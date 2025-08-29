@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:myapp/ui/sessions_screen.dart';
 import 'package:myapp/ui/set_screen.dart';
 import 'package:myapp/ui/schedule_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:myapp/services/auth_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -28,6 +30,18 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('My App'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              final authService = Provider.of<AuthService>(context, listen: false);
+              authService.signOut();
+            },
+          ),
+        ],
+      ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
       ),

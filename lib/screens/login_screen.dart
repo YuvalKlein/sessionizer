@@ -33,6 +33,16 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _signInWithGoogle() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final user = await authService.signInWithGoogle();
+    if (user == null) {
+      setState(() {
+        _errorMessage = 'Google sign-in failed.';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,6 +76,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ElevatedButton(
                 onPressed: _login,
                 child: const Text('Login'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _signInWithGoogle,
+                child: const Text('Sign in with Google'),
               ),
               TextButton(
                 onPressed: () => context.go('/register'),

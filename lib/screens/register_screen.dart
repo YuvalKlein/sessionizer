@@ -15,6 +15,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _displayNameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String? _errorMessage;
 
@@ -24,12 +25,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final user = await authService.registerWithEmailAndPassword(
         _emailController.text,
         _passwordController.text,
+        _displayNameController.text,
       );
       if (user == null) {
         setState(() {
           _errorMessage = 'Registration failed. Please try again.';
         });
       }
+    }
+  }
+
+  void _signInWithGoogle() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final user = await authService.signInWithGoogle();
+    if (user == null) {
+      setState(() {
+        _errorMessage = 'Google sign-in failed.';
+      });
     }
   }
 
@@ -50,6 +62,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: const TextStyle(color: Colors.red),
                 ),
               TextFormField(
+                controller: _displayNameController,
+                decoration: const InputDecoration(labelText: 'Display Name'),
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter your display name' : null,
+              ),
+              TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
                 validator: (value) =>
@@ -66,6 +84,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ElevatedButton(
                 onPressed: _register,
                 child: const Text('Register'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _signInWithGoogle,
+                child: const Text('Sign in with Google'),
               ),
               TextButton(
                 onPressed: () => context.go('/login'),

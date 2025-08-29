@@ -41,6 +41,7 @@ dependencies:
   go_router: ^16.2.0
   google_fonts: ^6.3.1
   firebase_ai: ^3.1.0
+  google_sign_in: ^7.1.1
 
 dev_dependencies:
   flutter_test:

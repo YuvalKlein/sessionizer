@@ -14,6 +14,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _displayNameController = TextEditingController(); // Added
   final _authService = AuthService();
   bool _isLoading = false;
 
@@ -30,6 +31,20 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
+              TextFormField(
+                controller: _displayNameController, // Added
+                decoration: const InputDecoration(
+                  labelText: 'Display Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your display name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
@@ -88,6 +103,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           final user = await _authService.registerWithEmailAndPassword(
                             _emailController.text,
                             _passwordController.text,
+                            _displayNameController.text, // Added
                           );
                           setState(() {
                             _isLoading = false;
@@ -121,6 +137,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _displayNameController.dispose(); // Added
     super.dispose();
   }
 }
