@@ -23,8 +23,10 @@ void main() {
   // Helper function to pump the widget with necessary providers and a mock router
   Future<void> pumpLoginScreen(WidgetTester tester) async {
     await tester.pumpWidget(
-      Provider<AuthService>.value(
-        value: mockAuthService,
+      MultiProvider(
+        providers: [
+          Provider<AuthService>.value(value: mockAuthService),
+        ],
         child: MaterialApp(
           home: MockGoRouterProvider(
             goRouter: mockGoRouter,
@@ -39,54 +41,64 @@ void main() {
     testWidgets('renders correctly', (WidgetTester tester) async {
       await pumpLoginScreen(tester);
 
-      expect(find.text('Login'), findsNWidgets(2)); // AppBar title and button
-      expect(find.byType(TextFormField), findsNWidgets(2));
-      expect(find.byType(ElevatedButton), findsOneWidget);
+      expect(find.byKey(const Key('email_field')), findsOneWidget);
+      expect(find.byKey(const Key('password_field')), findsOneWidget);
+      expect(find.byKey(const Key('login_button')), findsOneWidget);
       expect(find.text("Don't have an account? Register"), findsOneWidget);
     });
 
-    testWidgets('shows validation errors for empty fields', (WidgetTester tester) async {
+    testWidgets('shows validation error for empty email', (WidgetTester tester) async {
       await pumpLoginScreen(tester);
 
-      await tester.tap(find.byType(ElevatedButton));
-      await tester.pump(); // Re-render the widget after state change
+      await tester.tap(find.byKey(const Key('login_button')));
+      await tester.pump();
 
       expect(find.text('Please enter your email'), findsOneWidget);
       expect(find.text('Please enter your password'), findsOneWidget);
     });
 
-    testWidgets('calls login and shows loading indicator on valid submission', (WidgetTester tester) async {
+    testWidgets('shows validation error for empty password', (WidgetTester tester) async {
+      await pumpLoginScreen(tester);
+
+      await tester.enterText(find.byKey(const Key('email_field')), 'test@example.com');
+      await tester.tap(find.byKey(const Key('login_button')));
+      await tester.pump();
+
+      expect(find.text('Please enter your password'), findsOneWidget);
+    });
+
+    testWidgets('calls login and navigates on valid submission', (WidgetTester tester) async {
       when(mockAuthService.signInWithEmailAndPassword(any, any))
-          .thenAnswer((_) async {
-            await Future.delayed(const Duration(milliseconds: 100)); 
-            return null;
-          });
+          .thenAnswer((_) async => null);
 
       await pumpLoginScreen(tester);
 
-      await tester.enterText(find.byType(TextFormField).first, 'test@example.com');
-      await tester.enterText(find.byType(TextFormField).last, 'password');
+      await tester.enterText(find.byKey(const Key('email_field')), 'test@example.com');
+      await tester.enterText(find.byKey(const Key('password_field')), 'password');
       
-      await tester.tap(find.byType(ElevatedButton));
-      await tester.pump(); // Show loading indicator
+      await tester.tap(find.byKey(const Key('login_button')));
+      await tester.pump(); 
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-      await tester.pumpAndSettle(); // Let the future complete
+      await tester.pumpAndSettle(); 
+
+      verify(mockAuthService.signInWithEmailAndPassword('test@example.com', 'password')).called(1);
+      verify(mockGoRouter.go('/posts')).called(1);
     });
 
     testWidgets('shows snackbar on failed login', (WidgetTester tester) async {
-       when(mockAuthService.signInWithEmailAndPassword('test@example.com', 'wrongpassword'))
-          .thenAnswer((_) async => null);
+      when(mockAuthService.signInWithEmailAndPassword(any, any))
+          .thenThrow(Exception('Login failed'));
 
       await pumpLoginScreen(tester);
       
       await tester.enterText(find.byKey(const Key('email_field')), 'test@example.com');
       await tester.enterText(find.byKey(const Key('password_field')), 'wrongpassword');
 
-      await tester.tap(find.byType(ElevatedButton));
-      await tester.pump(); // Start loading
-      await tester.pumpAndSettle(); // Complete login future
+      await tester.tap(find.byKey(const Key('login_button')));
+      await tester.pump(); 
+      await tester.pumpAndSettle(); 
 
       expect(find.byType(SnackBar), findsOneWidget);
       expect(find.text('Login failed. Please check your credentials.'), findsOneWidget);

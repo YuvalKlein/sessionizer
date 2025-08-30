@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:myapp/services/auth_service.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,23 +23,30 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       final authService = Provider.of<AuthService>(context, listen: false);
-      final user = await authService.signInWithEmailAndPassword(
-        _emailController.text,
-        _passwordController.text,
-      );
 
-      if (!mounted) return;
+      try {
+        await authService.signInWithEmailAndPassword(
+          _emailController.text,
+          _passwordController.text,
+        );
 
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (user == null) {
+        if (mounted) {
+          // Navigate to the posts screen on successful login
+          context.go('/posts');
+        }
+      } catch (e) {
+        // Show a snackbar on failure
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Login failed. Please check your credentials.'),
           ),
         );
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -90,10 +97,18 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 24),
               _isLoading
                   ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _login,
-                      child: const Text('Login'),
+                  : SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        key: const Key('login_button'),
+                        onPressed: _login,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        ),
+                        child: const Text('Login'),
+                      ),
                     ),
+              const SizedBox(height: 16),
               TextButton(
                 onPressed: () => context.go('/register'),
                 child: const Text("Don't have an account? Register"),
