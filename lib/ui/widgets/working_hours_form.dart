@@ -29,7 +29,11 @@ class _WorkingHoursFormState extends State<WorkingHoursForm> {
     'Saturday': const TimeOfDay(hour: 0, minute: 0),
   };
 
-  Future<void> _selectTime(BuildContext context, String day, bool isStartTime) async {
+  Future<void> _selectTime(
+    BuildContext context,
+    String day,
+    bool isStartTime,
+  ) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: isStartTime ? _startTimes[day]! : _endTimes[day]!,
@@ -64,9 +68,9 @@ class _WorkingHoursFormState extends State<WorkingHoursForm> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving hours: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving hours: $e')));
     }
   }
 

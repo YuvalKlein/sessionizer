@@ -28,8 +28,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Future<void> _fetchDropdownData() async {
     try {
-      final templateSnapshot = await FirebaseFirestore.instance.collection('sessionTemplates').get();
-      final locationSnapshot = await FirebaseFirestore.instance.collection('locations').get();
+      final templateSnapshot = await FirebaseFirestore.instance
+          .collection('sessionTemplates')
+          .get();
+      final locationSnapshot = await FirebaseFirestore.instance
+          .collection('locations')
+          .get();
 
       if (!mounted) return;
       setState(() {
@@ -42,9 +46,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching data: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error fetching data: $e')));
     }
   }
 
@@ -74,18 +78,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     });
   }
 
-
   Future<void> _saveSession() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You must be logged in.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('You must be logged in.')));
       return;
     }
 
-    if (_selectedTemplate == null || _selectedLocation == null || _selectedStartTime == null) {
+    if (_selectedTemplate == null ||
+        _selectedLocation == null ||
+        _selectedStartTime == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill out all fields.')),
@@ -95,7 +100,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     try {
       final templateData = _selectedTemplate!.data() as Map<String, dynamic>;
-      final sessionEntity = Map<String, dynamic>.from(templateData['sessionEntity']);
+      final sessionEntity = Map<String, dynamic>.from(
+        templateData['sessionEntity'],
+      );
 
       final duration = sessionEntity['duration'] as int;
       final durationUnit = sessionEntity['durationUnit'] as String;
@@ -106,21 +113,24 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
       // Overwrite template data with specific session details
       sessionEntity['idInstructor'] = user.uid;
-      sessionEntity['startTimeEpoch'] = _selectedStartTime!.millisecondsSinceEpoch;
+      sessionEntity['startTimeEpoch'] =
+          _selectedStartTime!.millisecondsSinceEpoch;
       sessionEntity['endTimeEpoch'] = endTime.millisecondsSinceEpoch;
       sessionEntity['canceled'] = false;
       sessionEntity['playersIds'] = []; // Reset for the new session
-      sessionEntity['attendanceData'] = [];// Reset for the new session
-      
+      sessionEntity['attendanceData'] = []; // Reset for the new session
+
       // Add location details
-      final locationData = _selectedLocation!.data() as Map<String, dynamic>; 
+      final locationData = _selectedLocation!.data() as Map<String, dynamic>;
       sessionEntity['locationInfo'] = {
-          'id': _selectedLocation!.id,
-          'name': locationData['name'],
-          'address': locationData['address'],
+        'id': _selectedLocation!.id,
+        'name': locationData['name'],
+        'address': locationData['address'],
       };
 
-      await FirebaseFirestore.instance.collection('sessions').add(sessionEntity);
+      await FirebaseFirestore.instance
+          .collection('sessions')
+          .add(sessionEntity);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -133,18 +143,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving session: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving session: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Schedule a Session'),
-      ),
+      appBar: AppBar(title: const Text('Schedule a Session')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -164,7 +172,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         child: Text(entity['title'] ?? 'Unnamed Template'),
                       );
                     }).toList(),
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   DropdownButtonFormField<DocumentSnapshot>(
@@ -178,14 +188,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         child: Text(data['name'] ?? 'Unnamed Location'),
                       );
                     }).toList(),
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   ListTile(
                     title: const Text('Session Start Time'),
-                    subtitle: Text(_selectedStartTime == null
-                        ? 'Tap to select'
-                        : DateFormat.yMd().add_jm().format(_selectedStartTime!)),
+                    subtitle: Text(
+                      _selectedStartTime == null
+                          ? 'Tap to select'
+                          : DateFormat.yMd().add_jm().format(
+                              _selectedStartTime!,
+                            ),
+                    ),
                     onTap: _selectStartTime,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
@@ -196,7 +212,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   const SizedBox(height: 40),
                   ElevatedButton(
                     onPressed: _saveSession,
-                    style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
                     child: const Text('Save Session'),
                   ),
                 ],

@@ -22,8 +22,12 @@ void main() {
 
     when(mockFirestore.collection('sessions')).thenReturn(mockCollection);
     when(mockCollection.doc(any)).thenReturn(mockDocument);
-    when(mockCollection.where(any, isGreaterThanOrEqualTo: anyNamed('isGreaterThanOrEqualTo')))
-        .thenReturn(mockQuery);
+    when(
+      mockCollection.where(
+        any,
+        isGreaterThanOrEqualTo: anyNamed('isGreaterThanOrEqualTo'),
+      ),
+    ).thenReturn(mockQuery);
     when(mockQuery.orderBy(any)).thenReturn(mockQuery);
     when(mockDocument.update(any)).thenAnswer((_) async {});
 
@@ -34,7 +38,8 @@ void main() {
     group('getUpcomingSessions', () {
       test('calls Firestore with correct parameters and returns a stream', () {
         fakeAsync((async) {
-          final mockStream = StreamController<QuerySnapshot<Map<String, dynamic>>>().stream;
+          final mockStream =
+              StreamController<QuerySnapshot<Map<String, dynamic>>>().stream;
           when(mockQuery.snapshots()).thenAnswer((_) => mockStream);
 
           final result = sessionService.getUpcomingSessions();
@@ -42,9 +47,12 @@ void main() {
           expect(result, equals(mockStream));
 
           final now = DateTime.now().millisecondsSinceEpoch;
-          final captured = verify(mockCollection.where('startTimeEpoch',
-                  isGreaterThanOrEqualTo: captureAnyNamed('isGreaterThanOrEqualTo')))
-              .captured;
+          final captured = verify(
+            mockCollection.where(
+              'startTimeEpoch',
+              isGreaterThanOrEqualTo: captureAnyNamed('isGreaterThanOrEqualTo'),
+            ),
+          ).captured;
 
           expect((captured.first as int), closeTo(now, 1000));
           verify(mockQuery.orderBy('startTimeEpoch')).called(1);
@@ -59,7 +67,8 @@ void main() {
 
         await sessionService.joinSession(sessionId, userId);
 
-        final captured = verify(mockDocument.update(captureAny)).captured.single as Map;
+        final captured =
+            verify(mockDocument.update(captureAny)).captured.single as Map;
         expect(captured['playersIds'], isA<FieldValue>());
       });
     });
@@ -71,7 +80,8 @@ void main() {
 
         await sessionService.leaveSession(sessionId, userId);
 
-        final captured = verify(mockDocument.update(captureAny)).captured.single as Map;
+        final captured =
+            verify(mockDocument.update(captureAny)).captured.single as Map;
         expect(captured['playersIds'], isA<FieldValue>());
       });
     });

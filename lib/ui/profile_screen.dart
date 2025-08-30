@@ -4,23 +4,35 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:developer' as developer;
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final FirebaseAuth? auth;
+  final FirebaseFirestore? firestore;
+
+  const ProfileScreen({super.key, this.auth, this.firestore});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final User? currentUser = FirebaseAuth.instance.currentUser;
+  late final FirebaseAuth _auth;
+  late final FirebaseFirestore _firestore;
+  User? currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _auth = widget.auth ?? FirebaseAuth.instance;
+    _firestore = widget.firestore ?? FirebaseFirestore.instance;
+    currentUser = _auth.currentUser;
+  }
 
   Future<void> _updateInstructorStatus(bool isInstructor) async {
     if (currentUser == null) return;
 
     try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser!.uid)
-          .update({'isInstructor': isInstructor});
+      await _firestore.collection('users').doc(currentUser!.uid).update({
+        'isInstructor': isInstructor,
+      });
     } catch (e, s) {
       developer.log(
         'Error updating instructor status',
@@ -30,7 +42,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update status. Please try again.')),
+          const SnackBar(
+            content: Text('Failed to update status. Please try again.'),
+          ),
         );
       }
     }
@@ -41,48 +55,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     if (currentUser == null) {
-      return const Center(child: Text('No user logged in.'));
+      return const Scaffold(body: Center(child: Text('No user logged in.')));
     }
 
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Center(child: Text('Could not load user profile.'));
-        }
+    return Scaffold(
+      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: _firestore
+            .collection('users')
+            .doc(currentUser!.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text('Could not load user profile.'));
+          }
 
-        final userData = snapshot.data!.data()!;
-        final bool isInstructor = userData['isInstructor'] ?? false;
+          final userData = snapshot.data!.data()!;
+          final bool isInstructor = userData['isInstructor'] ?? false;
 
-        return ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: [
-            ListTile(
-              title: Text(userData['displayName'] ?? 'N/A', style: textTheme.headlineSmall),
-              subtitle: Text(userData['email'] ?? 'N/A', style: textTheme.bodyMedium),
-              leading: CircleAvatar(
-                radius: 30,
-                backgroundImage: userData['photoURL'] != null ? NetworkImage(userData['photoURL']) : null,
-                child: userData['photoURL'] == null ? const Icon(Icons.person) : null,
+          return ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              ListTile(
+                title: Text(
+                  userData['displayName'] ?? 'N/A',
+                  style: textTheme.headlineSmall,
+                ),
+                subtitle: Text(
+                  userData['email'] ?? 'N/A',
+                  style: textTheme.bodyMedium,
+                ),
+                leading: CircleAvatar(
+                  radius: 30,
+                  backgroundImage: userData['photoURL'] != null
+                      ? NetworkImage(userData['photoURL'])
+                      : null,
+                  child: userData['photoURL'] == null
+                      ? const Icon(Icons.person)
+                      : null,
+                ),
               ),
-            ),
-            const Divider(height: 32),
-            SwitchListTile(
-              title: const Text('Enable Instructor Mode'),
-              subtitle: const Text('Access special features for instructors'),
-              value: isInstructor,
-              onChanged: _updateInstructorStatus,
-              secondary: const Icon(Icons.school),
-            ),
-          ],
-        );
-      },
+              const Divider(height: 32),
+              SwitchListTile(
+                title: const Text('Enable Instructor Mode'),
+                subtitle: const Text('Access special features for instructors'),
+                value: isInstructor,
+                onChanged: _updateInstructorStatus,
+                secondary: const Icon(Icons.school),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

@@ -124,6 +124,12 @@ class _FakeUser_15 extends _i1.SmartFake implements _i4.User {
     : super(parent, parentInvocation);
 }
 
+class _FakeSnapshotMetadata_16 extends _i1.SmartFake
+    implements _i6.SnapshotMetadata {
+  _FakeSnapshotMetadata_16(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [FirebaseAuth].
 ///
 /// See the documentation for Mockito's code generation for more information.
@@ -1460,4 +1466,98 @@ class MockUser extends _i1.Mock implements _i4.User {
             returnValueForMissingStub: _i7.Future<void>.value(),
           )
           as _i7.Future<void>);
+}
+
+/// A class which mocks [DocumentSnapshot].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockDocumentSnapshot<T extends Object?> extends _i1.Mock
+    implements _i6.DocumentSnapshot<T> {
+  MockDocumentSnapshot() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  String get id =>
+      (super.noSuchMethod(
+            Invocation.getter(#id),
+            returnValue: _i8.dummyValue<String>(this, Invocation.getter(#id)),
+          )
+          as String);
+
+  @override
+  _i6.DocumentReference<T> get reference =>
+      (super.noSuchMethod(
+            Invocation.getter(#reference),
+            returnValue: _FakeDocumentReference_10<T>(
+              this,
+              Invocation.getter(#reference),
+            ),
+          )
+          as _i6.DocumentReference<T>);
+
+  @override
+  _i6.SnapshotMetadata get metadata =>
+      (super.noSuchMethod(
+            Invocation.getter(#metadata),
+            returnValue: _FakeSnapshotMetadata_16(
+              this,
+              Invocation.getter(#metadata),
+            ),
+          )
+          as _i6.SnapshotMetadata);
+
+  @override
+  bool get exists =>
+      (super.noSuchMethod(Invocation.getter(#exists), returnValue: false)
+          as bool);
+
+  @override
+  dynamic get(Object? field) =>
+      super.noSuchMethod(Invocation.method(#get, [field]));
+
+  @override
+  dynamic operator [](Object? field) =>
+      super.noSuchMethod(Invocation.method(#[], [field]));
+}
+
+/// A class which mocks [QuerySnapshot].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockQuerySnapshot<T extends Object?> extends _i1.Mock
+    implements _i6.QuerySnapshot<T> {
+  MockQuerySnapshot() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  List<_i6.QueryDocumentSnapshot<T>> get docs =>
+      (super.noSuchMethod(
+            Invocation.getter(#docs),
+            returnValue: <_i6.QueryDocumentSnapshot<T>>[],
+          )
+          as List<_i6.QueryDocumentSnapshot<T>>);
+
+  @override
+  List<_i6.DocumentChange<T>> get docChanges =>
+      (super.noSuchMethod(
+            Invocation.getter(#docChanges),
+            returnValue: <_i6.DocumentChange<T>>[],
+          )
+          as List<_i6.DocumentChange<T>>);
+
+  @override
+  _i6.SnapshotMetadata get metadata =>
+      (super.noSuchMethod(
+            Invocation.getter(#metadata),
+            returnValue: _FakeSnapshotMetadata_16(
+              this,
+              Invocation.getter(#metadata),
+            ),
+          )
+          as _i6.SnapshotMetadata);
+
+  @override
+  int get size =>
+      (super.noSuchMethod(Invocation.getter(#size), returnValue: 0) as int);
 }

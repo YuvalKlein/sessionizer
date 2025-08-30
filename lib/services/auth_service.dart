@@ -11,14 +11,17 @@ class AuthService {
     this._firebaseAuth, {
     required FirebaseFirestore firestore,
     required GoogleSignIn googleSignIn,
-  })  : _firestore = firestore,
-        _googleSignIn = googleSignIn;
+  }) : _firestore = firestore,
+       _googleSignIn = googleSignIn;
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
   User? get currentUser => _firebaseAuth.currentUser;
 
-  Future<User?> signInWithEmailAndPassword(String email, String password) async {
+  Future<User?> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
     try {
       final result = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
@@ -60,7 +63,10 @@ class AuthService {
   }
 
   Future<User?> registerWithEmailAndPassword(
-      String email, String password, String displayName) async {
+    String email,
+    String password,
+    String displayName,
+  ) async {
     try {
       final result = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,

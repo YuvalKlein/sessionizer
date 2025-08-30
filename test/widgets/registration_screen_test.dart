@@ -35,13 +35,18 @@ void main() {
     testWidgets('renders correctly', (WidgetTester tester) async {
       await pumpRegistrationScreen(tester);
 
-      expect(find.text('Register'), findsNWidgets(2)); // AppBar title and button
+      expect(
+        find.text('Register'),
+        findsNWidgets(2),
+      ); // AppBar title and button
       expect(find.byType(TextFormField), findsNWidgets(4));
       expect(find.byType(ElevatedButton), findsOneWidget);
       expect(find.text('Already have an account? Login'), findsOneWidget);
     });
 
-    testWidgets('shows validation errors for empty fields', (WidgetTester tester) async {
+    testWidgets('shows validation errors for empty fields', (
+      WidgetTester tester,
+    ) async {
       await pumpRegistrationScreen(tester);
 
       await tester.tap(find.byType(ElevatedButton));
@@ -53,60 +58,104 @@ void main() {
       expect(find.text('Please confirm your password'), findsOneWidget);
     });
 
-    testWidgets('shows validation error for mismatched passwords', (WidgetTester tester) async {
+    testWidgets('shows validation error for mismatched passwords', (
+      WidgetTester tester,
+    ) async {
       await pumpRegistrationScreen(tester);
 
-      await tester.enterText(find.byKey(const Key('password_field')), 'password123');
-      await tester.enterText(find.byKey(const Key('confirm_password_field')), 'password456');
-      
+      await tester.enterText(
+        find.byKey(const Key('password_field')),
+        'password123',
+      );
+      await tester.enterText(
+        find.byKey(const Key('confirm_password_field')),
+        'password456',
+      );
+
       await tester.tap(find.byType(ElevatedButton));
       await tester.pump();
 
       expect(find.text('Passwords do not match'), findsOneWidget);
     });
 
-    testWidgets('calls register and shows loading indicator on valid submission', (WidgetTester tester) async {
-      when(mockAuthService.registerWithEmailAndPassword(any, any, any))
-          .thenAnswer((_) async {
-            await Future.delayed(const Duration(milliseconds: 100));
-            return null;
-          });
+    testWidgets(
+      'calls register and shows loading indicator on valid submission',
+      (WidgetTester tester) async {
+        when(
+          mockAuthService.registerWithEmailAndPassword(any, any, any),
+        ).thenAnswer((_) async {
+          await Future.delayed(const Duration(milliseconds: 100));
+          return null;
+        });
+
+        await pumpRegistrationScreen(tester);
+
+        await tester.enterText(
+          find.byKey(const Key('display_name_field')),
+          'Test User',
+        );
+        await tester.enterText(
+          find.byKey(const Key('email_field')),
+          'test@example.com',
+        );
+        await tester.enterText(
+          find.byKey(const Key('password_field')),
+          'password123',
+        );
+        await tester.enterText(
+          find.byKey(const Key('confirm_password_field')),
+          'password123',
+        );
+
+        await tester.tap(find.byType(ElevatedButton));
+        await tester.pump();
+
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+        await tester.pumpAndSettle();
+      },
+    );
+
+    testWidgets('shows snackbar on failed registration', (
+      WidgetTester tester,
+    ) async {
+      when(
+        mockAuthService.registerWithEmailAndPassword(any, any, any),
+      ).thenAnswer((_) async => null);
 
       await pumpRegistrationScreen(tester);
 
-      await tester.enterText(find.byKey(const Key('display_name_field')), 'Test User');
-      await tester.enterText(find.byKey(const Key('email_field')), 'test@example.com');
-      await tester.enterText(find.byKey(const Key('password_field')), 'password123');
-      await tester.enterText(find.byKey(const Key('confirm_password_field')), 'password123');
-
-      await tester.tap(find.byType(ElevatedButton));
-      await tester.pump();
-
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      
-      await tester.pumpAndSettle();
-    });
-
-    testWidgets('shows snackbar on failed registration', (WidgetTester tester) async {
-      when(mockAuthService.registerWithEmailAndPassword(any, any, any))
-          .thenAnswer((_) async => null);
-
-      await pumpRegistrationScreen(tester);
-
-      await tester.enterText(find.byKey(const Key('display_name_field')), 'Test User');
-      await tester.enterText(find.byKey(const Key('email_field')), 'test@example.com');
-      await tester.enterText(find.byKey(const Key('password_field')), 'password123');
-      await tester.enterText(find.byKey(const Key('confirm_password_field')), 'password123');
+      await tester.enterText(
+        find.byKey(const Key('display_name_field')),
+        'Test User',
+      );
+      await tester.enterText(
+        find.byKey(const Key('email_field')),
+        'test@example.com',
+      );
+      await tester.enterText(
+        find.byKey(const Key('password_field')),
+        'password123',
+      );
+      await tester.enterText(
+        find.byKey(const Key('confirm_password_field')),
+        'password123',
+      );
 
       await tester.tap(find.byType(ElevatedButton));
       await tester.pump();
       await tester.pumpAndSettle();
 
       expect(find.byType(SnackBar), findsOneWidget);
-      expect(find.text('Registration failed. Please try again.'), findsOneWidget);
+      expect(
+        find.text('Registration failed. Please try again.'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('navigates to login screen on button tap', (WidgetTester tester) async {
+    testWidgets('navigates to login screen on button tap', (
+      WidgetTester tester,
+    ) async {
       await pumpRegistrationScreen(tester);
 
       await tester.tap(find.text('Already have an account? Login'));
@@ -128,9 +177,6 @@ class MockGoRouterProvider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InheritedGoRouter(
-      goRouter: goRouter,
-      child: child,
-    );
+    return InheritedGoRouter(goRouter: goRouter, child: child);
   }
 }

@@ -11,7 +11,8 @@ class SetScreen extends StatefulWidget {
   State<SetScreen> createState() => _SetScreenState();
 }
 
-class _SetScreenState extends State<SetScreen> with SingleTickerProviderStateMixin {
+class _SetScreenState extends State<SetScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -30,12 +31,14 @@ class _SetScreenState extends State<SetScreen> with SingleTickerProviderStateMix
   }
 
   void _navigateAndCreateTemplate() {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => Scaffold(
-        appBar: AppBar(title: const Text('Create New Template')),
-        body: const SessionTemplateForm(),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: const Text('Create New Template')),
+          body: const SessionTemplateForm(),
+        ),
       ),
-    ));
+    );
   }
 
   @override

@@ -8,15 +8,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/user_service.dart';
 import 'package:myapp/services/session_service.dart';
-import 'package:myapp/services/post_service.dart';
 import 'firebase_options.dart';
 import 'package:myapp/router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     MultiProvider(
       providers: [
@@ -25,7 +22,9 @@ void main() async {
           create: (_) => AuthService(
             FirebaseAuth.instance,
             firestore: FirebaseFirestore.instance,
-            googleSignIn: GoogleSignIn(),
+            googleSignIn: GoogleSignIn(
+              clientId: DefaultFirebaseOptions.currentPlatform.appId,
+            ),
           ),
         ),
         Provider<UserService>(
@@ -34,9 +33,7 @@ void main() async {
         Provider<SessionService>(
           create: (_) => SessionService(FirebaseFirestore.instance),
         ),
-        Provider<PostService>(
-          create: (_) => PostService(),
-        ),
+        
       ],
       child: const MyApp(),
     ),
@@ -49,7 +46,9 @@ class ThemeProvider with ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
 
   void toggleTheme() {
-    _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    _themeMode = _themeMode == ThemeMode.light
+        ? ThemeMode.dark
+        : ThemeMode.light;
     notifyListeners();
   }
 
@@ -77,7 +76,10 @@ final ThemeData lightTheme = ThemeData(
   appBarTheme: AppBarTheme(
     backgroundColor: primarySeedColor,
     foregroundColor: Colors.white,
-    titleTextStyle: GoogleFonts.oswald(fontSize: 24, fontWeight: FontWeight.bold),
+    titleTextStyle: GoogleFonts.oswald(
+      fontSize: 24,
+      fontWeight: FontWeight.bold,
+    ),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
@@ -100,7 +102,10 @@ final ThemeData darkTheme = ThemeData(
   appBarTheme: AppBarTheme(
     backgroundColor: Colors.grey[900],
     foregroundColor: Colors.white,
-    titleTextStyle: GoogleFonts.oswald(fontSize: 24, fontWeight: FontWeight.bold),
+    titleTextStyle: GoogleFonts.oswald(
+      fontSize: 24,
+      fontWeight: FontWeight.bold,
+    ),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(

@@ -5,15 +5,24 @@ import 'package:myapp/ui/widgets/session_template_form.dart';
 class TemplateListView extends StatelessWidget {
   const TemplateListView({super.key});
 
-  Future<void> _deleteTemplate(BuildContext context, DocumentSnapshot template) async {
+  Future<void> _deleteTemplate(
+    BuildContext context,
+    DocumentSnapshot template,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Template'),
         content: const Text('Are you sure you want to delete this template?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -39,7 +48,9 @@ class TemplateListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('sessionTemplates').snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('sessionTemplates')
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -57,7 +68,10 @@ class TemplateListView extends StatelessWidget {
           itemCount: templates.length,
           itemBuilder: (context, index) {
             final template = templates[index];
-            final entity = (template.data() as Map<String, dynamic>)['sessionEntity'] as Map<String, dynamic>? ?? {};
+            final entity =
+                (template.data() as Map<String, dynamic>)['sessionEntity']
+                    as Map<String, dynamic>? ??
+                {};
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: ListTile(
@@ -69,16 +83,23 @@ class TemplateListView extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.edit_note),
                       onPressed: () {
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => Scaffold(
-                            appBar: AppBar(title: const Text('Edit Template')),
-                            body: SessionTemplateForm(template: template),
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              appBar: AppBar(
+                                title: const Text('Edit Template'),
+                              ),
+                              body: SessionTemplateForm(template: template),
+                            ),
                           ),
-                        ));
+                        );
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.redAccent,
+                      ),
                       onPressed: () => _deleteTemplate(context, template),
                     ),
                   ],

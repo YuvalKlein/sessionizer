@@ -6,7 +6,6 @@ import 'package:myapp/ui/sessions_screen.dart';
 import 'package:myapp/ui/set_screen.dart';
 import 'package:myapp/ui/schedule_screen.dart';
 import 'package:myapp/ui/profile_screen.dart';
-import 'package:myapp/ui/post_list_screen.dart';
 import 'package:provider/provider.dart';
 
 class MainScreen extends StatefulWidget {
@@ -27,94 +26,101 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final userService = Provider.of<UserService>(context, listen: false);
-    final currentUser = authService.currentUser;
+    return Consumer<AuthService>(
+      builder: (context, authService, child) {
+        final currentUser = authService.currentUser;
 
-    if (currentUser == null) {
-      return const Scaffold(
-        body: Center(child: Text('Not authenticated. Redirecting...')),
-      );
-    }
-
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: userService.getUserStream(currentUser.uid),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
-        if (snapshot.hasError) {
-          return Scaffold(body: Center(child: Text('Error: ${snapshot.error}')));
-        }
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Scaffold(body: Center(child: Text('User data not found.')));
+        if (currentUser == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
-        final userData = snapshot.data!.data()!;
-        final bool isInstructor = userData['isInstructor'] ?? false;
+        final userService = Provider.of<UserService>(context, listen: false);
 
-        final List<Widget> widgetOptions = [
-          const SessionsScreen(),
-          const PostListScreen(),
-        ];
-        final List<BottomNavigationBarItem> navBarItems = [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.sports_soccer),
-            label: 'Sessions',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.article),
-            label: 'Posts',
-          ),
-        ];
+        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: userService.getUserStream(currentUser.uid),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError) {
+              return Scaffold(
+                body: Center(child: Text('Error: ${snapshot.error}')),
+              );
+            }
+            if (!snapshot.hasData || !snapshot.data!.exists) {
+              return const Scaffold(
+                body: Center(child: Text('User data not found.')),
+              );
+            }
 
-        if (isInstructor) {
-          widgetOptions.addAll([const SetScreen(), const ScheduleScreen()]);
-          navBarItems.addAll([
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'Set',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today),
-              label: 'Schedule',
-            ),
-          ]);
-        }
+            final userData = snapshot.data!.data()!;
+            final bool isInstructor = userData['isInstructor'] ?? false;
 
-        widgetOptions.add(const ProfileScreen());
-        navBarItems.add(
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        );
-
-        if (_selectedIndex >= widgetOptions.length) {
-          _selectedIndex = 0;
-        }
-
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('My App'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () {
-                  authService.signOut();
-                },
+            final List<Widget> widgetOptions = [
+              const SessionsScreen(),
+            ];
+            final List<BottomNavigationBarItem> navBarItems = [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.sports_soccer),
+                label: 'Sessions',
               ),
-            ],
-          ),
-          body: Center(
-            child: widgetOptions.elementAt(_selectedIndex),
-          ),
-          bottomNavigationBar: BottomNavigationBar(
-            items: navBarItems,
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            type: BottomNavigationBarType.fixed,
-          ),
+            ];
+
+            if (isInstructor) {
+              widgetOptions.addAll([const SetScreen(), const ScheduleScreen()]);
+              navBarItems.addAll([
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.settings),
+                  label: 'Set',
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.calendar_today),
+                  label: 'Schedule',
+                ),
+              ]);
+            }
+
+            widgetOptions.add(const ProfileScreen());
+            navBarItems.add(
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            );
+
+            if (_selectedIndex >= widgetOptions.length) {
+              _selectedIndex = 0;
+            }
+
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('My App'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.logout),
+                    onPressed: () {
+                      authService.signOut().then((_) {
+                        if (mounted) {
+                          Navigator.of(context).pushReplacementNamed('/login');
+                        }
+                      });
+                    },
+                  ),
+                ],
+              ),
+              body: Center(child: widgetOptions.elementAt(_selectedIndex)),
+              bottomNavigationBar: BottomNavigationBar(
+                items: navBarItems,
+                currentIndex: _selectedIndex,
+                onTap: _onItemTapped,
+                type: BottomNavigationBarType.fixed,
+              ),
+            );
+          },
         );
       },
     );

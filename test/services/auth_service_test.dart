@@ -18,7 +18,7 @@ import 'auth_service_test.mocks.dart';
   CollectionReference,
   DocumentReference,
   DocumentSnapshot,
-  Query
+  Query,
 ])
 void main() {
   late AuthService authService;
@@ -36,7 +36,9 @@ void main() {
     mockDocumentReference = MockDocumentReference<Map<String, dynamic>>();
 
     // Stub the firestore collection/doc calls
-    when(mockFirebaseFirestore.collection('users')).thenReturn(mockCollectionReference);
+    when(
+      mockFirebaseFirestore.collection('users'),
+    ).thenReturn(mockCollectionReference);
     when(mockCollectionReference.doc(any)).thenReturn(mockDocumentReference);
 
     authService = AuthService(
@@ -53,48 +55,78 @@ void main() {
     when(mockUser.email).thenReturn('test@example.com');
 
     group('signInWithGoogle', () {
-      test('returns a User and creates a new document when user is new', () async {
-        final mockGoogleSignInAccount = MockGoogleSignInAccount();
-        final mockGoogleSignInAuthentication = MockGoogleSignInAuthentication();
-        final mockUserCredential = MockUserCredential();
-        final mockDocumentSnapshot = MockDocumentSnapshot<Map<String, dynamic>>();
+      test(
+        'returns a User and creates a new document when user is new',
+        () async {
+          final mockGoogleSignInAccount = MockGoogleSignInAccount();
+          final mockGoogleSignInAuthentication =
+              MockGoogleSignInAuthentication();
+          final mockUserCredential = MockUserCredential();
+          final mockDocumentSnapshot =
+              MockDocumentSnapshot<Map<String, dynamic>>();
 
-        when(mockGoogleSignIn.signIn()).thenAnswer((_) async => mockGoogleSignInAccount);
-        when(mockGoogleSignInAccount.authentication).thenAnswer((_) async => mockGoogleSignInAuthentication);
-        when(mockGoogleSignInAuthentication.accessToken).thenReturn('accessToken');
-        when(mockGoogleSignInAuthentication.idToken).thenReturn('idToken');
-        when(mockFirebaseAuth.signInWithCredential(any)).thenAnswer((_) async => mockUserCredential);
-        when(mockUserCredential.user).thenReturn(mockUser);
-        when(mockDocumentReference.get()).thenAnswer((_) async => mockDocumentSnapshot);
-        when(mockDocumentSnapshot.exists).thenReturn(false);
-        when(mockDocumentReference.set(any)).thenAnswer((_) async => {});
+          when(
+            mockGoogleSignIn.signIn(),
+          ).thenAnswer((_) async => mockGoogleSignInAccount);
+          when(
+            mockGoogleSignInAccount.authentication,
+          ).thenAnswer((_) async => mockGoogleSignInAuthentication);
+          when(
+            mockGoogleSignInAuthentication.accessToken,
+          ).thenReturn('accessToken');
+          when(mockGoogleSignInAuthentication.idToken).thenReturn('idToken');
+          when(
+            mockFirebaseAuth.signInWithCredential(any),
+          ).thenAnswer((_) async => mockUserCredential);
+          when(mockUserCredential.user).thenReturn(mockUser);
+          when(
+            mockDocumentReference.get(),
+          ).thenAnswer((_) async => mockDocumentSnapshot);
+          when(mockDocumentSnapshot.exists).thenReturn(false);
+          when(mockDocumentReference.set(any)).thenAnswer((_) async => {});
 
-        final result = await authService.signInWithGoogle();
+          final result = await authService.signInWithGoogle();
 
-        expect(result, isA<User>());
-        verify(mockDocumentReference.set(any)).called(1);
-      });
+          expect(result, isA<User>());
+          verify(mockDocumentReference.set(any)).called(1);
+        },
+      );
 
-      test('returns a User and does not create a new document when user exists', () async {
-        final mockGoogleSignInAccount = MockGoogleSignInAccount();
-        final mockGoogleSignInAuthentication = MockGoogleSignInAuthentication();
-        final mockUserCredential = MockUserCredential();
-        final mockDocumentSnapshot = MockDocumentSnapshot<Map<String, dynamic>>();
+      test(
+        'returns a User and does not create a new document when user exists',
+        () async {
+          final mockGoogleSignInAccount = MockGoogleSignInAccount();
+          final mockGoogleSignInAuthentication =
+              MockGoogleSignInAuthentication();
+          final mockUserCredential = MockUserCredential();
+          final mockDocumentSnapshot =
+              MockDocumentSnapshot<Map<String, dynamic>>();
 
-        when(mockGoogleSignIn.signIn()).thenAnswer((_) async => mockGoogleSignInAccount);
-        when(mockGoogleSignInAccount.authentication).thenAnswer((_) async => mockGoogleSignInAuthentication);
-        when(mockGoogleSignInAuthentication.accessToken).thenReturn('accessToken');
-        when(mockGoogleSignInAuthentication.idToken).thenReturn('idToken');
-        when(mockFirebaseAuth.signInWithCredential(any)).thenAnswer((_) async => mockUserCredential);
-        when(mockUserCredential.user).thenReturn(mockUser);
-        when(mockDocumentReference.get()).thenAnswer((_) async => mockDocumentSnapshot);
-        when(mockDocumentSnapshot.exists).thenReturn(true);
+          when(
+            mockGoogleSignIn.signIn(),
+          ).thenAnswer((_) async => mockGoogleSignInAccount);
+          when(
+            mockGoogleSignInAccount.authentication,
+          ).thenAnswer((_) async => mockGoogleSignInAuthentication);
+          when(
+            mockGoogleSignInAuthentication.accessToken,
+          ).thenReturn('accessToken');
+          when(mockGoogleSignInAuthentication.idToken).thenReturn('idToken');
+          when(
+            mockFirebaseAuth.signInWithCredential(any),
+          ).thenAnswer((_) async => mockUserCredential);
+          when(mockUserCredential.user).thenReturn(mockUser);
+          when(
+            mockDocumentReference.get(),
+          ).thenAnswer((_) async => mockDocumentSnapshot);
+          when(mockDocumentSnapshot.exists).thenReturn(true);
 
-        final result = await authService.signInWithGoogle();
+          final result = await authService.signInWithGoogle();
 
-        expect(result, isA<User>());
-        verifyNever(mockDocumentReference.set(any));
-      });
+          expect(result, isA<User>());
+          verifyNever(mockDocumentReference.set(any));
+        },
+      );
 
       test('returns null when Google Sign-In is cancelled', () async {
         when(mockGoogleSignIn.signIn()).thenAnswer((_) async => null);
@@ -109,21 +141,31 @@ void main() {
       test('returns a User on successful registration', () async {
         final mockUserCredential = MockUserCredential();
 
-        when(mockFirebaseAuth.createUserWithEmailAndPassword(email: 'test@example.com', password: 'password'))
-            .thenAnswer((_) async => mockUserCredential);
+        when(
+          mockFirebaseAuth.createUserWithEmailAndPassword(
+            email: 'test@example.com',
+            password: 'password',
+          ),
+        ).thenAnswer((_) async => mockUserCredential);
         when(mockUserCredential.user).thenReturn(mockUser);
         when(mockUser.updateDisplayName(any)).thenAnswer((_) async => {});
         when(mockDocumentReference.set(any)).thenAnswer((_) async => {});
 
-        final result = await authService.registerWithEmailAndPassword('test@example.com', 'password', 'Test User');
+        final result = await authService.registerWithEmailAndPassword(
+          'test@example.com',
+          'password',
+          'Test User',
+        );
 
         expect(result, isA<User>());
         verify(mockUser.updateDisplayName('Test User')).called(1);
-        verify(mockDocumentReference.set({
-          'displayName': 'Test User',
-          'email': 'test@example.com',
-          'isInstructor': false,
-        })).called(1);
+        verify(
+          mockDocumentReference.set({
+            'displayName': 'Test User',
+            'email': 'test@example.com',
+            'isInstructor': false,
+          }),
+        ).called(1);
       });
     });
 

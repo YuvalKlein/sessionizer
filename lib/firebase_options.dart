@@ -65,5 +65,4 @@ class DefaultFirebaseOptions {
     projectId: 'apiclientapp',
     storageBucket: 'apiclientapp.firebasestorage.app',
   );
-
 }

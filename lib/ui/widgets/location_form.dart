@@ -33,9 +33,9 @@ class _LocationFormState extends State<LocationForm> {
         _formKey.currentState!.reset();
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving location: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving location: $e')));
       }
     }
   }

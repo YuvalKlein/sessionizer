@@ -70,33 +70,35 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You must be logged in to create a template.')),
-        );
-        return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must be logged in to create a template.'),
+        ),
+      );
+      return;
     }
 
     try {
-        final sessionData = {
-            'title': _titleController.text,
-            'details': _detailsController.text,
-            'category': _categoryController.text,
-            'price': int.tryParse(_priceController.text) ?? 0,
-            'maxPlayers': int.tryParse(_maxPlayersController.text) ?? 0,
-            'minPlayers': int.tryParse(_minPlayersController.text) ?? 0,
-            'duration': int.tryParse(_durationController.text) ?? 0,
-            'durationUnit': _durationUnit,
-            'timeZoneOffsetInHours': DateTime.now().timeZoneOffset.inHours,
-            'notifyCancelation': _notifyCancelation,
-            'repeatingSession': _repeatingSession,
-            'showParticipants': _showParticipants,
-            'createdTime': DateTime.now().millisecondsSinceEpoch,
-            'idCreatedBy': user.uid,
-            'idInstructor': user.uid,
-            'canceled': false,
-            'playersIds': [],
-            'attendanceData': [],
-        };
+      final sessionData = {
+        'title': _titleController.text,
+        'details': _detailsController.text,
+        'category': _categoryController.text,
+        'price': int.tryParse(_priceController.text) ?? 0,
+        'maxPlayers': int.tryParse(_maxPlayersController.text) ?? 0,
+        'minPlayers': int.tryParse(_minPlayersController.text) ?? 0,
+        'duration': int.tryParse(_durationController.text) ?? 0,
+        'durationUnit': _durationUnit,
+        'timeZoneOffsetInHours': DateTime.now().timeZoneOffset.inHours,
+        'notifyCancelation': _notifyCancelation,
+        'repeatingSession': _repeatingSession,
+        'showParticipants': _showParticipants,
+        'createdTime': DateTime.now().millisecondsSinceEpoch,
+        'idCreatedBy': user.uid,
+        'idInstructor': user.uid,
+        'canceled': false,
+        'playersIds': [],
+        'attendanceData': [],
+      };
 
       if (widget.template != null) {
         // Update existing template
@@ -104,22 +106,25 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
       } else {
         // Create new template
         await FirebaseFirestore.instance.collection('sessionTemplates').add({
-            'sessionEntity': sessionData,
+          'sessionEntity': sessionData,
         });
       }
 
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Template ${widget.template != null ? 'updated' : 'saved'} successfully!')),
-        );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Template ${widget.template != null ? 'updated' : 'saved'} successfully!',
+          ),
+        ),
+      );
 
-        Navigator.of(context).pop();
-
+      Navigator.of(context).pop();
     } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving template: $e')),
-        );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving template: $e')));
     }
   }
 
@@ -135,57 +140,82 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              isEditing ? 'Edit Session Template' : 'Create New Session Template',
-              style: Theme.of(context).textTheme.headlineSmall
+              isEditing
+                  ? 'Edit Session Template'
+                  : 'Create New Session Template',
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Title', border: OutlineInputBorder()),
-              validator: (v) => v == null || v.isEmpty ? 'Please enter a title' : null,
+              decoration: const InputDecoration(
+                labelText: 'Title',
+                border: OutlineInputBorder(),
+              ),
+              validator: (v) =>
+                  v == null || v.isEmpty ? 'Please enter a title' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _detailsController,
-              decoration: const InputDecoration(labelText: 'Details', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Details',
+                border: OutlineInputBorder(),
+              ),
               maxLines: 3,
             ),
             const SizedBox(height: 16),
             TextFormField(
-              controller:_categoryController,
-              decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
+              controller: _categoryController,
+              decoration: const InputDecoration(
+                labelText: 'Category',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
-             TextFormField(
+            TextFormField(
               controller: _priceController,
-              decoration: const InputDecoration(labelText: 'Price', border: OutlineInputBorder(), prefixText: '\$'),
+              decoration: const InputDecoration(
+                labelText: 'Price',
+                border: OutlineInputBorder(),
+                prefixText: '\$',
+              ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-               validator: (v) => v == null || v.isEmpty ? 'Please enter a price' : null,
+              validator: (v) =>
+                  v == null || v.isEmpty ? 'Please enter a price' : null,
             ),
             const SizedBox(height: 16),
             Row(
-                children: [
-                    Expanded(
-                        child: TextFormField(
-                            controller: _minPlayersController,
-                            decoration: const InputDecoration(labelText: 'Min Players', border: OutlineInputBorder()),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                        ),
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _minPlayersController,
+                    decoration: const InputDecoration(
+                      labelText: 'Min Players',
+                      border: OutlineInputBorder(),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                        child: TextFormField(
-                            controller: _maxPlayersController,
-                            decoration: const InputDecoration(labelText: 'Max Players', border: OutlineInputBorder()),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                        ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _maxPlayersController,
+                    decoration: const InputDecoration(
+                      labelText: 'Max Players',
+                      border: OutlineInputBorder(),
                     ),
-                ],
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Required' : null,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Row(
@@ -199,8 +229,9 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Please enter a duration' : null,
+                    validator: (v) => v == null || v.isEmpty
+                        ? 'Please enter a duration'
+                        : null,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -208,11 +239,12 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
                   value: _durationUnit,
                   items: <String>['Hours', 'Minutes']
                       .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      })
+                      .toList(),
                   onChanged: (String? newValue) {
                     setState(() {
                       _durationUnit = newValue!;
@@ -224,25 +256,27 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
             const SizedBox(height: 16),
             const Divider(),
             SwitchListTile(
-                title: const Text('Notify on Cancellation'),
-                value: _notifyCancelation,
-                onChanged: (val) => setState(() => _notifyCancelation = val),
+              title: const Text('Notify on Cancellation'),
+              value: _notifyCancelation,
+              onChanged: (val) => setState(() => _notifyCancelation = val),
             ),
             SwitchListTile(
-                title: const Text('Repeating Session'),
-                value: _repeatingSession,
-                onChanged: (val) => setState(() => _repeatingSession = val),
+              title: const Text('Repeating Session'),
+              value: _repeatingSession,
+              onChanged: (val) => setState(() => _repeatingSession = val),
             ),
             SwitchListTile(
-                title: const Text('Show Participants List'),
-                value: _showParticipants,
-                onChanged: (val) => setState(() => _showParticipants = val),
+              title: const Text('Show Participants List'),
+              value: _showParticipants,
+              onChanged: (val) => setState(() => _showParticipants = val),
             ),
             const Divider(),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _saveTemplate,
-              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
               child: Text(isEditing ? 'Update Template' : 'Save Template'),
             ),
           ],

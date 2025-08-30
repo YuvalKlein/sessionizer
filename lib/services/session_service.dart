@@ -8,20 +8,23 @@ class SessionService {
   Stream<QuerySnapshot> getUpcomingSessions() {
     return _firestore
         .collection('sessions')
-        .where('startTimeEpoch', isGreaterThanOrEqualTo: DateTime.now().millisecondsSinceEpoch)
+        .where(
+          'startTimeEpoch',
+          isGreaterThanOrEqualTo: DateTime.now().millisecondsSinceEpoch,
+        )
         .orderBy('startTimeEpoch')
         .snapshots();
   }
 
   Future<void> joinSession(String sessionId, String userId) {
     return _firestore.collection('sessions').doc(sessionId).update({
-      'playersIds': FieldValue.arrayUnion([userId])
+      'playersIds': FieldValue.arrayUnion([userId]),
     });
   }
 
   Future<void> leaveSession(String sessionId, String userId) {
     return _firestore.collection('sessions').doc(sessionId).update({
-      'playersIds': FieldValue.arrayRemove([userId])
+      'playersIds': FieldValue.arrayRemove([userId]),
     });
   }
 }

@@ -14,20 +14,6 @@ import 'package:myapp/ui/main_screen.dart';
 
 import 'widget_test.mocks.dart';
 
-class MockDocumentSnapshot<T extends Object> extends Mock implements DocumentSnapshot<T> {
-  @override
-  T? data() => super.noSuchMethod(Invocation.method(#data, []), returnValue: null);
-
-  @override
-  bool get exists => super.noSuchMethod(Invocation.getter(#exists), returnValue: false);
-}
-
-class MockQuerySnapshot<T extends Object> extends Mock implements QuerySnapshot<T> {
-  @override
-  List<QueryDocumentSnapshot<T>> get docs =>
-      super.noSuchMethod(Invocation.getter(#docs), returnValue: <QueryDocumentSnapshot<T>>[]);
-}
-
 @GenerateMocks([
   FirebaseAuth,
   FirebaseFirestore,
@@ -35,7 +21,9 @@ class MockQuerySnapshot<T extends Object> extends Mock implements QuerySnapshot<
   AuthService,
   UserService,
   SessionService,
-  User
+  User,
+  DocumentSnapshot,
+  QuerySnapshot,
 ])
 void main() {
   late MockAuthService mockAuthService;
@@ -48,9 +36,13 @@ void main() {
     mockSessionService = MockSessionService();
   });
 
-  testWidgets('Renders LoginScreen when not logged in', (WidgetTester tester) async {
+  testWidgets('Renders LoginScreen when not logged in', (
+    WidgetTester tester,
+  ) async {
     when(mockAuthService.currentUser).thenReturn(null);
-    when(mockAuthService.authStateChanges).thenAnswer((_) => Stream.value(null));
+    when(
+      mockAuthService.authStateChanges,
+    ).thenAnswer((_) => Stream.value(null));
 
     await tester.pumpWidget(
       MultiProvider(
@@ -75,11 +67,19 @@ void main() {
     final mockQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
     when(mockUser.uid).thenReturn('123');
     when(mockAuthService.currentUser).thenReturn(mockUser);
-    when(mockAuthService.authStateChanges).thenAnswer((_) => Stream.value(mockUser));
-    when(mockUserService.getUserStream('123')).thenAnswer((_) => Stream.value(mockDocumentSnapshot));
-    when(mockDocumentSnapshot.data()).thenReturn({'displayName': 'Test User', 'isInstructor': false});
+    when(
+      mockAuthService.authStateChanges,
+    ).thenAnswer((_) => Stream.value(mockUser));
+    when(
+      mockUserService.getUserStream('123'),
+    ).thenAnswer((_) => Stream.value(mockDocumentSnapshot));
+    when(
+      mockDocumentSnapshot.data(),
+    ).thenReturn({'displayName': 'Test User', 'isInstructor': false});
     when(mockDocumentSnapshot.exists).thenReturn(true);
-    when(mockSessionService.getUpcomingSessions()).thenAnswer((_) => Stream.value(mockQuerySnapshot));
+    when(
+      mockSessionService.getUpcomingSessions(),
+    ).thenAnswer((_) => Stream.value(mockQuerySnapshot));
     when(mockQuerySnapshot.docs).thenReturn([]);
 
     await tester.pumpWidget(

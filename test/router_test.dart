@@ -17,7 +17,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'router_test.mocks.dart';
 
-@GenerateMocks([AuthService, UserService, SessionService, User, DocumentSnapshot, QuerySnapshot, QueryDocumentSnapshot])
+@GenerateMocks([
+  AuthService,
+  UserService,
+  SessionService,
+  User,
+  DocumentSnapshot,
+  QuerySnapshot,
+  QueryDocumentSnapshot,
+])
 void main() {
   late MockAuthService mockAuthService;
   late MockUserService mockUserService;
@@ -41,34 +49,42 @@ void main() {
         Provider<UserService>.value(value: mockUserService),
         Provider<SessionService>.value(value: mockSessionService),
       ],
-      child: MaterialApp.router(
-        routerConfig: appRouter.router,
-      ),
+      child: MaterialApp.router(routerConfig: appRouter.router),
     );
   }
 
   void stubUserIsLoggedIn(bool isInstructor) {
     when(mockAuthService.currentUser).thenReturn(mockUser);
-    when(mockAuthService.authStateChanges).thenAnswer((_) => Stream.value(mockUser));
+    when(
+      mockAuthService.authStateChanges,
+    ).thenAnswer((_) => Stream.value(mockUser));
 
     final mockDocumentSnapshot = MockDocumentSnapshot<Map<String, dynamic>>();
     when(mockDocumentSnapshot.exists).thenReturn(true);
-    when(mockDocumentSnapshot.data()).thenReturn({'isInstructor': isInstructor});
+    when(
+      mockDocumentSnapshot.data(),
+    ).thenReturn({'isInstructor': isInstructor});
 
-    when(mockUserService.getUserStream(any)).thenAnswer(
-      (_) => Stream.value(mockDocumentSnapshot),
-    );
+    when(
+      mockUserService.getUserStream(any),
+    ).thenAnswer((_) => Stream.value(mockDocumentSnapshot));
     final mockQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
     when(mockQuerySnapshot.docs).thenReturn([]);
-    when(mockSessionService.getUpcomingSessions()).thenAnswer((_) => Stream.value(mockQuerySnapshot));
+    when(
+      mockSessionService.getUpcomingSessions(),
+    ).thenAnswer((_) => Stream.value(mockQuerySnapshot));
   }
 
   void stubUserIsLoggedOut() {
     when(mockAuthService.currentUser).thenReturn(null);
-    when(mockAuthService.authStateChanges).thenAnswer((_) => Stream.value(null));
+    when(
+      mockAuthService.authStateChanges,
+    ).thenAnswer((_) => Stream.value(null));
   }
 
-  testWidgets('redirects to login when not logged in', (WidgetTester tester) async {
+  testWidgets('redirects to login when not logged in', (
+    WidgetTester tester,
+  ) async {
     stubUserIsLoggedOut();
 
     await tester.pumpWidget(createTestableWidget(const SizedBox()));
@@ -77,7 +93,9 @@ void main() {
     expect(find.byType(LoginScreen), findsOneWidget);
   });
 
-  testWidgets('redirects to main screen when logged in', (WidgetTester tester) async {
+  testWidgets('redirects to main screen when logged in', (
+    WidgetTester tester,
+  ) async {
     stubUserIsLoggedIn(false);
 
     await tester.pumpWidget(createTestableWidget(const SizedBox()));
@@ -86,7 +104,9 @@ void main() {
     expect(find.byType(MainScreen), findsOneWidget);
   });
 
-  testWidgets('navigates to registration from login', (WidgetTester tester) async {
+  testWidgets('navigates to registration from login', (
+    WidgetTester tester,
+  ) async {
     stubUserIsLoggedOut();
 
     await tester.pumpWidget(createTestableWidget(const SizedBox()));
