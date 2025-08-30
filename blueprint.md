@@ -1,56 +1,38 @@
-# Project Blueprint
+# Project Blueprint: AI-Enhanced Flutter App
 
 ## Overview
 
-This is a Flutter application with a basic authentication flow using Firebase Authentication. The application allows users to register and log in with their email and password. It also includes a theme toggle for light, dark, and system theme modes.
+This document outlines the features, design, and architecture of a Flutter application built with AI assistance. The goal is to create a robust, well-structured, and visually appealing application that serves as a template for modern Flutter development.
 
-## Implemented Features
+## Implemented Features & Design
 
-*   **Authentication:**
-    *   User registration with email and password.
-    *   User login with email and password.
-    *   Basic error handling for registration and login.
-*   **Routing:**
-    *   Navigation between home, login, and registration screens using `go_router`.
-*   **Theming:**
-    *   Light, dark, and system theme modes.
-    *   Custom theme with `google_fonts`.
-    *   Theme toggle functionality using `provider`.
-*   **UI:**
-    *   Separate screens for home, login, and registration.
-    *   Forms for user input with validation.
-    *   Bottom navigation bar with three tabs: "Sessions", "Set", and "Schedule".
+... (previous features remain here) ...
 
-## Current Plan: "Set" Screen
+### User Profile Screen & Instructor Toggle
+- **Dedicated Profile Page:** A new `ProfileScreen` (`lib/ui/profile_screen.dart`) has been added to the application.
+- **Navigation Integration:** The profile page is accessible via a new, always-visible "Profile" tab in the main bottom navigation bar.
+- **Real-time Data Display:** The screen uses a `StreamBuilder` to listen for live updates to the user's document in Firestore, displaying their name, email, and profile picture.
+- **Instructor Mode Toggle:**
+    - A `SwitchListTile` on the profile screen allows users to enable or disable "Instructor Mode."
+    - Toggling the switch directly updates the `isInstructor` boolean field in their corresponding Firestore user document in real-time.
+- **Role-Based Navigation:** The main navigation bar (`lib/ui/main_screen.dart`) is now fully dynamic. The "Set" and "Schedule" tabs will automatically appear or disappear based on the `isInstructor` status, providing a seamless, role-based user experience.
 
-The "Set" screen will be the central hub for administrators to configure the core business rules of the application. This includes defining what types of sessions can be booked, when the business is open, and where the sessions take place.
 
-### Design & Features:
+## Current Plan: Build a User Profile Screen
 
-*   **Tabbed Layout:** The screen will be organized into three distinct tabs for a clean user experience: "Templates," "Hours," and "Locations."
-*   **Session Templates:**
-    *   A form with fields for:
-        *   Session Name (Text)
-        *   Minimum Players (Number)
-        *   Maximum Players (Number)
-        *   Price (Number)
-    *   A "Save Template" button will write this data as a new document to the `templates` collection in Firestore.
-*   **Working Hours:**
-    *   A list of all seven days of the week.
-    *   Each day will feature two interactive time pickers: one for the "Start Time" and one for the "End Time."
-    *   A "Save Hours" button will save the entire weekly schedule to the `times` collection in Firestore.
-*   **Locations:**
-    *   A form with a field for:
-        *   Location Name (Text)
-    *   A "Save Location" button will write this data as a new document to the `locations` collection in Firestore.
+This section details the plan for the current requested change.
 
-### Implementation Steps:
+### Goal
+To replace the placeholder `HomeScreen` with a functional and visually appealing user profile page that displays after a successful login.
 
-1.  Add the `cloud_firestore` dependency to `pubspec.yaml`.
-2.  Restructure the `set_screen.dart` file to use a `DefaultTabController` and `TabBar` to create the three sections.
-3.  Create the UI for the "Session Templates" tab, including all necessary input fields and the save button.
-4.  Implement the Firestore logic to save a new session template.
-5.  Create the UI for the "Working Hours" tab.
-6.  Implement the Firestore logic to save the working hours.
-7.  Create the UI for the "Locations" tab.
-8.  Implement the Firestore logic to save a new location.
+### Action Steps
+1.  **Fetch User Data:** The screen will asynchronously fetch the currently logged-in user's data (display name, email, and photo URL) from the `users` collection in Firestore.
+2.  **Display User Information:**
+    - A `FutureBuilder` will be used to handle the loading state while data is being fetched.
+    - The user's profile picture will be displayed in a circular avatar. A placeholder icon will be used if no photo URL exists.
+    - The user's display name and email will be shown in a clean, readable format.
+3.  **Implement Sign-Out:**
+    - A prominent "Sign Out" button will be included on the screen.
+    - Pressing the button will trigger the `AuthService.signOut()` method.
+    - After signing out, the user will be automatically navigated back to the main login screen (`/`) using `go_router`.
+4.  **UI/UX Polish:** The layout will be centered and styled for a modern, clean aesthetic, consistent with the rest of the application's theme.

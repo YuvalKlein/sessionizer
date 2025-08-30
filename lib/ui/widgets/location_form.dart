@@ -12,6 +12,12 @@ class _LocationFormState extends State<LocationForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
   Future<void> _saveLocation() async {
     if (_formKey.currentState!.validate()) {
       try {
@@ -19,12 +25,14 @@ class _LocationFormState extends State<LocationForm> {
           'name': _nameController.text,
         });
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Location saved successfully!')),
         );
 
         _formKey.currentState!.reset();
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error saving location: $e')),
         );

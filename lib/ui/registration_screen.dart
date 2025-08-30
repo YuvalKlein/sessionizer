@@ -18,6 +18,36 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _authService = AuthService();
   bool _isLoading = false;
 
+  Future<void> _register() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final user = await _authService.registerWithEmailAndPassword(
+        _emailController.text,
+        _passwordController.text,
+        _displayNameController.text, // Added
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (user != null) {
+        context.go('/');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration failed. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,30 +125,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               _isLoading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          setState(() {
-                            _isLoading = true;
-                          });
-                          final user = await _authService.registerWithEmailAndPassword(
-                            _emailController.text,
-                            _passwordController.text,
-                            _displayNameController.text, // Added
-                          );
-                          setState(() {
-                            _isLoading = false;
-                          });
-                          if (user != null) {
-                            context.go('/');
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Registration failed. Please try again.'),
-                              ),
-                            );
-                          }
-                        }
-                      },
+                      onPressed: _register,
                       child: const Text('Register'),
                     ),
               TextButton(

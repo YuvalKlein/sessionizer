@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -5,7 +6,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: '707974722454-e0k6vrq6c05v25vgs3qda2v324n53g97.apps.googleusercontent.com',
+  );
 
   Future<User?> registerWithEmailAndPassword(
       String email, String password, String displayName) async {
@@ -40,8 +43,8 @@ class AuthService {
         });
       }
       return user;
-    } catch (e) {
-      print(e.toString());
+    } catch (e, s) {
+      developer.log('Error during email/password registration', name: 'myapp.auth', error: e, stackTrace: s);
       return null;
     }
   }
@@ -53,8 +56,8 @@ class AuthService {
         password: password,
       );
       return result.user;
-    } catch (e) {
-      print(e.toString());
+    } catch (e, s) {
+      developer.log('Error during email/password sign-in', name: 'myapp.auth', error: e, stackTrace: s);
       return null;
     }
   }
@@ -63,7 +66,6 @@ class AuthService {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        // The user canceled the sign-in
         return null;
       }
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
@@ -102,8 +104,8 @@ class AuthService {
       }
 
       return user;
-    } catch (e) {
-      print(e.toString());
+    } catch (e, s) {
+      developer.log('Error during Google Sign-In', name: 'myapp.auth', error: e, stackTrace: s);
       return null;
     }
   }

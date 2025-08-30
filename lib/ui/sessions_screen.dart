@@ -1,6 +1,7 @@
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // For formatting dates and times
 
 class SessionsScreen extends StatelessWidget {
   const SessionsScreen({super.key});
@@ -9,12 +10,15 @@ class SessionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sessions'),
+        title: const Text('Upcoming Sessions'),
         centerTitle: true,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // Order sessions by when they were created, newest first.
-        stream: FirebaseFirestore.instance.collection('sessions').orderBy('createdAt', descending: true).snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('sessions')
+            .where('startTimeEpoch', isGreaterThanOrEqualTo: DateTime.now().millisecondsSinceEpoch)
+            .orderBy('startTimeEpoch') // Order by the start time
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -23,17 +27,20 @@ class SessionsScreen extends StatelessWidget {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No sessions yet'));
+            return const Center(
+                child: Text(
+              'No upcoming sessions.',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ));
           }
 
-          // We have data, so let's display it.
           final sessions = snapshot.data!.docs;
 
           return ListView.builder(
             itemCount: sessions.length,
             itemBuilder: (context, index) {
-              // Pass the entire session document to the card
-              return SessionCard(sessionData: sessions[index].data() as Map<String, dynamic>);
+              // Pass the full DocumentSnapshot to the card
+              return SessionCard(session: sessions[index]);
             },
           );
         },
@@ -42,13 +49,99 @@ class SessionsScreen extends StatelessWidget {
   }
 }
 
-class SessionCard extends StatelessWidget {
-  final Map<String, dynamic> sessionData;
+class SessionCard extends StatefulWidget {
+  // Expect a DocumentSnapshot to have access to the document ID and reference
+  final DocumentSnapshot session;
 
-  const SessionCard({super.key, required this.sessionData});
+  const SessionCard({super.key, required this.session});
+
+  @override
+  State<SessionCard> createState() => _SessionCardState();
+}
+
+class _SessionCardState extends State<SessionCard> {
+  Future<void> _joinSession() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You must be logged in to join.')),
+        );
+        return;
+    }
+
+    try {
+        await widget.session.reference.update({
+            'playersIds': FieldValue.arrayUnion([user.uid])
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Successfully joined the session!')),
+        );
+    } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error joining session: $e')),
+        );
+    }
+  }
+
+  Future<void> _leaveSession() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You must be logged in to leave.')),
+        );
+        return;
+    }
+
+    try {
+        await widget.session.reference.update({
+            'playersIds': FieldValue.arrayRemove([user.uid])
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You have left the session.')),
+        );
+    } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error leaving session: $e')),
+        );
+    }
+  }
+
+  String _formatTime(int epoch) {
+    return DateFormat.jm().format(DateTime.fromMillisecondsSinceEpoch(epoch));
+  }
+  String _formatDate(int epoch) {
+    return DateFormat.yMMMd().format(DateTime.fromMillisecondsSinceEpoch(epoch));
+  }
 
   @override
   Widget build(BuildContext context) {
+    final sessionData = widget.session.data() as Map<String, dynamic>;
+    final user = FirebaseAuth.instance.currentUser;
+
+    final textTheme = Theme.of(context).textTheme;
+    final locationInfo = sessionData['locationInfo'] as Map<String, dynamic>? ?? {};
+    final price = sessionData['price'] ?? 0;
+    final playersIds = List<String>.from(sessionData['playersIds'] ?? []);
+    final maxPlayers = sessionData['maxPlayers'] ?? 0;
+
+    final bool isUserJoined = user != null && playersIds.contains(user.uid);
+    final bool isSessionFull = playersIds.length >= maxPlayers;
+
+    Widget actionButton;
+    if (isUserJoined) {
+        actionButton = OutlinedButton(onPressed: _leaveSession, child: const Text('Leave'));
+    } else if (isSessionFull) {
+        actionButton = const Text('Session Full', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold));
+    } else {
+        actionButton = ElevatedButton(onPressed: _joinSession, child: const Text('Join'));
+    }
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 4,
@@ -59,15 +152,38 @@ class SessionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              sessionData['templateName'] ?? 'No Name',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              sessionData['title'] ?? 'No Title',
+              style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
+            if (sessionData['details'] != null && sessionData['details'].isNotEmpty)
+                Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(sessionData['details'], style: textTheme.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                ),
             const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text(
+                        _formatDate(sessionData['startTimeEpoch'] ?? 0),
+                        style: textTheme.bodyLarge
+                    )
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 const Icon(Icons.access_time, size: 16, color: Colors.grey),
                 const SizedBox(width: 8),
-                Text('${sessionData['startTime']} - ${sessionData['endTime']}', style: Theme.of(context).textTheme.bodyLarge),
+                Expanded(
+                    child: Text(
+                        '${_formatTime(sessionData['startTimeEpoch'] ?? 0)} - ${_formatTime(sessionData['endTimeEpoch'] ?? 0)}',
+                        style: textTheme.bodyLarge
+                    )
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -75,28 +191,33 @@ class SessionCard extends StatelessWidget {
               children: [
                 const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
                 const SizedBox(width: 8),
-                Text(sessionData['locationName'] ?? 'No Location', style: Theme.of(context).textTheme.bodyLarge),
+                Expanded(
+                  child: Text(locationInfo['name'] ?? 'No Location', style: textTheme.bodyLarge),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
+             const SizedBox(height: 8),
             Row(
               children: [
                 const Icon(Icons.people_outline, size: 16, color: Colors.grey),
                 const SizedBox(width: 8),
-                Text('${sessionData['minPlayers']} - ${sessionData['maxPlayers']} players', style: Theme.of(context).textTheme.bodyLarge),
+                Text('${playersIds.length} / ${sessionData['maxPlayers']} players', style: textTheme.bodyLarge),
               ],
             ),
             const Divider(height: 24),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                'Price: \$${sessionData['price']?.toStringAsFixed(2) ?? '0.00'}',
-                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+            Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                    Text(
+                      '\$$price',
+                      style: textTheme.titleLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold
+                      ),
                     ),
-              ),
-            ),
+                    actionButton,
+                ]
+            )
           ],
         ),
       ),

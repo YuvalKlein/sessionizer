@@ -58,10 +58,12 @@ class _WorkingHoursFormState extends State<WorkingHoursForm> {
       });
       await batch.commit();
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Hours saved successfully!')),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving hours: $e')),
       );
@@ -95,7 +97,7 @@ class _WorkingHoursFormState extends State<WorkingHoursForm> {
                   ),
                 ],
               );
-            }).toList(),
+            }),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _saveHours,
