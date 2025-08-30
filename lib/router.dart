@@ -9,6 +9,8 @@ import 'package:myapp/ui/profile_screen.dart';
 import 'package:myapp/ui/sessions_screen.dart';
 import 'package:myapp/ui/set_screen.dart';
 import 'package:myapp/ui/schedule_screen.dart';
+import 'package:myapp/ui/post_list_screen.dart';
+import 'package:myapp/ui/create_post_screen.dart';
 
 class AppRouter {
   final AuthService authService;
@@ -29,6 +31,18 @@ class AppRouter {
             path: 'profile',
             builder: (BuildContext context, GoRouterState state) {
               return const ProfileScreen();
+            },
+          ),
+          GoRoute(
+            path: 'posts',
+            builder: (BuildContext context, GoRouterState state) {
+              return const PostListScreen();
+            },
+          ),
+          GoRoute(
+            path: 'create_post',
+            builder: (BuildContext context, GoRouterState state) {
+              return const CreatePostScreen();
             },
           ),
         ],

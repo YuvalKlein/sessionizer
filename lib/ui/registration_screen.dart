@@ -63,6 +63,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               TextFormField(
+                key: const Key('display_name_field'),
                 controller: _displayNameController,
                 decoration: const InputDecoration(
                   labelText: 'Display Name',
@@ -77,6 +78,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                key: const Key('email_field'),
                 controller: _emailController,
                 decoration: const InputDecoration(
                   labelText: 'Email',
@@ -91,6 +93,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                key: const Key('password_field'),
                 controller: _passwordController,
                 decoration: const InputDecoration(
                   labelText: 'Password',
@@ -106,6 +109,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                key: const Key('confirm_password_field'),
                 controller: _confirmPasswordController,
                 decoration: const InputDecoration(
                   labelText: 'Confirm Password',

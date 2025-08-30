@@ -58,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               TextFormField(
+                key: const Key('email_field'),
                 controller: _emailController,
                 decoration: const InputDecoration(
                   labelText: 'Email',
@@ -72,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                key: const Key('password_field'),
                 controller: _passwordController,
                 decoration: const InputDecoration(
                   labelText: 'Password',

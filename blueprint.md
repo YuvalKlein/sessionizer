@@ -1,38 +1,32 @@
-# Project Blueprint: AI-Enhanced Flutter App
+# Project Blueprint
 
 ## Overview
 
-This document outlines the features, design, and architecture of a Flutter application built with AI assistance. The goal is to create a robust, well-structured, and visually appealing application that serves as a template for modern Flutter development.
+This document outlines the architecture, features, and implementation details of the Flutter application. It serves as a living document, updated with each new feature or significant change.
 
-## Implemented Features & Design
+## Implemented Features
 
-... (previous features remain here) ...
+### Core Services
 
-### User Profile Screen & Instructor Toggle
-- **Dedicated Profile Page:** A new `ProfileScreen` (`lib/ui/profile_screen.dart`) has been added to the application.
-- **Navigation Integration:** The profile page is accessible via a new, always-visible "Profile" tab in the main bottom navigation bar.
-- **Real-time Data Display:** The screen uses a `StreamBuilder` to listen for live updates to the user's document in Firestore, displaying their name, email, and profile picture.
-- **Instructor Mode Toggle:**
-    - A `SwitchListTile` on the profile screen allows users to enable or disable "Instructor Mode."
-    - Toggling the switch directly updates the `isInstructor` boolean field in their corresponding Firestore user document in real-time.
-- **Role-Based Navigation:** The main navigation bar (`lib/ui/main_screen.dart`) is now fully dynamic. The "Set" and "Schedule" tabs will automatically appear or disappear based on the `isInstructor` status, providing a seamless, role-based user experience.
+- **Authentication Service (`AuthService`)**: Handles user authentication, including sign-in with Google and registration with email and password. It also manages user data in the Firestore `users` collection.
+- **User Service (`UserService`)**: Provides a stream to listen for real-time updates to a user's document in Firestore.
+- **Session Service (`SessionService`)**: Manages fitness class sessions. It allows users to view upcoming sessions, and join or leave a session. It interacts with the `sessions` collection in Firestore.
+- **Post Service (`PostService`)**: Manages user posts, including creating, reading, and deleting posts from the Firestore `posts` collection.
 
+### Post Feature
 
-## Current Plan: Build a User Profile Screen
+- **Post List Screen (`PostListScreen`)**: Displays a list of all posts in chronological order. Each post is displayed in a `Card` and shows the post content, the author's email, and a formatted timestamp. Users can delete their own posts.
+- **Create Post Screen (`CreatePostScreen`)**: Allows users to create new posts. It includes a `TextFormField` with a character counter and a character limit of 280 characters. The "Post" button is full-width for better usability.
 
-This section details the plan for the current requested change.
+### Testing
 
-### Goal
-To replace the placeholder `HomeScreen` with a functional and visually appealing user profile page that displays after a successful login.
+- **Unit Tests**: Comprehensive unit tests have been written for all core services (`AuthService`, `UserService`, `SessionService`, `PostService`).
+- **Widget Tests**: Widget tests have been written for the `PostListScreen` and `CreatePostScreen` to ensure that the UI behaves as expected.
+- **Mocking**: The `mockito` package is used to mock dependencies, ensuring that tests are isolated and repeatable.
+- **Build Runner**: The `build_runner` package is used to generate mock classes.
 
-### Action Steps
-1.  **Fetch User Data:** The screen will asynchronously fetch the currently logged-in user's data (display name, email, and photo URL) from the `users` collection in Firestore.
-2.  **Display User Information:**
-    - A `FutureBuilder` will be used to handle the loading state while data is being fetched.
-    - The user's profile picture will be displayed in a circular avatar. A placeholder icon will be used if no photo URL exists.
-    - The user's display name and email will be shown in a clean, readable format.
-3.  **Implement Sign-Out:**
-    - A prominent "Sign Out" button will be included on the screen.
-    - Pressing the button will trigger the `AuthService.signOut()` method.
-    - After signing out, the user will be automatically navigated back to the main login screen (`/`) using `go_router`.
-4.  **UI/UX Polish:** The layout will be centered and styled for a modern, clean aesthetic, consistent with the rest of the application's theme.
+## Next Steps
+
+- **Profile Screen**: Create a user profile screen where users can view their own posts and edit their profile information.
+- **Comments**: Add a feature that allows users to comment on posts.
+- **Likes**: Add a feature that allows users to "like" posts.

@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/user_service.dart';
 import 'package:myapp/services/session_service.dart';
+import 'package:myapp/services/post_service.dart';
 import 'firebase_options.dart';
 import 'package:myapp/router.dart';
 
@@ -32,6 +33,9 @@ void main() async {
         ),
         Provider<SessionService>(
           create: (_) => SessionService(FirebaseFirestore.instance),
+        ),
+        Provider<PostService>(
+          create: (_) => PostService(),
         ),
       ],
       child: const MyApp(),

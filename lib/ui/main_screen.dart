@@ -6,6 +6,7 @@ import 'package:myapp/ui/sessions_screen.dart';
 import 'package:myapp/ui/set_screen.dart';
 import 'package:myapp/ui/schedule_screen.dart';
 import 'package:myapp/ui/profile_screen.dart';
+import 'package:myapp/ui/post_list_screen.dart';
 import 'package:provider/provider.dart';
 
 class MainScreen extends StatefulWidget {
@@ -52,11 +53,18 @@ class _MainScreenState extends State<MainScreen> {
         final userData = snapshot.data!.data()!;
         final bool isInstructor = userData['isInstructor'] ?? false;
 
-        final List<Widget> widgetOptions = [const SessionsScreen()];
+        final List<Widget> widgetOptions = [
+          const SessionsScreen(),
+          const PostListScreen(),
+        ];
         final List<BottomNavigationBarItem> navBarItems = [
           const BottomNavigationBarItem(
             icon: Icon(Icons.sports_soccer),
             label: 'Sessions',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.article),
+            label: 'Posts',
           ),
         ];
 
