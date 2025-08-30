@@ -1,30 +1,102 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/main.dart';
+import 'package:myapp/services/auth_service.dart';
+import 'package:myapp/services/user_service.dart';
+import 'package:myapp/services/session_service.dart';
+import 'package:myapp/ui/login_screen.dart';
+import 'package:myapp/ui/main_screen.dart';
 
+import 'widget_test.mocks.dart';
+
+class MockDocumentSnapshot<T extends Object> extends Mock implements DocumentSnapshot<T> {
+  @override
+  T? data() => super.noSuchMethod(Invocation.method(#data, []), returnValue: null);
+
+  @override
+  bool get exists => super.noSuchMethod(Invocation.getter(#exists), returnValue: false);
+}
+
+class MockQuerySnapshot<T extends Object> extends Mock implements QuerySnapshot<T> {
+  @override
+  List<QueryDocumentSnapshot<T>> get docs =>
+      super.noSuchMethod(Invocation.getter(#docs), returnValue: <QueryDocumentSnapshot<T>>[]);
+}
+
+@GenerateMocks([
+  FirebaseAuth,
+  FirebaseFirestore,
+  GoogleSignIn,
+  AuthService,
+  UserService,
+  SessionService,
+  User
+])
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  late MockAuthService mockAuthService;
+  late MockUserService mockUserService;
+  late MockSessionService mockSessionService;
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  setUp(() {
+    mockAuthService = MockAuthService();
+    mockUserService = MockUserService();
+    mockSessionService = MockSessionService();
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('Renders LoginScreen when not logged in', (WidgetTester tester) async {
+    when(mockAuthService.currentUser).thenReturn(null);
+    when(mockAuthService.authStateChanges).thenAnswer((_) => Stream.value(null));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (context) => ThemeProvider()),
+          Provider<AuthService>.value(value: mockAuthService),
+          Provider<UserService>.value(value: mockUserService),
+          Provider<SessionService>.value(value: mockSessionService),
+        ],
+        child: const MyApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoginScreen), findsOneWidget);
+  });
+
+  testWidgets('Renders MainScreen when logged in', (WidgetTester tester) async {
+    final mockUser = MockUser();
+    final mockDocumentSnapshot = MockDocumentSnapshot<Map<String, dynamic>>();
+    final mockQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
+    when(mockUser.uid).thenReturn('123');
+    when(mockAuthService.currentUser).thenReturn(mockUser);
+    when(mockAuthService.authStateChanges).thenAnswer((_) => Stream.value(mockUser));
+    when(mockUserService.getUserStream('123')).thenAnswer((_) => Stream.value(mockDocumentSnapshot));
+    when(mockDocumentSnapshot.data()).thenReturn({'displayName': 'Test User', 'isInstructor': false});
+    when(mockDocumentSnapshot.exists).thenReturn(true);
+    when(mockSessionService.getUpcomingSessions()).thenAnswer((_) => Stream.value(mockQuerySnapshot));
+    when(mockQuerySnapshot.docs).thenReturn([]);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (context) => ThemeProvider()),
+          Provider<AuthService>.value(value: mockAuthService),
+          Provider<UserService>.value(value: mockUserService),
+          Provider<SessionService>.value(value: mockSessionService),
+        ],
+        child: const MyApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MainScreen), findsOneWidget);
   });
 }

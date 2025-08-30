@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:myapp/services/auth_service.dart';
+import 'package:myapp/services/user_service.dart';
 import 'package:myapp/ui/sessions_screen.dart';
 import 'package:myapp/ui/set_screen.dart';
 import 'package:myapp/ui/schedule_screen.dart';
-import 'package:myapp/ui/profile_screen.dart'; // Import the new profile screen
+import 'package:myapp/ui/profile_screen.dart';
+import 'package:provider/provider.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -26,7 +26,9 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = FirebaseAuth.instance.currentUser;
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final userService = Provider.of<UserService>(context, listen: false);
+    final currentUser = authService.currentUser;
 
     if (currentUser == null) {
       return const Scaffold(
@@ -35,7 +37,7 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance.collection('users').doc(currentUser.uid).snapshots(),
+      stream: userService.getUserStream(currentUser.uid),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -50,7 +52,6 @@ class _MainScreenState extends State<MainScreen> {
         final userData = snapshot.data!.data()!;
         final bool isInstructor = userData['isInstructor'] ?? false;
 
-        // Dynamically build the pages and navigation items
         final List<Widget> widgetOptions = [const SessionsScreen()];
         final List<BottomNavigationBarItem> navBarItems = [
           const BottomNavigationBarItem(
@@ -72,8 +73,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ]);
         }
-        
-        // Add the Profile screen and navigation item, always visible
+
         widgetOptions.add(const ProfileScreen());
         navBarItems.add(
           const BottomNavigationBarItem(
@@ -82,7 +82,6 @@ class _MainScreenState extends State<MainScreen> {
           ),
         );
 
-        // Ensure the selected index is valid
         if (_selectedIndex >= widgetOptions.length) {
           _selectedIndex = 0;
         }
@@ -94,8 +93,7 @@ class _MainScreenState extends State<MainScreen> {
               IconButton(
                 icon: const Icon(Icons.logout),
                 onPressed: () {
-                  context.go('/'); // Navigate to the login/main screen
-                  AuthService().signOut();
+                  authService.signOut();
                 },
               ),
             ],
@@ -107,8 +105,7 @@ class _MainScreenState extends State<MainScreen> {
             items: navBarItems,
             currentIndex: _selectedIndex,
             onTap: _onItemTapped,
-            // To ensure all items are visible and have labels when more than 3 items
-            type: BottomNavigationBarType.fixed, 
+            type: BottomNavigationBarType.fixed,
           ),
         );
       },

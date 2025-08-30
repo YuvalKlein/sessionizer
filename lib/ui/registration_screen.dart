@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/services/auth_service.dart';
+import 'package:provider/provider.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -14,8 +15,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _displayNameController = TextEditingController(); // Added
-  final _authService = AuthService();
+  final _displayNameController = TextEditingController();
   bool _isLoading = false;
 
   Future<void> _register() async {
@@ -24,10 +24,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         _isLoading = true;
       });
 
-      final user = await _authService.registerWithEmailAndPassword(
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = await authService.registerWithEmailAndPassword(
         _emailController.text,
         _passwordController.text,
-        _displayNameController.text, // Added
+        _displayNameController.text,
       );
 
       if (!mounted) return;
@@ -37,7 +38,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       });
 
       if (user != null) {
-        context.go('/');
+        // The router's redirect logic will handle navigation.
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -62,7 +63,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               TextFormField(
-                controller: _displayNameController, // Added
+                controller: _displayNameController,
                 decoration: const InputDecoration(
                   labelText: 'Display Name',
                   border: OutlineInputBorder(),
@@ -144,7 +145,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _displayNameController.dispose(); // Added
+    _displayNameController.dispose();
     super.dispose();
   }
 }

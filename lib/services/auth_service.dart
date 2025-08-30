@@ -1,117 +1,88 @@
-import 'dart:developer' as developer;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '707974722454-e0k6vrq6c05v25vgs3qda2v324n53g97.apps.googleusercontent.com',
-  );
+  final FirebaseAuth _firebaseAuth;
+  final FirebaseFirestore _firestore;
+  final GoogleSignIn _googleSignIn;
 
-  Future<User?> registerWithEmailAndPassword(
-      String email, String password, String displayName) async {
-    try {
-      final UserCredential result = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      final User? user = result.user;
+  AuthService(
+    this._firebaseAuth, {
+    required FirebaseFirestore firestore,
+    required GoogleSignIn googleSignIn,
+  })  : _firestore = firestore,
+        _googleSignIn = googleSignIn;
 
-      if (user != null) {
-        await _firestore.collection('users').doc(user.uid).set({
-          'uuid': user.uid,
-          'displayName': displayName,
-          'email': email,
-          'sessionsQuataExceeded': false,
-          'deservesFreeTrial': true,
-          'subscriptionType': 'free',
-          'disabled': false,
-          'recentAddresses': [],
-          'savedAddresses': [],
-          'authSource': 'email',
-          'isVerified': user.emailVerified,
-          'admin': false,
-          'referralsIds': [],
-          'photoURL': user.photoURL,
-          'isInstructor': false,
-          'phone': user.phoneNumber,
-          'createdTime': DateTime.now().toIso8601String(),
-          'referredById': null,
-          'sessionsIds': [],
-        });
-      }
-      return user;
-    } catch (e, s) {
-      developer.log('Error during email/password registration', name: 'myapp.auth', error: e, stackTrace: s);
-      return null;
-    }
-  }
+  Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
+
+  User? get currentUser => _firebaseAuth.currentUser;
 
   Future<User?> signInWithEmailAndPassword(String email, String password) async {
     try {
-      final UserCredential result = await _auth.signInWithEmailAndPassword(
+      final result = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       return result.user;
-    } catch (e, s) {
-      developer.log('Error during email/password sign-in', name: 'myapp.auth', error: e, stackTrace: s);
-      return null;
+    } on FirebaseAuthException {
+      rethrow;
     }
   }
 
   Future<User?> signInWithGoogle() async {
+    final googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) {
+      return null; // The user canceled the sign-in
+    }
+
+    final googleAuth = await googleUser.authentication;
+    final AuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final userCredential = await _firebaseAuth.signInWithCredential(credential);
+    final user = userCredential.user;
+
+    if (user != null) {
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        _firestore.collection('users').doc(user.uid).set({
+          'displayName': user.displayName,
+          'email': user.email,
+          'isInstructor': false,
+        });
+      }
+    }
+
+    return user;
+  }
+
+  Future<User?> registerWithEmailAndPassword(
+      String email, String password, String displayName) async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        return null;
-      }
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+      final result = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
       );
-      final UserCredential result = await _auth.signInWithCredential(credential);
-      final User? user = result.user;
-
+      final user = result.user;
       if (user != null) {
-        final DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
-        if (!doc.exists) {
-          await _firestore.collection('users').doc(user.uid).set({
-            'uuid': user.uid,
-            'displayName': user.displayName,
-            'email': user.email,
-            'sessionsQuataExceeded': false,
-            'deservesFreeTrial': true,
-            'subscriptionType': 'free',
-            'disabled': false,
-            'recentAddresses': [],
-            'savedAddresses': [],
-            'authSource': 'google',
-            'isVerified': user.emailVerified,
-            'admin': false,
-            'referralsIds': [],
-            'photoURL': user.photoURL,
-            'isInstructor': false,
-            'phone': user.phoneNumber,
-            'createdTime': DateTime.now().toIso8601String(),
-            'referredById': null,
-            'sessionsIds': [],
-          });
-        }
+        await user.updateDisplayName(displayName);
+        await _firestore.collection('users').doc(user.uid).set({
+          'displayName': displayName,
+          'email': email,
+          'isInstructor': false,
+        });
       }
-
       return user;
-    } catch (e, s) {
-      developer.log('Error during Google Sign-In', name: 'myapp.auth', error: e, stackTrace: s);
-      return null;
+    } on FirebaseAuthException {
+      rethrow;
     }
   }
 
   Future<void> signOut() async {
     await _googleSignIn.signOut();
-    await _auth.signOut();
+    await _firebaseAuth.signOut();
   }
 }

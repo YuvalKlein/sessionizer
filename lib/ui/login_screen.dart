@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/services/auth_service.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,7 +14,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthService();
   bool _isLoading = false;
 
   Future<void> _login() async {
@@ -22,7 +22,8 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
 
-      final user = await _authService.signInWithEmailAndPassword(
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = await authService.signInWithEmailAndPassword(
         _emailController.text,
         _passwordController.text,
       );
@@ -33,9 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
       });
 
-      if (user != null) {
-        context.go('/');
-      } else {
+      if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Login failed. Please check your credentials.'),
@@ -95,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
               TextButton(
                 onPressed: () => context.go('/register'),
-                child: const Text('Don\'t have an account? Register'),
+                child: const Text("Don't have an account? Register"),
               ),
             ],
           ),
