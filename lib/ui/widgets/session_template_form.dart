@@ -36,18 +36,18 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
     super.initState();
     if (widget.template != null) {
       final data = widget.template!.data() as Map<String, dynamic>;
-      final entity = data['sessionEntity'] as Map<String, dynamic>;
-      _titleController.text = entity['title'] ?? '';
-      _detailsController.text = entity['details'] ?? '';
-      _categoryController.text = entity['category'] ?? '';
-      _priceController.text = (entity['price'] ?? 0).toString();
-      _maxPlayersController.text = (entity['maxPlayers'] ?? 0).toString();
-      _minPlayersController.text = (entity['minPlayers'] ?? 0).toString();
-      _durationController.text = (entity['duration'] ?? 0).toString();
-      _durationUnit = entity['durationUnit'] ?? 'Hours';
-      _notifyCancelation = entity['notifyCancelation'] ?? true;
-      _repeatingSession = entity['repeatingSession'] ?? false;
-      _showParticipants = entity['showParticipants'] ?? true;
+      final session = data;
+      _titleController.text = session['title'] ?? '';
+      _detailsController.text = session['details'] ?? '';
+      _categoryController.text = session['category'] ?? '';
+      _priceController.text = (session['price'] ?? 0).toString();
+      _maxPlayersController.text = (session['maxPlayers'] ?? 0).toString();
+      _minPlayersController.text = (session['minPlayers'] ?? 0).toString();
+      _durationController.text = (session['duration'] ?? 0).toString();
+      _durationUnit = session['durationUnit'] ?? 'Hours';
+      _notifyCancelation = session['notifyCancelation'] ?? true;
+      _repeatingSession = session['repeatingSession'] ?? false;
+      _showParticipants = session['showParticipants'] ?? true;
     }
   }
 
@@ -102,12 +102,12 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
 
       if (widget.template != null) {
         // Update existing template
-        await widget.template!.reference.update({'sessionEntity': sessionData});
+        await widget.template!.reference.update(sessionData);
       } else {
         // Create new template
-        await FirebaseFirestore.instance.collection('sessionTemplates').add({
-          'sessionEntity': sessionData,
-        });
+        await FirebaseFirestore.instance.collection('sessionTemplates').add(
+           sessionData,
+        );
       }
 
       if (!mounted) return;

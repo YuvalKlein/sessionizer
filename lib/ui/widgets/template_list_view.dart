@@ -68,15 +68,15 @@ class TemplateListView extends StatelessWidget {
           itemCount: templates.length,
           itemBuilder: (context, index) {
             final template = templates[index];
-            final entity =
-                (template.data() as Map<String, dynamic>)['sessionEntity']
+            final session =
+                (template.data() )
                     as Map<String, dynamic>? ??
                 {};
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: ListTile(
-                title: Text(entity['title'] ?? 'No Title'),
-                subtitle: Text(entity['category'] ?? 'No Category'),
+                title: Text(session['title'] ?? 'No Title'),
+                subtitle: Text(session['category'] ?? 'No Category'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

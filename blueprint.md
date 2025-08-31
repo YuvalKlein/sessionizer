@@ -1,36 +1,85 @@
+
 # Project Blueprint
 
 ## Overview
 
-This document outlines the architecture, features, and implementation details of the Flutter application. It serves as a living document, updated with each new feature or significant change.
+This is a Flutter application that allows users to book sessions with instructors. The application features a robust, Calendly-like scheduling system that allows instructors to define their availability with a high degree of control, which clients can then use to book available session slots.
+
+## Application Architecture
+
+### Services
+
+- **`AuthService`**: Manages user authentication (login, registration, logout).
+- **`UserService`**: Manages user data and roles (e.g., `isInstructor`).
+- **`SessionTemplateService`**: Handles fetching `SessionTemplate` data from Firestore for a specific instructor.
+- **`AvailabilityService`**: Manages all CRUD (Create, Read, Update, Delete) operations for instructor `Availability` rules in Firestore.
+
+### UI Screens & Widgets
+
+- **`LoginScreen` / `RegistrationScreen`**: Standard user authentication screens.
+- **`MainScreen`**: The primary screen after login, containing the main `BottomNavigationBar`.
+- **`SessionsScreen`**: The main view for clients to see and book available sessions.
+- **`SetScreen`**: A screen for instructors to manage their settings, including their session templates.
+- **`ScheduleScreen`**: A dedicated screen for instructors to manage their availability. It features a tabbed interface to separate "Weekly Recurring" schedules from "Date Overrides."
+- **`ProfileScreen`**: Displays the user's profile information.
+- **`AvailabilityForm`**: A comprehensive modal bottom sheet form used to create and edit availability rules. The form is dynamic and adapts its fields based on whether the rule is for a recurring week day or a specific date.
+
+---
 
 ## Implemented Features
 
-### Core Services
+- **User Authentication**: Secure login, registration, and session management.
+- **Role Management**: The app distinguishes between regular users and instructors, showing instructor-specific UI elements and functionality only to authenticated instructors.
+- **Session Template Management**: Instructors can define the types of sessions they offer (e.g., "1-hour Personal Training," "30-minute Consultation").
+- **Advanced Instructor Scheduling**:
+  - **Weekly Recurring Availability**: Instructors can set their standard weekly hours for each day of the week.
+  - **Specific Date Overrides**: Instructors can override their weekly schedule for a particular date, either to add one-off availability or to block out time.
+  - **Granular Control**: For each availability rule, instructors can specify:
+    - The time range (`startTime`, `endTime`).
+    - Allowed session types for that slot.
+    - Break times between sessions.
+    - Booking lead time and how far in the future clients can book.
 
-- **Authentication Service (`AuthService`)**: Handles user authentication, including sign-in with Google and registration with email and password. It also manages user data in the Firestore `users` collection.
-- **User Service (`UserService`)**: Provides a stream to listen for real-time updates to a user's document in Firestore.
-- **Session Service (`SessionService`)**: Manages fitness class sessions. It allows users to view upcoming sessions, and join or leave a session. It interacts with the `sessions` collection in Firestore.
-- **Post Service (`PostService`)**: Manages user posts, including creating, reading, and deleting posts from the Firestore `posts` collection.
+---
 
-### Post Feature
+## Data Models
 
-- **Post List Screen (`PostListScreen`)**: Displays a list of all posts in chronological order. Each post is displayed in a `Card` and shows the post content, the author's email, and a formatted timestamp. Users can delete their own posts.
-- **Create Post Screen (`CreatePostScreen`)**: Allows users to create new posts. It includes a `TextFormField` with a character counter and a character limit of 280 characters. The "Post" button is full-width for better usability.
+### `SessionTemplate`
 
-### Profile Screen Feature
+Represents a type of session that an instructor can offer.
 
-- **Profile Screen (`ProfileScreen`)**: Displays the logged-in user's profile information, including their display name, email, and profile picture. It also includes a toggle switch that allows the user to enable or disable "Instructor Mode," which updates their `isInstructor` status in Firestore.
+- `id`: `String` - The unique document ID.
+- `title`: `String` - The name of the session (e.g., "Yoga Basics").
+- `timeZoneOffsetInHours`: `num` - The instructor's timezone offset.
+- `notifyCancelation`: `bool` - Flag to notify on cancellation.
+- `createdTime`: `int` - Timestamp of creation.
+- `duration`: `int` - Session duration.
+- `durationUnit`: `String` - The unit for duration (e.g., "minutes").
+- `details`: `String` - A detailed description of the session.
+- `idCreatedBy`: `String` - The user ID of the creator.
+- `idInstructor`: `String` - The user ID of the instructor.
+- `playersIds`: `List<String>` - List of participant IDs.
+- `maxPlayers`: `int` - Maximum number of participants.
+- `minPlayers`: `int` - Minimum number of participants.
+- `canceled`: `bool` - Flag if the session is canceled.
+- `repeatingSession`: `bool` - Flag for repeating sessions.
+- `attendanceData`: `List<dynamic>` - Data on attendance.
+- `showParticipants`: `bool` - Flag to show participants publicly.
+- `category`: `String` - The category of the session.
 
-### Testing
+### `Availability`
 
-- **Unit Tests**: Comprehensive unit tests have been written for all core services (`AuthService`, `UserService`, `SessionService`, `PostService`).
-- **Widget Tests**: Widget tests have been written for the `PostListScreen`, `CreatePostScreen`, and `ProfileScreen` to ensure that the UI behaves as expected.
-- **Mocking**: The `mockito` and `fake_cloud_firestore` packages are used to mock dependencies, ensuring that tests are isolated and repeatable.
-- **Build Runner**: The `build_runner` package is used to generate mock classes.
-- **Test Data Generation**: The `faker` package is used to generate realistic mock data for tests.
+Represents a rule that defines when an instructor is available for bookings.
 
-## Next Steps
-
-- **Comments**: Add a feature that allows users to comment on posts.
-- **Likes**: Add a feature that allows users to "like" posts.
+- `id`: `String` - The unique document ID.
+- `instructorId`: `String` - The ID of the instructor this rule belongs to.
+- `type`: `String` - The type of rule. Can be **`'weekly'`** or **`'date'`**.
+- `dayOfWeek`: `int?` - The day of the week (1-7 for Monday-Sunday). **Required if `type` is `'weekly'`**.
+- `date`: `DateTime?` - The specific date for an override. **Required if `type` is `'date'`**.
+- `startTime`: `String` - The start time of the slot in "HH:mm" format.
+- `endTime`: `String` - The end time of the slot in "HH:mm" format.
+- `allowedSessionTemplates`: `List<String>` - A list of `SessionTemplate` IDs that can be booked in this slot.
+- `breakTime`: `int` - Break time in minutes between sessions.
+- `customDuration`: `int?` - An optional duration in minutes to override the session template's default.
+- `daysInFuture`: `int` - How many days ahead clients can book.
+- `bookingLeadTime`: `int` - The minimum notice (in minutes) required for a booking.

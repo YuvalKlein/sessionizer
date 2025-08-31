@@ -1,225 +1,196 @@
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart'; // For date formatting
 
+import 'package:flutter/material.dart';
+import 'package:myapp/models/availability_model.dart';
+import 'package:myapp/services/availability_service.dart';
+import 'package:provider/provider.dart';
+import 'package:myapp/services/auth_service.dart';
+import 'package:intl/intl.dart';
+import 'package:myapp/ui/widgets/availability_form.dart';
+
+// This is the new screen where instructors will manage their availability.
 class ScheduleScreen extends StatefulWidget {
-  const ScheduleScreen({super.key});
+  const ScheduleScreen({Key? key}) : super(key: key);
 
   @override
-  State<ScheduleScreen> createState() => _ScheduleScreenState();
+  _ScheduleScreenState createState() => _ScheduleScreenState();
 }
 
-class _ScheduleScreenState extends State<ScheduleScreen> {
-  List<DocumentSnapshot> _templates = [];
-  List<DocumentSnapshot> _locations = [];
-
-  DocumentSnapshot? _selectedTemplate;
-  DocumentSnapshot? _selectedLocation;
-  DateTime? _selectedStartTime;
-
-  bool _isLoading = true;
+class _ScheduleScreenState extends State<ScheduleScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late AvailabilityService _availabilityService;
+  late String _instructorId;
 
   @override
   void initState() {
     super.initState();
-    _fetchDropdownData();
+    _tabController = TabController(length: 2, vsync: this);
+    _availabilityService = AvailabilityService();
+    final authService = Provider.of<AuthService>(context, listen: false);
+    _instructorId = authService.currentUser!.uid;
   }
 
-  Future<void> _fetchDropdownData() async {
-    try {
-      final templateSnapshot = await FirebaseFirestore.instance
-          .collection('sessionTemplates')
-          .get();
-      final locationSnapshot = await FirebaseFirestore.instance
-          .collection('locations')
-          .get();
-
-      if (!mounted) return;
-      setState(() {
-        _templates = templateSnapshot.docs;
-        _locations = locationSnapshot.docs;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching data: $e')));
-    }
-  }
-
-  Future<void> _selectStartTime() async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _selectedStartTime ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2101),
-    );
-    if (pickedDate == null || !mounted) return;
-
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(_selectedStartTime ?? DateTime.now()),
-    );
-    if (pickedTime == null) return;
-
-    setState(() {
-      _selectedStartTime = DateTime(
-        pickedDate.year,
-        pickedDate.month,
-        pickedDate.day,
-        pickedTime.hour,
-        pickedTime.minute,
-      );
-    });
-  }
-
-  Future<void> _saveSession() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('You must be logged in.')));
-      return;
-    }
-
-    if (_selectedTemplate == null ||
-        _selectedLocation == null ||
-        _selectedStartTime == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill out all fields.')),
-      );
-      return;
-    }
-
-    try {
-      final templateData = _selectedTemplate!.data() as Map<String, dynamic>;
-      final sessionEntity = Map<String, dynamic>.from(
-        templateData['sessionEntity'],
-      );
-
-      final duration = sessionEntity['duration'] as int;
-      final durationUnit = sessionEntity['durationUnit'] as String;
-
-      final endTime = durationUnit == 'Hours'
-          ? _selectedStartTime!.add(Duration(hours: duration))
-          : _selectedStartTime!.add(Duration(minutes: duration));
-
-      // Overwrite template data with specific session details
-      sessionEntity['idInstructor'] = user.uid;
-      sessionEntity['startTimeEpoch'] =
-          _selectedStartTime!.millisecondsSinceEpoch;
-      sessionEntity['endTimeEpoch'] = endTime.millisecondsSinceEpoch;
-      sessionEntity['canceled'] = false;
-      sessionEntity['playersIds'] = []; // Reset for the new session
-      sessionEntity['attendanceData'] = []; // Reset for the new session
-
-      // Add location details
-      final locationData = _selectedLocation!.data() as Map<String, dynamic>;
-      sessionEntity['locationInfo'] = {
-        'id': _selectedLocation!.id,
-        'name': locationData['name'],
-        'address': locationData['address'],
-      };
-
-      await FirebaseFirestore.instance
-          .collection('sessions')
-          .add(sessionEntity);
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session saved successfully!')),
-      );
-      setState(() {
-        _selectedTemplate = null;
-        _selectedLocation = null;
-        _selectedStartTime = null;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving session: $e')));
-    }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Schedule a Session')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  DropdownButtonFormField<DocumentSnapshot>(
-                    value: _selectedTemplate,
-                    hint: const Text('Choose a Session Template'),
-                    onChanged: (v) => setState(() => _selectedTemplate = v),
-                    items: _templates.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final entity = data['sessionEntity'] ?? {};
-                      return DropdownMenuItem<DocumentSnapshot>(
-                        value: doc,
-                        child: Text(entity['title'] ?? 'Unnamed Template'),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  DropdownButtonFormField<DocumentSnapshot>(
-                    value: _selectedLocation,
-                    hint: const Text('Choose a Location'),
-                    onChanged: (v) => setState(() => _selectedLocation = v),
-                    items: _locations.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      return DropdownMenuItem<DocumentSnapshot>(
-                        value: doc,
-                        child: Text(data['name'] ?? 'Unnamed Location'),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ListTile(
-                    title: const Text('Session Start Time'),
-                    subtitle: Text(
-                      _selectedStartTime == null
-                          ? 'Tap to select'
-                          : DateFormat.yMd().add_jm().format(
-                              _selectedStartTime!,
-                            ),
-                    ),
-                    onTap: _selectStartTime,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                      side: BorderSide(color: Theme.of(context).dividerColor),
-                    ),
-                    trailing: const Icon(Icons.calendar_today),
-                  ),
-                  const SizedBox(height: 40),
-                  ElevatedButton(
-                    onPressed: _saveSession,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Save Session'),
-                  ),
-                ],
-              ),
-            ),
+      appBar: AppBar(
+        title: const Text('Manage Availability'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Weekly Recurring'),
+            Tab(text: 'Date Overrides'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildWeeklyRecurringView(),
+          _buildDateOverridesView(),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAvailabilityForm(),
+        child: const Icon(Icons.add),
+        tooltip: 'Add Availability',
+      ),
     );
+  }
+
+  void _showAvailabilityForm({Availability? availability}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: AvailabilityForm(availability: availability),
+      ),
+    );
+  }
+
+  Widget _buildWeeklyRecurringView() {
+    return StreamBuilder<List<Availability>>(
+      stream: _availabilityService.getAvailabilityForInstructor(_instructorId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        final allAvailability = snapshot.data ?? [];
+        final weeklyAvailability = allAvailability.where((a) => a.type == 'weekly').toList();
+
+        if (weeklyAvailability.isEmpty) {
+          return const Center(child: Text('No weekly recurring availability set. Tap + to add one.'));
+        }
+
+        return ListView.builder(
+          itemCount: 7,
+          itemBuilder: (context, index) {
+            final dayOfWeek = index + 1;
+            final dayAvailability = weeklyAvailability.where((a) => a.dayOfWeek == dayOfWeek).toList();
+
+            return Card(
+              margin: const EdgeInsets.all(8.0),
+              child: ExpansionTile(
+                title: Text(_getDayOfWeekName(dayOfWeek)),
+                children: dayAvailability.map((availability) {
+                  return ListTile(
+                    title: Text('${availability.startTime} - ${availability.endTime}'),
+                    subtitle: Text('Break: ${availability.breakTime} mins'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => _showAvailabilityForm(availability: availability),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            _availabilityService.deleteAvailability(availability.id);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDateOverridesView() {
+    return StreamBuilder<List<Availability>>(
+      stream: _availabilityService.getAvailabilityForInstructor(_instructorId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        final allAvailability = snapshot.data ?? [];
+        final dateOverrides = allAvailability.where((a) => a.type == 'date').toList();
+
+        if (dateOverrides.isEmpty) {
+          return const Center(child: Text('No date overrides set. Tap + to add one.'));
+        }
+
+        return ListView.builder(
+          itemCount: dateOverrides.length,
+          itemBuilder: (context, index) {
+            final availability = dateOverrides[index];
+            final date = DateFormat.yMMMd().format(availability.date!);
+
+            return Card(
+              margin: const EdgeInsets.all(8.0),
+              child: ListTile(
+                title: Text('$date: ${availability.startTime} - ${availability.endTime}'),
+                subtitle: Text('Break: ${availability.breakTime} mins'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => _showAvailabilityForm(availability: availability),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        _availabilityService.deleteAvailability(availability.id);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _getDayOfWeekName(int dayOfWeek) {
+    switch (dayOfWeek) {
+      case 1: return 'Monday';
+      case 2: return 'Tuesday';
+      case 3: return 'Wednesday';
+      case 4: return 'Thursday';
+      case 5: return 'Friday';
+      case 6: return 'Saturday';
+      case 7: return 'Sunday';
+      default: return '';
+    }
   }
 }
