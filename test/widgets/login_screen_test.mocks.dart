@@ -4,6 +4,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i11;
+import 'dart:ui' as _i14;
 
 import 'package:firebase_auth/firebase_auth.dart' as _i13;
 import 'package:flutter/widgets.dart' as _i3;
@@ -372,6 +373,11 @@ class MockAuthService extends _i1.Mock implements _i12.AuthService {
           as _i11.Stream<_i13.User?>);
 
   @override
+  bool get hasListeners =>
+      (super.noSuchMethod(Invocation.getter(#hasListeners), returnValue: false)
+          as bool);
+
+  @override
   _i11.Future<_i13.User?> signInWithEmailAndPassword(
     String? email,
     String? password,
@@ -383,9 +389,9 @@ class MockAuthService extends _i1.Mock implements _i12.AuthService {
           as _i11.Future<_i13.User?>);
 
   @override
-  _i11.Future<_i13.User?> signInWithGoogle() =>
+  _i11.Future<_i13.User?> signInWithGoogle(bool? isInstructor) =>
       (super.noSuchMethod(
-            Invocation.method(#signInWithGoogle, []),
+            Invocation.method(#signInWithGoogle, [isInstructor]),
             returnValue: _i11.Future<_i13.User?>.value(),
           )
           as _i11.Future<_i13.User?>);
@@ -395,12 +401,14 @@ class MockAuthService extends _i1.Mock implements _i12.AuthService {
     String? email,
     String? password,
     String? displayName,
+    bool? isInstructor,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#registerWithEmailAndPassword, [
               email,
               password,
               displayName,
+              isInstructor,
             ]),
             returnValue: _i11.Future<_i13.User?>.value(),
           )
@@ -414,4 +422,28 @@ class MockAuthService extends _i1.Mock implements _i12.AuthService {
             returnValueForMissingStub: _i11.Future<void>.value(),
           )
           as _i11.Future<void>);
+
+  @override
+  void addListener(_i14.VoidCallback? listener) => super.noSuchMethod(
+    Invocation.method(#addListener, [listener]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void removeListener(_i14.VoidCallback? listener) => super.noSuchMethod(
+    Invocation.method(#removeListener, [listener]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void notifyListeners() => super.noSuchMethod(
+    Invocation.method(#notifyListeners, []),
+    returnValueForMissingStub: null,
+  );
 }

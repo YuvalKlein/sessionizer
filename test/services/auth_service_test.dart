@@ -85,7 +85,7 @@ void main() {
           when(mockDocumentSnapshot.exists).thenReturn(false);
           when(mockDocumentReference.set(any)).thenAnswer((_) async => {});
 
-          final result = await authService.signInWithGoogle();
+          final result = await authService.signInWithGoogle(false);
 
           expect(result, isA<User>());
           verify(mockDocumentReference.set(any)).called(1);
@@ -121,7 +121,7 @@ void main() {
           ).thenAnswer((_) async => mockDocumentSnapshot);
           when(mockDocumentSnapshot.exists).thenReturn(true);
 
-          final result = await authService.signInWithGoogle();
+          final result = await authService.signInWithGoogle(false);
 
           expect(result, isA<User>());
           verifyNever(mockDocumentReference.set(any));
@@ -131,7 +131,7 @@ void main() {
       test('returns null when Google Sign-In is cancelled', () async {
         when(mockGoogleSignIn.signIn()).thenAnswer((_) async => null);
 
-        final result = await authService.signInWithGoogle();
+        final result = await authService.signInWithGoogle(false);
 
         expect(result, isNull);
       });
@@ -155,6 +155,7 @@ void main() {
           'test@example.com',
           'password',
           'Test User',
+          false,
         );
 
         expect(result, isA<User>());

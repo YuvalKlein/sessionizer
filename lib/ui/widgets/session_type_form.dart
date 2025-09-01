@@ -3,16 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class SessionTemplateForm extends StatefulWidget {
-  final DocumentSnapshot? template;
+class SessionTypeForm extends StatefulWidget {
+  final DocumentSnapshot? type;
 
-  const SessionTemplateForm({super.key, this.template});
+  const SessionTypeForm({super.key, this.type});
 
   @override
-  State<SessionTemplateForm> createState() => _SessionTemplateFormState();
+  State<SessionTypeForm> createState() => _SessionTypeFormState();
 }
 
-class _SessionTemplateFormState extends State<SessionTemplateForm> {
+class _SessionTypeFormState extends State<SessionTypeForm> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers for text input
@@ -24,8 +24,6 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
   final _priceController = TextEditingController();
   final _durationController = TextEditingController();
 
-  String _durationUnit = 'Hours';
-
   // State for boolean switches
   bool _notifyCancelation = true;
   bool _repeatingSession = false;
@@ -34,20 +32,18 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
   @override
   void initState() {
     super.initState();
-    if (widget.template != null) {
-      final data = widget.template!.data() as Map<String, dynamic>;
-      final session = data;
-      _titleController.text = session['title'] ?? '';
-      _detailsController.text = session['details'] ?? '';
-      _categoryController.text = session['category'] ?? '';
-      _priceController.text = (session['price'] ?? 0).toString();
-      _maxPlayersController.text = (session['maxPlayers'] ?? 0).toString();
-      _minPlayersController.text = (session['minPlayers'] ?? 0).toString();
-      _durationController.text = (session['duration'] ?? 0).toString();
-      _durationUnit = session['durationUnit'] ?? 'Hours';
-      _notifyCancelation = session['notifyCancelation'] ?? true;
-      _repeatingSession = session['repeatingSession'] ?? false;
-      _showParticipants = session['showParticipants'] ?? true;
+    if (widget.type != null) {
+      final data = widget.type!.data() as Map<String, dynamic>;
+      _titleController.text = data['title'] ?? '';
+      _detailsController.text = data['details'] ?? '';
+      _categoryController.text = data['category'] ?? '';
+      _priceController.text = (data['price'] ?? 0).toString();
+      _maxPlayersController.text = (data['maxPlayers'] ?? 0).toString();
+      _minPlayersController.text = (data['minPlayers'] ?? 0).toString();
+      _durationController.text = (data['durationInMinutes'] ?? 0).toString();
+      _notifyCancelation = data['notifyCancelation'] ?? true;
+      _repeatingSession = data['repeatingSession'] ?? false;
+      _showParticipants = data['showParticipants'] ?? true;
     }
   }
 
@@ -63,7 +59,7 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
     super.dispose();
   }
 
-  Future<void> _saveTemplate() async {
+  Future<void> _saveType() async {
     if (!_formKey.currentState!.validate()) {
       return; // If the form is not valid, do not proceed.
     }
@@ -72,7 +68,7 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('You must be logged in to create a template.'),
+          content: Text('You must be logged in to create a session type.'),
         ),
       );
       return;
@@ -86,35 +82,28 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
         'price': int.tryParse(_priceController.text) ?? 0,
         'maxPlayers': int.tryParse(_maxPlayersController.text) ?? 0,
         'minPlayers': int.tryParse(_minPlayersController.text) ?? 0,
-        'duration': int.tryParse(_durationController.text) ?? 0,
-        'durationUnit': _durationUnit,
-        'timeZoneOffsetInHours': DateTime.now().timeZoneOffset.inHours,
+        'durationInMinutes': int.tryParse(_durationController.text) ?? 0,
         'notifyCancelation': _notifyCancelation,
         'repeatingSession': _repeatingSession,
         'showParticipants': _showParticipants,
-        'createdTime': DateTime.now().millisecondsSinceEpoch,
-        'idCreatedBy': user.uid,
-        'idInstructor': user.uid,
-        'canceled': false,
-        'playersIds': [],
-        'attendanceData': [],
+        'instructorId': user.uid,
       };
 
-      if (widget.template != null) {
-        // Update existing template
-        await widget.template!.reference.update(sessionData);
+      if (widget.type != null) {
+        // Update existing type
+        await widget.type!.reference.update(sessionData);
       } else {
-        // Create new template
-        await FirebaseFirestore.instance.collection('sessionTemplates').add(
-           sessionData,
-        );
+        // Create new type
+        await FirebaseFirestore.instance
+            .collection('sessionTypes')
+            .add(sessionData);
       }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Template ${widget.template != null ? 'updated' : 'saved'} successfully!',
+            'Session type ${widget.type != null ? 'updated' : 'saved'} successfully!',
           ),
         ),
       );
@@ -124,13 +113,13 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error saving template: $e')));
+      ).showSnackBar(SnackBar(content: Text('Error saving session type: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isEditing = widget.template != null;
+    final isEditing = widget.type != null;
 
     return Form(
       key: _formKey,
@@ -138,11 +127,10 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              isEditing
-                  ? 'Edit Session Template'
-                  : 'Create New Session Template',
+              isEditing ? 'Edit Session Type' : 'Create New Session Type',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
@@ -218,40 +206,16 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _durationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Duration',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'Please enter a duration'
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                DropdownButton<String>(
-                  value: _durationUnit,
-                  items: <String>['Hours', 'Minutes']
-                      .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      })
-                      .toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _durationUnit = newValue!;
-                    });
-                  },
-                ),
-              ],
+            TextFormField(
+              controller: _durationController,
+              decoration: const InputDecoration(
+                labelText: 'Duration (minutes)',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              validator: (v) =>
+                  v == null || v.isEmpty ? 'Please enter a duration' : null,
             ),
             const SizedBox(height: 16),
             const Divider(),
@@ -273,11 +237,11 @@ class _SessionTemplateFormState extends State<SessionTemplateForm> {
             const Divider(),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _saveTemplate,
+              onPressed: _saveType,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: Text(isEditing ? 'Update Template' : 'Save Template'),
+              child: Text(isEditing ? 'Update Type' : 'Save Type'),
             ),
           ],
         ),

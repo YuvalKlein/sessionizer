@@ -1,22 +1,29 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 
-class AuthService {
+class AuthService with ChangeNotifier {
   final FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
   final GoogleSignIn _googleSignIn;
+  User? _user;
 
   AuthService(
     this._firebaseAuth, {
     required FirebaseFirestore firestore,
     required GoogleSignIn googleSignIn,
   }) : _firestore = firestore,
-       _googleSignIn = googleSignIn;
+       _googleSignIn = googleSignIn {
+    _firebaseAuth.authStateChanges().listen((user) {
+      _user = user;
+      notifyListeners();
+    });
+  }
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
-  User? get currentUser => _firebaseAuth.currentUser;
+  User? get currentUser => _user;
 
   Future<User?> signInWithEmailAndPassword(
     String email,
@@ -33,7 +40,7 @@ class AuthService {
     }
   }
 
-  Future<User?> signInWithGoogle() async {
+  Future<User?> signInWithGoogle(bool isInstructor) async {
     final googleUser = await _googleSignIn.signIn();
     if (googleUser == null) {
       return null; // The user canceled the sign-in
@@ -54,7 +61,7 @@ class AuthService {
         _firestore.collection('users').doc(user.uid).set({
           'displayName': user.displayName,
           'email': user.email,
-          'isInstructor': false,
+          'isInstructor': isInstructor,
         });
       }
     }
@@ -66,6 +73,7 @@ class AuthService {
     String email,
     String password,
     String displayName,
+    bool isInstructor,
   ) async {
     try {
       final result = await _firebaseAuth.createUserWithEmailAndPassword(
@@ -78,7 +86,7 @@ class AuthService {
         await _firestore.collection('users').doc(user.uid).set({
           'displayName': displayName,
           'email': email,
-          'isInstructor': false,
+          'isInstructor': isInstructor,
         });
       }
       return user;

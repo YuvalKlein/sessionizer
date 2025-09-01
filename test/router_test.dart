@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:myapp/models/user_model.dart';
 import 'package:myapp/router.dart';
 import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/user_service.dart';
@@ -59,20 +60,10 @@ void main() {
       mockAuthService.authStateChanges,
     ).thenAnswer((_) => Stream.value(mockUser));
 
-    final mockDocumentSnapshot = MockDocumentSnapshot<Map<String, dynamic>>();
-    when(mockDocumentSnapshot.exists).thenReturn(true);
-    when(
-      mockDocumentSnapshot.data(),
-    ).thenReturn({'isInstructor': isInstructor});
-
-    when(
-      mockUserService.getUserStream(any),
-    ).thenAnswer((_) => Stream.value(mockDocumentSnapshot));
-    final mockQuerySnapshot = MockQuerySnapshot<Map<String, dynamic>>();
-    when(mockQuerySnapshot.docs).thenReturn([]);
-    when(
-      mockSessionService.getUpcomingSessions(),
-    ).thenAnswer((_) => Stream.value(mockQuerySnapshot));
+    when(mockUserService.getUserStream(any)).thenAnswer((_) => Stream.value(
+        UserModel(id: '123', email: 'test@test.com', name: 'test')));
+    when(mockSessionService.getSessions(any, any))
+        .thenAnswer((_) => Stream.value([]));
   }
 
   void stubUserIsLoggedOut() {

@@ -4,14 +4,17 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i5;
+import 'dart:ui' as _i6;
 
 import 'package:cloud_firestore/cloud_firestore.dart' as _i3;
 import 'package:firebase_auth/firebase_auth.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i8;
+import 'package:mockito/src/dummies.dart' as _i11;
+import 'package:myapp/models/session.dart' as _i10;
+import 'package:myapp/models/user_model.dart' as _i8;
 import 'package:myapp/services/auth_service.dart' as _i4;
-import 'package:myapp/services/session_service.dart' as _i7;
-import 'package:myapp/services/user_service.dart' as _i6;
+import 'package:myapp/services/session_service.dart' as _i9;
+import 'package:myapp/services/user_service.dart' as _i7;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -88,6 +91,11 @@ class MockAuthService extends _i1.Mock implements _i4.AuthService {
           as _i5.Stream<_i2.User?>);
 
   @override
+  bool get hasListeners =>
+      (super.noSuchMethod(Invocation.getter(#hasListeners), returnValue: false)
+          as bool);
+
+  @override
   _i5.Future<_i2.User?> signInWithEmailAndPassword(
     String? email,
     String? password,
@@ -99,9 +107,9 @@ class MockAuthService extends _i1.Mock implements _i4.AuthService {
           as _i5.Future<_i2.User?>);
 
   @override
-  _i5.Future<_i2.User?> signInWithGoogle() =>
+  _i5.Future<_i2.User?> signInWithGoogle(bool? isInstructor) =>
       (super.noSuchMethod(
-            Invocation.method(#signInWithGoogle, []),
+            Invocation.method(#signInWithGoogle, [isInstructor]),
             returnValue: _i5.Future<_i2.User?>.value(),
           )
           as _i5.Future<_i2.User?>);
@@ -111,12 +119,14 @@ class MockAuthService extends _i1.Mock implements _i4.AuthService {
     String? email,
     String? password,
     String? displayName,
+    bool? isInstructor,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#registerWithEmailAndPassword, [
               email,
               password,
               displayName,
+              isInstructor,
             ]),
             returnValue: _i5.Future<_i2.User?>.value(),
           )
@@ -130,61 +140,93 @@ class MockAuthService extends _i1.Mock implements _i4.AuthService {
             returnValueForMissingStub: _i5.Future<void>.value(),
           )
           as _i5.Future<void>);
+
+  @override
+  void addListener(_i6.VoidCallback? listener) => super.noSuchMethod(
+    Invocation.method(#addListener, [listener]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void removeListener(_i6.VoidCallback? listener) => super.noSuchMethod(
+    Invocation.method(#removeListener, [listener]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void notifyListeners() => super.noSuchMethod(
+    Invocation.method(#notifyListeners, []),
+    returnValueForMissingStub: null,
+  );
 }
 
 /// A class which mocks [UserService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockUserService extends _i1.Mock implements _i6.UserService {
+class MockUserService extends _i1.Mock implements _i7.UserService {
   MockUserService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Stream<_i3.DocumentSnapshot<Map<String, dynamic>>> getUserStream(
-    String? uid,
-  ) =>
+  _i5.Future<void> createUser(String? uid, String? email, bool? isInstructor) =>
+      (super.noSuchMethod(
+            Invocation.method(#createUser, [uid, email, isInstructor]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<_i8.UserModel?> getUser(String? uid) =>
+      (super.noSuchMethod(
+            Invocation.method(#getUser, [uid]),
+            returnValue: _i5.Future<_i8.UserModel?>.value(),
+          )
+          as _i5.Future<_i8.UserModel?>);
+
+  @override
+  _i5.Stream<_i8.UserModel?> getUserStream(String? uid) =>
       (super.noSuchMethod(
             Invocation.method(#getUserStream, [uid]),
-            returnValue:
-                _i5.Stream<_i3.DocumentSnapshot<Map<String, dynamic>>>.empty(),
+            returnValue: _i5.Stream<_i8.UserModel?>.empty(),
           )
-          as _i5.Stream<_i3.DocumentSnapshot<Map<String, dynamic>>>);
+          as _i5.Stream<_i8.UserModel?>);
+
+  @override
+  _i5.Future<void> updateUser(String? uid, Map<String, dynamic>? data) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateUser, [uid, data]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
 }
 
 /// A class which mocks [SessionService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSessionService extends _i1.Mock implements _i7.SessionService {
+class MockSessionService extends _i1.Mock implements _i9.SessionService {
   MockSessionService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i5.Stream<_i3.QuerySnapshot<Object?>> getUpcomingSessions() =>
+  _i5.Stream<List<_i10.Session>> getSessions(
+    String? userId,
+    bool? isInstructor,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#getUpcomingSessions, []),
-            returnValue: _i5.Stream<_i3.QuerySnapshot<Object?>>.empty(),
+            Invocation.method(#getSessions, [userId, isInstructor]),
+            returnValue: _i5.Stream<List<_i10.Session>>.empty(),
           )
-          as _i5.Stream<_i3.QuerySnapshot<Object?>>);
-
-  @override
-  _i5.Future<void> joinSession(String? sessionId, String? userId) =>
-      (super.noSuchMethod(
-            Invocation.method(#joinSession, [sessionId, userId]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> leaveSession(String? sessionId, String? userId) =>
-      (super.noSuchMethod(
-            Invocation.method(#leaveSession, [sessionId, userId]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
-          )
-          as _i5.Future<void>);
+          as _i5.Stream<List<_i10.Session>>);
 }
 
 /// A class which mocks [User].
@@ -228,7 +270,7 @@ class MockUser extends _i1.Mock implements _i2.User {
   String get uid =>
       (super.noSuchMethod(
             Invocation.getter(#uid),
-            returnValue: _i8.dummyValue<String>(this, Invocation.getter(#uid)),
+            returnValue: _i11.dummyValue<String>(this, Invocation.getter(#uid)),
           )
           as String);
 
@@ -516,7 +558,7 @@ class MockDocumentSnapshot<T extends Object?> extends _i1.Mock
   String get id =>
       (super.noSuchMethod(
             Invocation.getter(#id),
-            returnValue: _i8.dummyValue<String>(this, Invocation.getter(#id)),
+            returnValue: _i11.dummyValue<String>(this, Invocation.getter(#id)),
           )
           as String);
 
@@ -610,7 +652,7 @@ class MockQueryDocumentSnapshot<T extends Object?> extends _i1.Mock
   String get id =>
       (super.noSuchMethod(
             Invocation.getter(#id),
-            returnValue: _i8.dummyValue<String>(this, Invocation.getter(#id)),
+            returnValue: _i11.dummyValue<String>(this, Invocation.getter(#id)),
           )
           as String);
 
@@ -645,7 +687,7 @@ class MockQueryDocumentSnapshot<T extends Object?> extends _i1.Mock
   T data() =>
       (super.noSuchMethod(
             Invocation.method(#data, []),
-            returnValue: _i8.dummyValue<T>(this, Invocation.method(#data, [])),
+            returnValue: _i11.dummyValue<T>(this, Invocation.method(#data, [])),
           )
           as T);
 

@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:myapp/ui/widgets/session_template_form.dart';
+import 'package:myapp/ui/widgets/session_type_form.dart';
 
-class TemplateListView extends StatelessWidget {
-  const TemplateListView({super.key});
+class SessionTypeListView extends StatelessWidget {
+  const SessionTypeListView({super.key});
 
-  Future<void> _deleteTemplate(
-    BuildContext context,
-    DocumentSnapshot template,
-  ) async {
+  Future<void> _deleteType(BuildContext context, DocumentSnapshot type) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Template'),
-        content: const Text('Are you sure you want to delete this template?'),
+        title: const Text('Delete Session Type'),
+        content: const Text(
+          'Are you sure you want to delete this session type?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -28,19 +27,11 @@ class TemplateListView extends StatelessWidget {
     );
 
     if (confirmed == true) {
-      try {
-        await template.reference.delete();
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Template deleted successfully')),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error deleting template: $e')),
-          );
-        }
+      await type.reference.delete();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session type deleted successfully')),
+        );
       }
     }
   }
@@ -48,30 +39,28 @@ class TemplateListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('sessionTemplates')
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('sessionTypes').snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text('No templates found. Create one!'));
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
         }
 
-        final templates = snapshot.data!.docs;
+        final types = snapshot.data!.docs;
+
+        if (types.isEmpty) {
+          return const Center(
+            child: Text('No session types found. Create one to get started!'),
+          );
+        }
 
         return ListView.builder(
-          itemCount: templates.length,
+          itemCount: types.length,
           itemBuilder: (context, index) {
-            final template = templates[index];
-            final session =
-                (template.data() )
-                    as Map<String, dynamic>? ??
-                {};
+            final type = types[index];
+            final session = (type.data() as Map<String, dynamic>?) ?? {};
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: ListTile(
@@ -87,9 +76,9 @@ class TemplateListView extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (context) => Scaffold(
                               appBar: AppBar(
-                                title: const Text('Edit Template'),
+                                title: const Text('Edit Session Type'),
                               ),
-                              body: SessionTemplateForm(template: template),
+                              body: SessionTypeForm(type: type),
                             ),
                           ),
                         );
@@ -100,7 +89,7 @@ class TemplateListView extends StatelessWidget {
                         Icons.delete_outline,
                         color: Colors.redAccent,
                       ),
-                      onPressed: () => _deleteTemplate(context, template),
+                      onPressed: () => _deleteType(context, type),
                     ),
                   ],
                 ),
