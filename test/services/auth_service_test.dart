@@ -35,6 +35,9 @@ void main() {
     mockCollectionReference = MockCollectionReference<Map<String, dynamic>>();
     mockDocumentReference = MockDocumentReference<Map<String, dynamic>>();
 
+    // Stub the authStateChanges stream
+    when(mockFirebaseAuth.authStateChanges()).thenAnswer((_) => Stream.value(null));
+
     // Stub the firestore collection/doc calls
     when(
       mockFirebaseFirestore.collection('users'),
@@ -167,6 +170,27 @@ void main() {
             'isInstructor': false,
           }),
         ).called(1);
+      });
+    });
+
+    group('signInWithEmailAndPassword', () {
+      test('returns a User on successful sign-in', () async {
+        final mockUserCredential = MockUserCredential();
+
+        when(
+          mockFirebaseAuth.signInWithEmailAndPassword(
+            email: 'test@example.com',
+            password: 'password',
+          ),
+        ).thenAnswer((_) async => mockUserCredential);
+        when(mockUserCredential.user).thenReturn(mockUser);
+
+        final result = await authService.signInWithEmailAndPassword(
+          'test@example.com',
+          'password',
+        );
+
+        expect(result, isA<User>());
       });
     });
 
