@@ -1,31 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/services/auth_service.dart';
+import 'package:go_router/go_router.dart';
 
 class InstructorDashboardScreen extends StatelessWidget {
   const InstructorDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
+    final authService = Provider.of<AuthService>(context, listen: false);
     final user = authService.currentUser;
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Instructor Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign Out',
-            onPressed: () async {
-              await authService.signOut();
-              // The auth state listener in the router will handle the redirect.
-            },
-          ),
-        ],
-      ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
@@ -42,29 +29,15 @@ class InstructorDashboardScreen extends StatelessWidget {
             theme: theme,
             icon: Icons.class_,
             title: 'Manage Sessions',
-            subtitle: 'Manage session types, locations, and schedules',
+            subtitle: 'Create, edit, and view your sessions.',
             onTap: () => context.go('/instructor/manage-sessions'),
           ),
-          const SizedBox(height: 16),
           _DashboardCard(
             theme: theme,
-            icon: Icons.calendar_today,
-            title: 'View Bookings',
-            subtitle: 'See upcoming and past client appointments',
-            onTap: () {
-              // TODO: Navigate to the bookings screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Bookings screen coming soon!')),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          _DashboardCard(
-            theme: theme,
-            icon: Icons.person_outline,
-            title: 'Profile Settings',
-            subtitle: 'Update your personal information',
-            onTap: () => context.go('/profile'),
+            icon: Icons.schedule,
+            title: 'View Schedule',
+            subtitle: 'See your upcoming schedule.',
+            onTap: () => context.go('/instructor/schedules'),
           ),
         ],
       ),
@@ -78,45 +51,46 @@ class _DashboardCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.onTap,
+    this.onTap,
   });
 
   final ThemeData theme;
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
               Icon(icon, size: 40, color: theme.colorScheme.primary),
-              const SizedBox(width: 20),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: theme.textTheme.titleLarge,
                     ),
-                    const SizedBox(height: 4),
-                    Text(subtitle, style: theme.textTheme.bodyMedium),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodyMedium,
+                    ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios),
             ],
           ),
         ),

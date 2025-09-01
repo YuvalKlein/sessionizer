@@ -73,6 +73,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             },
                             child: const Text('Save'),
                           ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: () {
+                              authService.signOut();
+                            },
+                            child: const Text('Sign Out'),
+                          ),
                         ],
                       ),
                     ),

@@ -45,7 +45,9 @@ class MyApp extends StatelessWidget {
           create: (_) => AuthService(
             FirebaseAuth.instance,
             firestore: FirebaseFirestore.instance,
-            googleSignIn: GoogleSignIn(),
+            googleSignIn: GoogleSignIn(
+              clientId: DefaultFirebaseOptions.currentPlatform.appId,
+            ),
           ),
         ),
         Provider<UserService>(create: (_) => UserService()),

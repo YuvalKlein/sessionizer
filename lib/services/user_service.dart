@@ -37,5 +37,14 @@ class UserService {
     return _firestore.collection(_collectionPath).doc(uid).update(data);
   }
 
+  Stream<List<UserModel>> getInstructorsStream() {
+    return _firestore
+        .collection(_collectionPath)
+        .where('isInstructor', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList());
+  }
+
   // Add other user-related methods here
 }

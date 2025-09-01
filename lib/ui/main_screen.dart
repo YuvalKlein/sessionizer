@@ -1,137 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:myapp/models/user_model.dart';
 import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/user_service.dart';
-import 'package:myapp/ui/sessions_screen.dart';
-import 'package:myapp/ui/set_screen.dart';
-import 'package:myapp/ui/profile_screen.dart';
 import 'package:provider/provider.dart';
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+class MainScreen extends StatelessWidget {
+  final Widget child;
 
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  const MainScreen({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthService>(
-      builder: (context, authService, child) {
-        final currentUser = authService.currentUser;
+    final authService = context.watch<AuthService>();
+    final userService = Provider.of<UserService>(context, listen: false);
+    final currentUser = authService.currentUser;
 
-        if (currentUser == null) {
+    if (currentUser == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return StreamBuilder<UserModel?>(
+      stream: userService.getUserStream(currentUser.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        final userService = Provider.of<UserService>(context, listen: false);
+        final isInstructor = snapshot.hasData && snapshot.data!.isInstructor;
+        final title = isInstructor ? 'Instructor Dashboard' : 'Client Dashboard';
 
-        return StreamBuilder<UserModel?>(
-          stream: userService.getUserStream(currentUser.uid),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            if (snapshot.hasError) {
-              return Scaffold(
-                body: Center(child: Text('Error: ${snapshot.error}')),
-              );
-            }
-            if (!snapshot.hasData || snapshot.data == null) {
-              return const Scaffold(
-                body: Center(child: Text('User data not found.')),
-              );
-            }
-
-            final userData = snapshot.data!;
-            final bool isInstructor = userData.isInstructor;
-
-            final List<Widget> widgetOptions = [const SessionsScreen()];
-            final List<BottomNavigationBarItem> navBarItems = [
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.sports_soccer),
-                label: 'Sessions',
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(title),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () => authService.signOut(),
               ),
-            ];
-            int setScreenIndex = -1;
-
-            if (isInstructor) {
-              setScreenIndex = widgetOptions.length;
-              widgetOptions.add(const SetScreen());
-              navBarItems.add(
-                const BottomNavigationBarItem(
-                  icon: Icon(Icons.settings),
-                  label: 'Set',
-                ),
-              );
-            }
-
-            widgetOptions.add(const ProfileScreen());
-            navBarItems.add(
-              const BottomNavigationBarItem(
+            ],
+          ),
+          body: child,
+          bottomNavigationBar: BottomNavigationBar(
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: 'Dashboard',
+              ),
+              BottomNavigationBarItem(
                 icon: Icon(Icons.person),
                 label: 'Profile',
               ),
-            );
-
-            if (_selectedIndex >= widgetOptions.length) {
-              _selectedIndex = 0;
-            }
-
-            final List<Widget> appBarActions = [];
-            if (isInstructor && setScreenIndex != -1) {
-              appBarActions.add(
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  tooltip: 'Settings',
-                  onPressed: () {
-                    _onItemTapped(setScreenIndex);
-                  },
-                ),
-              );
-            }
-            appBarActions.add(
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () {
-                  authService.signOut().then((_) {
-                    if (mounted) {
-                      Navigator.of(context).pushReplacementNamed('/login');
-                    }
-                  });
-                },
-              ),
-            );
-
-            return Scaffold(
-              appBar: AppBar(
-                title: const Text('My App'),
-                actions: appBarActions,
-              ),
-              body: Center(child: widgetOptions.elementAt(_selectedIndex)),
-              bottomNavigationBar: BottomNavigationBar(
-                items: navBarItems,
-                currentIndex: _selectedIndex,
-                onTap: _onItemTapped,
-                type: BottomNavigationBarType.fixed,
-              ),
-            );
-          },
+            ],
+            currentIndex: _calculateSelectedIndex(context),
+            onTap: (index) => _onItemTapped(index, context),
+            type: BottomNavigationBarType.fixed,
+          ),
         );
       },
     );
+  }
+
+  int _calculateSelectedIndex(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    if (location.startsWith('/profile')) {
+      return 1;
+    }
+    return 0;
+  }
+
+  void _onItemTapped(int index, BuildContext context) {
+    switch (index) {
+      case 0:
+        context.go('/');
+        break;
+      case 1:
+        context.go('/profile');
+        break;
+    }
   }
 }
