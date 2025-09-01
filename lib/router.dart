@@ -10,6 +10,9 @@ import 'package:myapp/ui/instructor_dashboard_screen.dart';
 import 'package:myapp/ui/client_dashboard_screen.dart';
 import 'package:myapp/ui/booking_screen.dart';
 import 'package:myapp/ui/schedules_list_screen.dart';
+import 'package:myapp/ui/instructor/manage_sessions_screen.dart';
+import 'package:myapp/ui/session_types_screen.dart';
+import 'package:myapp/ui/locations_screen.dart';
 import 'package:provider/provider.dart';
 
 class AppRouter {
@@ -57,6 +60,24 @@ class AppRouter {
             path: 'profile',
             builder: (BuildContext context, GoRouterState state) {
               return const ProfileScreen();
+            },
+          ),
+          GoRoute(
+            path: 'instructor/manage-sessions',
+            builder: (BuildContext context, GoRouterState state) {
+              return const ManageSessionsScreen();
+            },
+          ),
+          GoRoute(
+            path: 'instructor/session-types',
+            builder: (BuildContext context, GoRouterState state) {
+              return const SessionTypesScreen();
+            },
+          ),
+          GoRoute(
+            path: 'instructor/locations',
+            builder: (BuildContext context, GoRouterState state) {
+              return const LocationsScreen();
             },
           ),
           GoRoute(

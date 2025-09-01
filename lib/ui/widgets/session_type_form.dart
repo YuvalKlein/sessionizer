@@ -1,12 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:myapp/models/session_type.dart';
 
 class SessionTypeForm extends StatefulWidget {
-  final DocumentSnapshot? type;
+  final SessionType? sessionType;
+  final Function(SessionType) onSave;
 
-  const SessionTypeForm({super.key, this.type});
+  const SessionTypeForm({super.key, this.sessionType, required this.onSave});
 
   @override
   State<SessionTypeForm> createState() => _SessionTypeFormState();
@@ -14,237 +13,159 @@ class SessionTypeForm extends StatefulWidget {
 
 class _SessionTypeFormState extends State<SessionTypeForm> {
   final _formKey = GlobalKey<FormState>();
-
-  // Controllers for text input
-  final _titleController = TextEditingController();
-  final _detailsController = TextEditingController();
-  final _maxPlayersController = TextEditingController();
-  final _minPlayersController = TextEditingController();
-  final _categoryController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _durationController = TextEditingController();
-
-  // State for boolean switches
-  bool _notifyCancelation = true;
-  bool _repeatingSession = false;
-  bool _showParticipants = true;
+  late String _title;
+  late String _details;
+  late int _price;
+  late int _minPlayers;
+  late int _maxPlayers;
+  late int _duration;
+  late String _durationUnit;
+  late bool _repeatingSession;
+  late bool _showParticipants;
 
   @override
   void initState() {
     super.initState();
-    if (widget.type != null) {
-      final data = widget.type!.data() as Map<String, dynamic>;
-      _titleController.text = data['title'] ?? '';
-      _detailsController.text = data['details'] ?? '';
-      _categoryController.text = data['category'] ?? '';
-      _priceController.text = (data['price'] ?? 0).toString();
-      _maxPlayersController.text = (data['maxPlayers'] ?? 0).toString();
-      _minPlayersController.text = (data['minPlayers'] ?? 0).toString();
-      _durationController.text = (data['durationInMinutes'] ?? 0).toString();
-      _notifyCancelation = data['notifyCancelation'] ?? true;
-      _repeatingSession = data['repeatingSession'] ?? false;
-      _showParticipants = data['showParticipants'] ?? true;
-    }
+    _title = widget.sessionType?.title ?? '';
+    _details = widget.sessionType?.details ?? '';
+    _price = widget.sessionType?.price ?? 0;
+    _minPlayers = widget.sessionType?.minPlayers ?? 0;
+    _maxPlayers = widget.sessionType?.maxPlayers ?? 10;
+    _duration = widget.sessionType?.duration ?? 1;
+    _durationUnit = widget.sessionType?.durationUnit ?? 'Hours';
+    _repeatingSession = widget.sessionType?.repeatingSession ?? false;
+    _showParticipants = widget.sessionType?.showParticipants ?? true;
   }
 
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _detailsController.dispose();
-    _maxPlayersController.dispose();
-    _minPlayersController.dispose();
-    _categoryController.dispose();
-    _priceController.dispose();
-    _durationController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveType() async {
-    if (!_formKey.currentState!.validate()) {
-      return; // If the form is not valid, do not proceed.
-    }
-
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You must be logged in to create a session type.'),
-        ),
+  void _saveForm() {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      final newSessionType = SessionType(
+        id: widget.sessionType?.id,
+        title: _title,
+        details: _details,
+        price: _price,
+        minPlayers: _minPlayers,
+        maxPlayers: _maxPlayers,
+        duration: _duration,
+        durationUnit: _durationUnit,
+        repeatingSession: _repeatingSession,
+        showParticipants: _showParticipants,
+        // The service will fill in the rest of the required fields
+        createdTime: widget.sessionType?.createdTime ?? 0,
+        idCreatedBy: widget.sessionType?.idCreatedBy ?? '',
+        idInstructor: widget.sessionType?.idInstructor ?? '',
       );
-      return;
-    }
-
-    try {
-      final sessionData = {
-        'title': _titleController.text,
-        'details': _detailsController.text,
-        'category': _categoryController.text,
-        'price': int.tryParse(_priceController.text) ?? 0,
-        'maxPlayers': int.tryParse(_maxPlayersController.text) ?? 0,
-        'minPlayers': int.tryParse(_minPlayersController.text) ?? 0,
-        'durationInMinutes': int.tryParse(_durationController.text) ?? 0,
-        'notifyCancelation': _notifyCancelation,
-        'repeatingSession': _repeatingSession,
-        'showParticipants': _showParticipants,
-        'instructorId': user.uid,
-      };
-
-      if (widget.type != null) {
-        // Update existing type
-        await widget.type!.reference.update(sessionData);
-      } else {
-        // Create new type
-        await FirebaseFirestore.instance
-            .collection('sessionTypes')
-            .add(sessionData);
-      }
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Session type ${widget.type != null ? 'updated' : 'saved'} successfully!',
-          ),
-        ),
-      );
-
-      Navigator.of(context).pop();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving session type: $e')));
+      widget.onSave(newSessionType);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isEditing = widget.type != null;
-
     return Form(
       key: _formKey,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              isEditing ? 'Edit Session Type' : 'Create New Session Type',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Title',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Please enter a title' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _detailsController,
-              decoration: const InputDecoration(
-                labelText: 'Details',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _priceController,
-              decoration: const InputDecoration(
-                labelText: 'Price',
-                border: OutlineInputBorder(),
-                prefixText: '\$',
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Please enter a price' : null,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _minPlayersController,
-                    decoration: const InputDecoration(
-                      labelText: 'Min Players',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Required' : null,
-                  ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextFormField(
+            initialValue: _title,
+            decoration: const InputDecoration(labelText: 'Title'),
+            validator: (value) =>
+                value!.isEmpty ? 'Please enter a title' : null,
+            onSaved: (value) => _title = value!,
+          ),
+          TextFormField(
+            initialValue: _details,
+            decoration: const InputDecoration(labelText: 'Description'),
+            onSaved: (value) => _details = value ?? '',
+          ),
+          TextFormField(
+            initialValue: _price.toString(),
+            decoration: const InputDecoration(labelText: 'Price'),
+            keyboardType: TextInputType.number,
+            validator: (value) => value!.isEmpty ? 'Please enter a price' : null,
+            onSaved: (value) => _price = int.tryParse(value!) ?? 0,
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: _minPlayers.toString(),
+                  decoration: const InputDecoration(labelText: 'Min Players'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Enter min players' : null,
+                  onSaved: (value) => _minPlayers = int.tryParse(value!) ?? 0,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _maxPlayersController,
-                    decoration: const InputDecoration(
-                      labelText: 'Max Players',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Required' : null,
-                  ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: TextFormField(
+                  initialValue: _maxPlayers.toString(),
+                  decoration: const InputDecoration(labelText: 'Max Players'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Enter max players' : null,
+                  onSaved: (value) => _maxPlayers = int.tryParse(value!) ?? 0,
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _durationController,
-              decoration: const InputDecoration(
-                labelText: 'Duration (minutes)',
-                border: OutlineInputBorder(),
               ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Please enter a duration' : null,
-            ),
-            const SizedBox(height: 16),
-            const Divider(),
-            SwitchListTile(
-              title: const Text('Notify on Cancellation'),
-              value: _notifyCancelation,
-              onChanged: (val) => setState(() => _notifyCancelation = val),
-            ),
-            SwitchListTile(
-              title: const Text('Repeating Session'),
-              value: _repeatingSession,
-              onChanged: (val) => setState(() => _repeatingSession = val),
-            ),
-            SwitchListTile(
-              title: const Text('Show Participants List'),
-              value: _showParticipants,
-              onChanged: (val) => setState(() => _showParticipants = val),
-            ),
-            const Divider(),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveType,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+            ],
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: _duration.toString(),
+                  decoration: const InputDecoration(labelText: 'Duration'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Enter a duration' : null,
+                  onSaved: (value) => _duration = int.tryParse(value!) ?? 0,
+                ),
               ),
-              child: Text(isEditing ? 'Update Type' : 'Save Type'),
-            ),
-          ],
-        ),
+              const SizedBox(width: 16),
+              DropdownButton<String>(
+                value: _durationUnit,
+                items: <String>['Minutes', 'Hours']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _durationUnit = newValue!;
+                  });
+                },
+              ),
+            ],
+          ),
+          SwitchListTile(
+            title: const Text('Repeat Session'),
+            value: _repeatingSession,
+            onChanged: (bool value) {
+              setState(() {
+                _repeatingSession = value;
+              });
+            },
+          ),
+          SwitchListTile(
+            title: const Text('Show Participants'),
+            value: _showParticipants,
+            onChanged: (bool value) {
+              setState(() {
+                _showParticipants = value;
+              });
+            },
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _saveForm,
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:myapp/models/session_type.dart';
+import 'package:myapp/services/session_type_service.dart';
 import 'package:myapp/ui/widgets/session_type_form.dart';
 
 class SessionTypeListView extends StatelessWidget {
@@ -38,6 +40,8 @@ class SessionTypeListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final SessionTypeService sessionTypeService = SessionTypeService();
+
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('sessionTypes').snapshots(),
       builder: (context, snapshot) {
@@ -60,12 +64,12 @@ class SessionTypeListView extends StatelessWidget {
           itemCount: types.length,
           itemBuilder: (context, index) {
             final type = types[index];
-            final session = (type.data() as Map<String, dynamic>?) ?? {};
+            final sessionType = SessionType.fromFirestore(type);
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: ListTile(
-                title: Text(session['title'] ?? 'No Title'),
-                subtitle: Text(session['category'] ?? 'No Category'),
+                title: Text(sessionType.title),
+                subtitle: Text(sessionType.category),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -78,7 +82,17 @@ class SessionTypeListView extends StatelessWidget {
                               appBar: AppBar(
                                 title: const Text('Edit Session Type'),
                               ),
-                              body: SessionTypeForm(type: type),
+                              body: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: SessionTypeForm(
+                                  sessionType: sessionType,
+                                  onSave: (updatedSessionType) {
+                                    sessionTypeService
+                                        .updateSessionType(updatedSessionType);
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ),
                             ),
                           ),
                         );

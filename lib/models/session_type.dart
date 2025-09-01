@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class SessionTemplate {
-  final String id;
+class SessionType {
+  final String? id;
   final String title;
   final num timeZoneOffsetInHours;
   final bool notifyCancelation;
@@ -19,31 +19,33 @@ class SessionTemplate {
   final List<dynamic> attendanceData;
   final bool showParticipants;
   final String category;
+  final int price;
 
-  SessionTemplate({
-    required this.id,
+  SessionType({
+    this.id,
     required this.title,
-    required this.timeZoneOffsetInHours,
-    required this.notifyCancelation,
+    this.timeZoneOffsetInHours = 0,
+    this.notifyCancelation = false,
     required this.createdTime,
     required this.duration,
-    required this.durationUnit,
-    required this.details,
+    this.durationUnit = 'minutes',
+    this.details = '',
     required this.idCreatedBy,
     required this.idInstructor,
-    required this.playersIds,
+    this.playersIds = const [],
     required this.maxPlayers,
-    required this.minPlayers,
-    required this.canceled,
-    required this.repeatingSession,
-    required this.attendanceData,
-    required this.showParticipants,
-    required this.category,
+    this.minPlayers = 0,
+    this.canceled = false,
+    this.repeatingSession = false,
+    this.attendanceData = const [],
+    this.showParticipants = true,
+    this.category = '',
+    required this.price,
   });
 
-  factory SessionTemplate.fromFirestore(DocumentSnapshot doc) {
+  factory SessionType.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    return SessionTemplate(
+    return SessionType(
       id: doc.id,
       title: data['title'] ?? '',
       timeZoneOffsetInHours: data['timeZoneOffsetInHours'] ?? 0,
@@ -62,6 +64,7 @@ class SessionTemplate {
       attendanceData: List<dynamic>.from(data['attendanceData'] ?? []),
       showParticipants: data['showParticipants'] ?? false,
       category: data['category'] ?? '',
+      price: data['price'] ?? 0,
     );
   }
 
@@ -84,6 +87,51 @@ class SessionTemplate {
       'attendanceData': attendanceData,
       'showParticipants': showParticipants,
       'category': category,
+      'price': price,
     };
+  }
+
+  SessionType copyWith({
+    String? id,
+    String? title,
+    num? timeZoneOffsetInHours,
+    bool? notifyCancelation,
+    int? createdTime,
+    int? duration,
+    String? durationUnit,
+    String? details,
+    String? idCreatedBy,
+    String? idInstructor,
+    List<String>? playersIds,
+    int? maxPlayers,
+    int? minPlayers,
+    bool? canceled,
+    bool? repeatingSession,
+    List<dynamic>? attendanceData,
+    bool? showParticipants,
+    String? category,
+    int? price,
+  }) {
+    return SessionType(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      timeZoneOffsetInHours: timeZoneOffsetInHours ?? this.timeZoneOffsetInHours,
+      notifyCancelation: notifyCancelation ?? this.notifyCancelation,
+      createdTime: createdTime ?? this.createdTime,
+      duration: duration ?? this.duration,
+      durationUnit: durationUnit ?? this.durationUnit,
+      details: details ?? this.details,
+      idCreatedBy: idCreatedBy ?? this.idCreatedBy,
+      idInstructor: idInstructor ?? this.idInstructor,
+      playersIds: playersIds ?? this.playersIds,
+      maxPlayers: maxPlayers ?? this.maxPlayers,
+      minPlayers: minPlayers ?? this.minPlayers,
+      canceled: canceled ?? this.canceled,
+      repeatingSession: repeatingSession ?? this.repeatingSession,
+      attendanceData: attendanceData ?? this.attendanceData,
+      showParticipants: showParticipants ?? this.showParticipants,
+      category: category ?? this.category,
+      price: price ?? this.price,
+    );
   }
 }

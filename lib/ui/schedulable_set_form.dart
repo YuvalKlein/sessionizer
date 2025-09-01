@@ -217,10 +217,11 @@ class _SchedulableSetFormState extends State<SchedulableSetForm> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final docs = snapshot.data!.docs;
-                if (docs.isEmpty)
+                if (docs.isEmpty) {
                   return const Text(
                     'No items found. Please create some first.',
                   );
+                }
 
                 return ListView.builder(
                   shrinkWrap: true,

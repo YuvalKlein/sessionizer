@@ -1,70 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:myapp/services/auth_service.dart';
 
-class InstructorDashboardScreen extends StatelessWidget {
-  const InstructorDashboardScreen({super.key});
+class ManageSessionsScreen extends StatelessWidget {
+  const ManageSessionsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
-    final user = authService.currentUser;
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Instructor Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign Out',
-            onPressed: () async {
-              await authService.signOut();
-              // The auth state listener in the router will handle the redirect.
-            },
-          ),
-        ],
+        title: const Text('Manage Sessions'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 24.0),
-            child: Text(
-              'Welcome, ${user?.displayName ?? 'Instructor'}!',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
           _DashboardCard(
             theme: theme,
-            icon: Icons.class_,
-            title: 'Manage Sessions',
-            subtitle: 'Manage session types, locations, and schedules',
-            onTap: () => context.go('/instructor/manage-sessions'),
+            icon: Icons.category,
+            title: 'Manage Session Types',
+            subtitle: 'Create and edit session types',
+            onTap: () => context.go('/instructor/session-types'),
           ),
           const SizedBox(height: 16),
           _DashboardCard(
             theme: theme,
-            icon: Icons.calendar_today,
-            title: 'View Bookings',
-            subtitle: 'See upcoming and past client appointments',
-            onTap: () {
-              // TODO: Navigate to the bookings screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Bookings screen coming soon!')),
-              );
-            },
+            icon: Icons.location_on,
+            title: 'Manage Locations',
+            subtitle: 'Create and edit locations',
+            onTap: () => context.go('/instructor/locations'),
           ),
           const SizedBox(height: 16),
           _DashboardCard(
             theme: theme,
-            icon: Icons.person_outline,
-            title: 'Profile Settings',
-            subtitle: 'Update your personal information',
-            onTap: () => context.go('/profile'),
+            icon: Icons.schedule,
+            title: 'Manage Schedules',
+            subtitle: 'Create, edit, and view your availability',
+            onTap: () => context.go('/instructor/schedules'),
           ),
         ],
       ),

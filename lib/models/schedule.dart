@@ -46,8 +46,9 @@ class Schedule {
           'Wednesday',
           'Thursday',
           'Friday',
-        }.every(availableDaysList.contains))
+        }.every(availableDaysList.contains)) {
       return 'Weekdays';
+    }
     if (availableDaysList.isEmpty) return 'No availability set';
 
     return availableDaysList.join(', ');
