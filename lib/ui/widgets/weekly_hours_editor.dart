@@ -45,7 +45,7 @@ class _WeeklyHoursEditorState extends State<WeeklyHoursEditor> {
             _weeklyAvailability[day] = null;
           }
           for (var availability in availabilities) {
-            _weeklyAvailability[availability.dayOfWeek] = availability;
+            _weeklyAvailability[_getDayFromInt(availability.dayOfWeek)] = availability;
           }
         });
       });
@@ -101,7 +101,7 @@ class _WeeklyHoursEditorState extends State<WeeklyHoursEditor> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (availability == null || availability.timeSlots.isEmpty)
+                if (availability == null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Row(
@@ -119,11 +119,11 @@ class _WeeklyHoursEditorState extends State<WeeklyHoursEditor> {
                     ),
                   )
                 else
-                  ...availability.timeSlots.map((timeSlot) {
-                    final index = availability.timeSlots.indexOf(timeSlot);
+                  ...availability.allowedSessionTypes.map((timeSlot) {
+                    final index = availability.allowedSessionTypes.indexOf(timeSlot);
                     return _buildTimeRangeRow(day, index, timeSlot);
                   }),
-                if (availability != null && availability.timeSlots.isNotEmpty)
+                if (availability != null)
                   Align(
                     alignment: Alignment.centerRight,
                     child: IconButton(
@@ -142,30 +142,24 @@ class _WeeklyHoursEditorState extends State<WeeklyHoursEditor> {
   Widget _buildTimeRangeRow(
     String day,
     int rangeIndex,
-    Map<String, String> timeSlot,
+    String timeSlot,
   ) {
-    final startTime = _parseTime(timeSlot['start']!);
-    final endTime = _parseTime(timeSlot['end']!);
+    final startTime = _parseTime(timeSlot.split('-')[0]);
+    final endTime = _parseTime(timeSlot.split('-')[1]);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
           _buildTimeButton(startTime, (newTime) {
-            final newTimeSlot = {
-              'start': _formatTime(newTime),
-              'end': timeSlot['end']!,
-            };
+            final newTimeSlot = '${_formatTime(newTime)}-${_formatTime(endTime)}';
             _updateTimeSlot(day, rangeIndex, newTimeSlot);
           }),
           const SizedBox(width: 8),
           const Text('-'),
           const SizedBox(width: 8),
           _buildTimeButton(endTime, (newTime) {
-            final newTimeSlot = {
-              'start': timeSlot['start']!,
-              'end': _formatTime(newTime),
-            };
+            final newTimeSlot = '${_formatTime(startTime)}-${_formatTime(newTime)}';
             _updateTimeSlot(day, rangeIndex, newTimeSlot);
           }),
           const Spacer(),
@@ -201,11 +195,12 @@ class _WeeklyHoursEditorState extends State<WeeklyHoursEditor> {
       if (currentUser != null) {
         final newAvailability = Availability(
           id: '',
-          scheduleId: '', // This needs to be set appropriately
-          dayOfWeek: day,
-          timeSlots: [
-            {'start': '09:00', 'end': '17:00'},
-          ],
+          instructorId: currentUser.uid,
+          type: 'weekly',
+          dayOfWeek: _getIntFromDay(day),
+          startTime: '09:00',
+          endTime: '17:00',
+          allowedSessionTypes: [],
         );
         final availabilityService = Provider.of<AvailabilityService>(
           context,
@@ -214,15 +209,18 @@ class _WeeklyHoursEditorState extends State<WeeklyHoursEditor> {
         availabilityService.addAvailability(newAvailability);
       }
     } else {
-      final newTimeSlots = List<Map<String, String>>.from(
-        availability.timeSlots,
+      final newTimeSlots = List<String>.from(
+        availability.allowedSessionTypes,
       );
-      newTimeSlots.add({'start': '09:00', 'end': '17:00'});
+      newTimeSlots.add('09:00-17:00');
       final updatedAvailability = Availability(
         id: availability.id,
-        scheduleId: availability.scheduleId,
+        instructorId: availability.instructorId,
+        type: availability.type,
         dayOfWeek: availability.dayOfWeek,
-        timeSlots: newTimeSlots,
+        startTime: availability.startTime,
+        endTime: availability.endTime,
+        allowedSessionTypes: newTimeSlots,
       );
       final availabilityService = Provider.of<AvailabilityService>(
         context,
@@ -235,19 +233,22 @@ class _WeeklyHoursEditorState extends State<WeeklyHoursEditor> {
   void _updateTimeSlot(
     String day,
     int rangeIndex,
-    Map<String, String> newTimeSlot,
+    String newTimeSlot,
   ) {
     final availability = _weeklyAvailability[day];
     if (availability != null) {
-      final newTimeSlots = List<Map<String, String>>.from(
-        availability.timeSlots,
+      final newTimeSlots = List<String>.from(
+        availability.allowedSessionTypes,
       );
       newTimeSlots[rangeIndex] = newTimeSlot;
       final updatedAvailability = Availability(
         id: availability.id,
-        scheduleId: availability.scheduleId,
+        instructorId: availability.instructorId,
+        type: availability.type,
         dayOfWeek: availability.dayOfWeek,
-        timeSlots: newTimeSlots,
+        startTime: availability.startTime,
+        endTime: availability.endTime,
+        allowedSessionTypes: newTimeSlots,
       );
       final availabilityService = Provider.of<AvailabilityService>(
         context,
@@ -260,15 +261,18 @@ class _WeeklyHoursEditorState extends State<WeeklyHoursEditor> {
   void _removeTimeSlot(String day, int rangeIndex) {
     final availability = _weeklyAvailability[day];
     if (availability != null) {
-      final newTimeSlots = List<Map<String, String>>.from(
-        availability.timeSlots,
+      final newTimeSlots = List<String>.from(
+        availability.allowedSessionTypes,
       );
       newTimeSlots.removeAt(rangeIndex);
       final updatedAvailability = Availability(
         id: availability.id,
-        scheduleId: availability.scheduleId,
+        instructorId: availability.instructorId,
+        type: availability.type,
         dayOfWeek: availability.dayOfWeek,
-        timeSlots: newTimeSlots,
+        startTime: availability.startTime,
+        endTime: availability.endTime,
+        allowedSessionTypes: newTimeSlots,
       );
       final availabilityService = Provider.of<AvailabilityService>(
         context,
@@ -285,5 +289,47 @@ class _WeeklyHoursEditorState extends State<WeeklyHoursEditor> {
 
   String _formatTime(TimeOfDay time) {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _getDayFromInt(int? day) {
+    switch (day) {
+      case 1:
+        return 'Monday';
+      case 2:
+        return 'Tuesday';
+      case 3:
+        return 'Wednesday';
+      case 4:
+        return 'Thursday';
+      case 5:
+        return 'Friday';
+      case 6:
+        return 'Saturday';
+      case 7:
+        return 'Sunday';
+      default:
+        return '';
+    }
+  }
+
+  int _getIntFromDay(String day) {
+    switch (day) {
+      case 'Monday':
+        return 1;
+      case 'Tuesday':
+        return 2;
+      case 'Wednesday':
+        return 3;
+      case 'Thursday':
+        return 4;
+      case 'Friday':
+        return 5;
+      case 'Saturday':
+        return 6;
+      case 'Sunday':
+        return 7;
+      default:
+        return 0;
+    }
   }
 }

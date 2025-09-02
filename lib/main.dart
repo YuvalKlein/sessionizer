@@ -14,6 +14,7 @@ import 'package:myapp/services/session_service.dart';
 import 'package:myapp/router.dart';
 import 'package:myapp/view_models/schedule_view_model.dart';
 import 'package:myapp/view_models/session_view_model.dart';
+import 'package:myapp/services/availability_service.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -56,6 +57,7 @@ class MyApp extends StatelessWidget {
         Provider<SessionService>(
           create: (_) => SessionService(FirebaseFirestore.instance),
         ),
+        Provider<AvailabilityService>(create: (_) => AvailabilityService()),
         ChangeNotifierProvider<ScheduleViewModel>(
           create: (context) =>
               ScheduleViewModel(context.read<ScheduleService>()),

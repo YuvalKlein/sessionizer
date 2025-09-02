@@ -18,14 +18,14 @@ class AvailabilityService {
   }
 
   Future<void> addAvailability(Availability availability) {
-    return _firestore.collection(_collectionPath).add(availability.toMap());
+    return _firestore.collection(_collectionPath).add(availability.toFirestore());
   }
 
   Future<void> updateAvailability(Availability availability) {
     return _firestore
         .collection(_collectionPath)
         .doc(availability.id)
-        .update(availability.toMap());
+        .update(availability.toFirestore());
   }
 
   Future<void> deleteAvailability(String availabilityId) {
