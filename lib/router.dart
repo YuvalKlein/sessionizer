@@ -13,6 +13,7 @@ import 'package:myapp/ui/schedules_list_screen.dart';
 import 'package:myapp/ui/schedule_detail_screen.dart';
 import 'package:myapp/ui/schedulable_sessions_screen.dart';
 import 'package:myapp/ui/schedulable_session_form_screen.dart';
+import 'package:myapp/ui/availability_demo_screen.dart';
 import 'package:myapp/ui/instructor/schedule_form_screen.dart';
 import 'package:myapp/ui/instructor/manage_sessions_screen.dart';
 import 'package:myapp/ui/session_types_screen.dart';
@@ -123,6 +124,12 @@ class AppRouter {
                     },
                   ),
                 ],
+              ),
+              GoRoute(
+                path: 'availability-demo',
+                builder: (BuildContext context, GoRouterState state) {
+                  return const AvailabilityDemoScreen();
+                },
               ),
             ],
           ),

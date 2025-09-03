@@ -13,6 +13,7 @@ import 'package:myapp/services/booking_service.dart';
 import 'package:myapp/services/session_service.dart';
 import 'package:myapp/services/schedulable_session_service.dart';
 import 'package:myapp/services/session_type_service.dart';
+import 'package:myapp/services/availability_service.dart';
 import 'package:myapp/router.dart';
 import 'package:myapp/view_models/schedule_view_model.dart';
 import 'package:myapp/view_models/session_view_model.dart';
@@ -61,6 +62,14 @@ class MyApp extends StatelessWidget {
         ),
         Provider<SchedulableSessionService>(create: (_) => SchedulableSessionService()),
         Provider<SessionTypeService>(create: (_) => SessionTypeService()),
+        Provider<AvailabilityService>(
+          create: (context) => AvailabilityService(
+            scheduleService: context.read<ScheduleService>(),
+            schedulableSessionService: context.read<SchedulableSessionService>(),
+            sessionTypeService: context.read<SessionTypeService>(),
+            bookingService: context.read<BookingService>(),
+          ),
+        ),
         ChangeNotifierProvider<ScheduleViewModel>(
           create: (context) =>
               ScheduleViewModel(context.read<ScheduleService>()),
