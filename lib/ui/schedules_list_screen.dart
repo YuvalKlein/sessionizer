@@ -142,10 +142,9 @@ class _ScheduleCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.blue),
-                    onPressed: () =>
-                        context.go('/instructor/schedules/${schedule.id}/edit'),
-                    tooltip: 'Edit',
+                    icon: const Icon(Icons.copy, color: Colors.green),
+                    onPressed: () => _duplicateSchedule(context, schedule),
+                    tooltip: 'Duplicate',
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -162,6 +161,19 @@ class _ScheduleCard extends StatelessWidget {
   }
 
   // The _getDaysSummary function is no longer needed and has been removed.
+
+  Future<void> _duplicateSchedule(BuildContext context, Schedule schedule) async {
+    try {
+      await context.read<ScheduleService>().duplicateSchedule(schedule.id);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Schedule duplicated successfully.')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error duplicating schedule: $e')),
+      );
+    }
+  }
 
   Future<void> _confirmDelete(BuildContext context, Schedule schedule) async {
     if (schedule.isDefault) {

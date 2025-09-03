@@ -104,6 +104,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
             'saturday': [],
             'sunday': [],
           },
+          'specificDateAvailability': {},
+          'holidays': {},
         });
         Navigator.of(context).pop();
       } catch (e) {

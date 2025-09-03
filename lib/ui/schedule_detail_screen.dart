@@ -1,145 +1,352 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/models/schedule.dart';
-import 'package:myapp/models/availability_override.dart';
 import 'package:myapp/services/schedule_service.dart';
+import 'package:myapp/ui/widgets/weekly_hours_form.dart';
 import 'package:myapp/widgets/date_override_form.dart';
-import 'package:intl/intl.dart';
 
-class ScheduleDetailScreen extends StatelessWidget {
+class ScheduleDetailScreen extends StatefulWidget {
   final String scheduleId;
 
   const ScheduleDetailScreen({super.key, required this.scheduleId});
 
   @override
+  State<ScheduleDetailScreen> createState() => _ScheduleDetailScreenState();
+}
+
+class _ScheduleDetailScreenState extends State<ScheduleDetailScreen> {
+  final _nameController = TextEditingController();
+  bool _isLoading = true;
+  Schedule? _schedule;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSchedule();
+  }
+
+  Future<void> _loadSchedule() async {
+    try {
+      final schedule = await context.read<ScheduleService>().getSchedule(widget.scheduleId);
+      if (schedule != null) {
+        setState(() {
+          _schedule = schedule;
+          _nameController.text = schedule.name;
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading schedule: $e')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final scheduleService = context.watch<ScheduleService>();
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-    return StreamBuilder<DocumentSnapshot>(
-      stream: scheduleService.getScheduleStream(scheduleId),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (snapshot.hasError) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: Text('Error loading schedule.')),
-          );
-        }
+    if (_schedule == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Schedule Details')),
+        body: const Center(child: Text('Schedule not found')),
+      );
+    }
 
-        final schedule = Schedule.fromFirestore(snapshot.data!);
-
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(schedule.name),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () =>
-                    context.go('/instructor/schedules/${schedule.id}/edit'),
-                tooltip: 'Edit Schedule',
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _confirmDelete(context, schedule),
-                tooltip: 'Delete Schedule',
-              ),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Schedule Settings'),
+        actions: [
+          TextButton(
+            onPressed: _saveChanges,
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
-          body: ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
-              _CoreDetailsCard(schedule: schedule),
-              const SizedBox(height: 16),
-              _WeeklyHoursCard(schedule: schedule),
-              const SizedBox(height: 16),
-              _DateOverridesCard(schedule: schedule),
-            ],
-          ),
-        );
-      },
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          _buildNameAndDefaultSection(),
+          const SizedBox(height: 24),
+          _buildAvailabilitySection(),
+        ],
+      ),
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, Schedule schedule) async {
-    if (schedule.isDefault) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot delete the default schedule.'),
-          backgroundColor: Colors.red,
+  Widget _buildNameAndDefaultSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Schedule Settings',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Schedule Name',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: SwitchListTile(
+                    title: const Text('Default'),
+                    subtitle: const Text('Use for new bookings'),
+                    value: _schedule!.isDefault,
+                    onChanged: (value) {
+                      setState(() {
+                        _schedule = Schedule(
+                          id: _schedule!.id,
+                          instructorId: _schedule!.instructorId,
+                          name: _schedule!.name,
+                          isDefault: value,
+                          timezone: _schedule!.timezone,
+                          weeklyAvailability: _schedule!.weeklyAvailability,
+                          specificDateAvailability: _schedule!.specificDateAvailability,
+                          holidays: _schedule!.holidays,
+                        );
+                      });
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAvailabilitySection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Availability Settings',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _AvailabilityOption(
+              icon: Icons.schedule,
+              title: 'Weekly Hours',
+              subtitle: 'Set your regular weekly availability',
+              onTap: () => _showWeeklyHours(),
+            ),
+            const Divider(),
+            _AvailabilityOption(
+              icon: Icons.calendar_today,
+              title: 'Specific Dates',
+              subtitle: 'Override availability for specific dates',
+              onTap: () => _showSpecificDates(),
+            ),
+            const Divider(),
+            _AvailabilityOption(
+              icon: Icons.beach_access,
+              title: 'Holidays',
+              subtitle: 'Mark periods when you are unavailable',
+              onTap: () => _showHolidays(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showWeeklyHours() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.9,
+        child: WeeklyHoursForm(scheduleId: widget.scheduleId),
+      ),
+    );
+  }
+
+  void _showSpecificDates() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.9,
+        child: DateOverrideForm(scheduleId: widget.scheduleId),
+      ),
+    );
+  }
+
+  void _showHolidays() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.9,
+        child: HolidaysForm(scheduleId: widget.scheduleId),
+      ),
+    );
+  }
+
+  Future<void> _saveChanges() async {
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Schedule name cannot be empty')),
       );
       return;
     }
 
-    final bool? confirmed = await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirm Deletion'),
-        content: const Text('Are you sure you want to delete this schedule?'),
+    try {
+      final updatedSchedule = Schedule(
+        id: _schedule!.id,
+        instructorId: _schedule!.instructorId,
+        name: _nameController.text.trim(),
+        isDefault: _schedule!.isDefault,
+        timezone: _schedule!.timezone,
+        weeklyAvailability: _schedule!.weeklyAvailability,
+        specificDateAvailability: _schedule!.specificDateAvailability,
+        holidays: _schedule!.holidays,
+      );
+
+      if (_schedule!.isDefault) {
+        await context.read<ScheduleService>().setDefaultSchedule(
+          _schedule!.instructorId,
+          _schedule!.id,
+          true,
+        );
+      }
+
+      await context.read<ScheduleService>().updateSchedule(
+        _schedule!.id,
+        updatedSchedule.toMap(),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Schedule updated successfully')),
+      );
+
+      context.pop();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating schedule: $e')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+}
+
+class _AvailabilityOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _AvailabilityOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap,
+      contentPadding: EdgeInsets.zero,
+    );
+  }
+}
+
+class HolidaysForm extends StatefulWidget {
+  final String scheduleId;
+
+  const HolidaysForm({super.key, required this.scheduleId});
+
+  @override
+  State<HolidaysForm> createState() => _HolidaysFormState();
+}
+
+class _HolidaysFormState extends State<HolidaysForm> {
+  final List<Map<String, String>> _holidays = [];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Holidays'),
         actions: [
           TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(ctx).pop(false),
-          ),
-          TextButton(
-            child: const Text('Delete'),
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: _saveHolidays,
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await context.read<ScheduleService>().deleteSchedule(schedule.id);
-        context.pop(); // Go back after deletion
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Schedule deleted successfully.')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error deleting schedule: $e')));
-      }
-    }
-  }
-}
-
-class _CoreDetailsCard extends StatelessWidget {
-  final Schedule schedule;
-  const _CoreDetailsCard({required this.schedule});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Core Details', style: theme.textTheme.titleLarge),
-            const Divider(height: 20),
-            SwitchListTile(
-              title: const Text('Default Schedule'),
-              subtitle: const Text('This is your main schedule'),
-              value: schedule.isDefault,
-              onChanged: (isDefault) => _toggleDefault(context, isDefault),
-              secondary: const Icon(Icons.star),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _holidays.length,
+                itemBuilder: (context, index) {
+                  final holiday = _holidays[index];
+                  return Card(
+                    child: ListTile(
+                      title: Text(holiday['name'] ?? ''),
+                      subtitle: Text(
+                        '${holiday['startDate']} - ${holiday['endDate']}',
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          setState(() {
+                            _holidays.removeAt(index);
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.public),
-              title: const Text('Timezone'),
-              subtitle: Text(schedule.timezone),
-              onTap: () =>
-                  context.go('/instructor/schedules/${schedule.id}/timezone'),
+            ElevatedButton.icon(
+              onPressed: _addHoliday,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Holiday'),
             ),
           ],
         ),
@@ -147,226 +354,20 @@ class _CoreDetailsCard extends StatelessWidget {
     );
   }
 
-  Future<void> _toggleDefault(BuildContext context, bool isDefault) async {
-    final scheduleService = context.read<ScheduleService>();
-    try {
-      await scheduleService.setDefaultSchedule(
-        schedule.instructorId,
-        schedule.id,
-        isDefault,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Default schedule updated.')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error updating default: $e')));
-    }
-  }
-}
-
-class _WeeklyHoursCard extends StatelessWidget {
-  final Schedule schedule;
-  const _WeeklyHoursCard({required this.schedule});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Weekly Hours', style: theme.textTheme.titleLarge),
-                IconButton(
-                  icon: const Icon(Icons.edit_calendar_outlined),
-                  onPressed: () =>
-                      context.go('/instructor/schedules/${schedule.id}/hours'),
-                ),
-              ],
-            ),
-            const Divider(height: 20),
-            for (var day in [
-              'Monday',
-              'Tuesday',
-              'Wednesday',
-              'Thursday',
-              'Friday',
-              'Saturday',
-              'Sunday',
-            ])
-              _buildDayRow(theme, day, schedule.availableDays.contains(day)),
-          ],
-        ),
-      ),
-    );
+  void _addHoliday() {
+    // This would open a dialog to add a new holiday period
+    // For now, adding a placeholder
+    setState(() {
+      _holidays.add({
+        'name': 'Holiday ${_holidays.length + 1}',
+        'startDate': DateTime.now().toString().split(' ')[0],
+        'endDate': DateTime.now().add(const Duration(days: 1)).toString().split(' ')[0],
+      });
+    });
   }
 
-  Widget _buildDayRow(ThemeData theme, String day, bool isAvailable) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(day, style: theme.textTheme.titleMedium),
-          ),
-          Expanded(
-            child: Text(
-              isAvailable ? 'Available' : 'Unavailable',
-              style: TextStyle(color: isAvailable ? Colors.green : Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DateOverridesCard extends StatelessWidget {
-  final Schedule schedule;
-  const _DateOverridesCard({required this.schedule});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheduleService = context.watch<ScheduleService>();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Date Overrides', style: theme.textTheme.titleLarge),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () => _showAddOverrideDialog(context, schedule.id),
-                ),
-              ],
-            ),
-            const Divider(height: 20),
-            StreamBuilder<QuerySnapshot>(
-              stream: scheduleService.getOverridesStream(schedule.id),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const CircularProgressIndicator();
-                if (snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('No overrides defined.'));
-                }
-                return Column(
-                  children: snapshot.data!.docs.map((doc) {
-                    final override = AvailabilityOverride.fromFirestore(doc);
-                    return _buildOverrideTile(context, theme, override);
-                  }).toList(),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOverrideTile(
-    BuildContext context,
-    ThemeData theme,
-    AvailabilityOverride override,
-  ) {
-    final isExclusion = override.type == OverrideType.exclusion;
-    String dateRange = DateFormat.yMMMd().format(override.startDate);
-    if (override.startDate != override.endDate) {
-      dateRange += ' - ${DateFormat.yMMMd().format(override.endDate)}';
-    }
-
-    return ListTile(
-      title: Text(dateRange),
-      subtitle: Text(
-        isExclusion
-            ? 'Unavailable'
-            : 'Available: ${override.timeSlots.map((s) => '${s["startTime"]}-${s["endTime"]}').join(', ')}',
-        style: TextStyle(color: isExclusion ? Colors.red : Colors.green),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () =>
-                _showEditOverrideDialog(context, schedule.id, override),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () => _deleteOverride(context, override.id),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddOverrideDialog(BuildContext context, String scheduleId) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add Override'),
-        content: DateOverrideForm(
-          onSubmit: (newOverride) {
-            final scheduleService = context.read<ScheduleService>();
-            final overrideWithId = AvailabilityOverride(
-              id: '',
-              scheduleId: scheduleId,
-              startDate: newOverride.startDate,
-              endDate: newOverride.endDate,
-              type: newOverride.type,
-              timeSlots: newOverride.timeSlots,
-            );
-            scheduleService.createOverride(overrideWithId.toMap());
-            Navigator.of(ctx).pop();
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showEditOverrideDialog(
-    BuildContext context,
-    String scheduleId,
-    AvailabilityOverride override,
-  ) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Edit Override'),
-        content: DateOverrideForm(
-          override: override,
-          onSubmit: (updatedOverride) {
-            final scheduleService = context.read<ScheduleService>();
-            scheduleService.updateOverride(
-                override.id, updatedOverride.toMap());
-            Navigator.of(ctx).pop();
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _deleteOverride(BuildContext context, String overrideId) async {
-    try {
-      await context.read<ScheduleService>().deleteOverride(overrideId);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Override deleted.')));
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error deleting override: $e')));
-    }
+  void _saveHolidays() {
+    // Implementation to save holidays to the schedule
+    Navigator.of(context).pop();
   }
 }

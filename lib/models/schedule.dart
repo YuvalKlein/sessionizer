@@ -8,6 +8,8 @@ class Schedule {
   final bool isDefault;
   final String timezone;
   final Map<String, dynamic>? weeklyAvailability;
+  final Map<String, dynamic>? specificDateAvailability; // For specific date overrides
+  final Map<String, dynamic>? holidays; // For holiday/unavailable periods
 
   Schedule({
     required this.id,
@@ -16,6 +18,8 @@ class Schedule {
     required this.isDefault,
     required this.timezone,
     this.weeklyAvailability,
+    this.specificDateAvailability,
+    this.holidays,
   });
 
   factory Schedule.fromFirestore(DocumentSnapshot doc) {
@@ -27,6 +31,8 @@ class Schedule {
       isDefault: data['isDefault'] ?? false,
       timezone: data['timezone'] ?? '',
       weeklyAvailability: data['weeklyAvailability'] as Map<String, dynamic>?,
+      specificDateAvailability: data['specificDateAvailability'] as Map<String, dynamic>?,
+      holidays: data['holidays'] as Map<String, dynamic>?,
     );
   }
 
@@ -78,6 +84,8 @@ class Schedule {
       'isDefault': isDefault,
       'timezone': timezone,
       'weeklyAvailability': weeklyAvailability,
+      'specificDateAvailability': specificDateAvailability,
+      'holidays': holidays,
     };
   }
 }

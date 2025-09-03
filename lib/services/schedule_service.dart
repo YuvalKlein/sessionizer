@@ -63,6 +63,23 @@ class ScheduleService {
     await batch.commit();
   }
 
+  Future<String> duplicateSchedule(String scheduleId) async {
+    final originalDoc = await _firestore.collection('schedules').doc(scheduleId).get();
+    if (!originalDoc.exists) {
+      throw Exception('Schedule not found');
+    }
+
+    final originalData = originalDoc.data() as Map<String, dynamic>;
+    final duplicatedData = Map<String, dynamic>.from(originalData);
+    
+    // Modify the name to indicate it's a copy
+    duplicatedData['name'] = '${originalData['name']} (Copy)';
+    duplicatedData['isDefault'] = false; // Copies should never be default
+
+    final newDocRef = await _firestore.collection('schedules').add(duplicatedData);
+    return newDocRef.id;
+  }
+
   Stream<QuerySnapshot> getOverridesStream(String scheduleId) {
     return _firestore
         .collection('availability_overrides')
