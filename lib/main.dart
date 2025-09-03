@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
         ),
         Provider<UserService>(create: (_) => UserService()),
         Provider<ScheduleService>(create: (_) => ScheduleService()),
-        Provider<BookingService>(create: (_) => BookingService()),
+        ChangeNotifierProvider<BookingService>(create: (_) => BookingService()),
         Provider<SessionService>(
           create: (_) => SessionService(FirebaseFirestore.instance),
         ),
