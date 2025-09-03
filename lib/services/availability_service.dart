@@ -32,7 +32,7 @@ class AvailabilityService with ChangeNotifier {
     required DateTime endDate,
     String? sessionTypeId,
     List<String>? locationIds,
-    int slotDurationMinutes = 60,
+    int? slotDurationMinutes,
   }) async {
     debugPrint('=== AVAILABILITY SERVICE CALLED ===');
     debugPrint('Instructor ID: $instructorId');
@@ -205,7 +205,7 @@ class AvailabilityService with ChangeNotifier {
         sessionType: sessionType,
         schedule: schedule,
         existingBookings: existingBookings,
-        slotDurationMinutes: slotDurationMinutes ?? schedulableSession.slotIntervalMinutes,
+        slotDurationMinutes: slotDurationMinutes,
       );
 
       allSlots.addAll(slots);
@@ -221,12 +221,13 @@ class AvailabilityService with ChangeNotifier {
     required SessionType sessionType,
     required Schedule schedule,
     required List<Booking> existingBookings,
-    required int slotDurationMinutes,
+    int? slotDurationMinutes,
   }) {
     final slots = <AvailabilitySlot>[];
     final dayOfWeek = _getDayOfWeek(date);
     final availableRanges = _getAvailableRangesForDay(date, dayOfWeek, schedule);
     final effectiveDuration = schedulableSession.getEffectiveDuration(sessionType.duration);
+    final actualSlotInterval = slotDurationMinutes ?? schedulableSession.slotIntervalMinutes;
 
     for (final range in availableRanges) {
       var currentTime = range.start;
@@ -234,7 +235,7 @@ class AvailabilityService with ChangeNotifier {
       while (currentTime.add(Duration(minutes: effectiveDuration)).isBefore(range.end) ||
              currentTime.add(Duration(minutes: effectiveDuration)) == range.end) {
         
-        final slotEndTime = currentTime.add(Duration(minutes: slotDurationMinutes));
+        final slotEndTime = currentTime.add(Duration(minutes: actualSlotInterval));
         
         final canAccommodate = schedulableSession.canAccommodateTimeSlot(
           currentTime, slotEndTime, sessionType.duration);
@@ -275,7 +276,7 @@ class AvailabilityService with ChangeNotifier {
           conflictReason: conflictReason,
         ));
 
-        currentTime = currentTime.add(Duration(minutes: slotDurationMinutes));
+        currentTime = currentTime.add(Duration(minutes: actualSlotInterval));
       }
     }
 
