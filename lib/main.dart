@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
         ),
         Provider<SchedulableSessionService>(create: (_) => SchedulableSessionService()),
         Provider<SessionTypeService>(create: (_) => SessionTypeService()),
-        Provider<AvailabilityService>(
+        ChangeNotifierProvider<AvailabilityService>(
           create: (context) => AvailabilityService(
             scheduleService: context.read<ScheduleService>(),
             schedulableSessionService: context.read<SchedulableSessionService>(),

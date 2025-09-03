@@ -131,7 +131,8 @@ class _AvailabilityDemoScreenState extends State<AvailabilityDemoScreen> {
     }
 
     if (_error != null) {
-      return Center(
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
