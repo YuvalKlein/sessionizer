@@ -189,7 +189,7 @@ class AvailabilityService with ChangeNotifier {
     required DateTime date,
     required List<SchedulableSession> schedulableSessions,
     required List<Booking> existingBookings,
-    required int slotDurationMinutes,
+    int? slotDurationMinutes,
   }) async {
     final allSlots = <AvailabilitySlot>[];
 
