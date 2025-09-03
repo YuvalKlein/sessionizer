@@ -353,10 +353,56 @@ class AvailabilityService with ChangeNotifier {
   }
 
   DateTime _parseTimeOnDate(DateTime date, String timeString) {
-    final timeParts = timeString.split(':');
-    final hour = int.parse(timeParts[0]);
-    final minute = int.parse(timeParts[1]);
-    return DateTime(date.year, date.month, date.day, hour, minute);
+    debugPrint('Parsing time: "$timeString"');
+    
+    // Handle different time formats
+    String cleanTime = timeString.trim();
+    
+    // If it's in "HH:MM AM/PM" format, convert to 24-hour
+    if (cleanTime.contains('AM') || cleanTime.contains('PM')) {
+      final isPM = cleanTime.contains('PM');
+      final timeWithoutAmPm = cleanTime.replaceAll(RegExp(r'\s*(AM|PM)'), '').trim();
+      
+      if (timeWithoutAmPm.contains(':')) {
+        final parts = timeWithoutAmPm.split(':');
+        var hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        
+        // Convert to 24-hour format
+        if (isPM && hour != 12) {
+          hour += 12;
+        } else if (!isPM && hour == 12) {
+          hour = 0;
+        }
+        
+        debugPrint('Converted "$timeString" to $hour:$minute');
+        return DateTime(date.year, date.month, date.day, hour, minute);
+      } else {
+        // Just hour with AM/PM
+        var hour = int.parse(timeWithoutAmPm);
+        if (isPM && hour != 12) {
+          hour += 12;
+        } else if (!isPM && hour == 12) {
+          hour = 0;
+        }
+        debugPrint('Converted "$timeString" to $hour:00');
+        return DateTime(date.year, date.month, date.day, hour, 0);
+      }
+    }
+    
+    // Handle "HH:MM" format
+    if (cleanTime.contains(':')) {
+      final timeParts = cleanTime.split(':');
+      final hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+      debugPrint('Parsed "$timeString" as $hour:$minute');
+      return DateTime(date.year, date.month, date.day, hour, minute);
+    }
+    
+    // Handle just hour (assume minutes = 0)
+    final hour = int.parse(cleanTime);
+    debugPrint('Parsed "$timeString" as $hour:00');
+    return DateTime(date.year, date.month, date.day, hour, 0);
   }
 
   String _getDayOfWeek(DateTime date) {
