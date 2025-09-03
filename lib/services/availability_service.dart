@@ -42,7 +42,10 @@ class AvailabilityService with ChangeNotifier {
         locationIds,
       );
 
+      debugPrint('Found ${schedulableSessions.length} schedulable sessions for instructor $instructorId');
+
       if (schedulableSessions.isEmpty) {
+        debugPrint('No schedulable sessions found - returning empty availability');
         return _generateEmptyAvailability(startDate, endDate);
       }
 
@@ -297,10 +300,13 @@ class AvailabilityService with ChangeNotifier {
   List<TimeRange> _getAvailableRangesForDay(DateTime date, String dayOfWeek, Schedule schedule) {
     final ranges = <TimeRange>[];
 
+    debugPrint('Getting availability for $dayOfWeek (${date.toString().split(' ')[0]})');
+
     // Check holidays first (these override everything)
     if (schedule.holidays != null) {
       final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       if (schedule.holidays!.containsKey(dateKey)) {
+        debugPrint('Date $dateKey is a holiday - no availability');
         return []; // No availability on holidays
       }
     }
@@ -325,16 +331,21 @@ class AvailabilityService with ChangeNotifier {
     // Fall back to weekly availability
     if (schedule.weeklyAvailability != null && schedule.weeklyAvailability!.containsKey(dayOfWeek)) {
       final daySlots = schedule.weeklyAvailability![dayOfWeek] as List?;
+      debugPrint('Found ${daySlots?.length ?? 0} weekly slots for $dayOfWeek');
       if (daySlots != null) {
         for (final slot in daySlots) {
           final slotMap = slot as Map<String, dynamic>;
           final startTime = _parseTimeOnDate(date, slotMap['startTime'] as String);
           final endTime = _parseTimeOnDate(date, slotMap['endTime'] as String);
           ranges.add(TimeRange(start: startTime, end: endTime));
+          debugPrint('Added weekly slot: ${slotMap['startTime']} - ${slotMap['endTime']}');
         }
       }
+    } else {
+      debugPrint('No weekly availability found for $dayOfWeek');
     }
 
+    debugPrint('Total ranges for $dayOfWeek: ${ranges.length}');
     return ranges;
   }
 

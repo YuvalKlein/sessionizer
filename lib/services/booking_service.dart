@@ -29,20 +29,28 @@ class BookingService with ChangeNotifier {
     String instructorId,
     DateTime date,
   ) async {
-    final startOfDay = DateTime(date.year, date.month, date.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
-
+    // Temporarily simplified query to avoid Firestore index requirement
+    // TODO: Create composite index for instructorId + startTime range queries
     final snapshot = await _firestore
         .collection('bookings')
         .where('instructorId', isEqualTo: instructorId)
-        .where(
-          'startTime',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
-        )
-        .where('startTime', isLessThan: Timestamp.fromDate(endOfDay))
         .get();
 
-    return snapshot.docs.map((doc) => Booking.fromFirestore(doc)).toList();
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+
+    // Filter by date in memory instead of Firestore query
+    return snapshot.docs
+        .map((doc) => Booking.fromFirestore(doc))
+        .where((booking) {
+          final bookingDate = DateTime(
+            booking.startTime.year,
+            booking.startTime.month,
+            booking.startTime.day,
+          );
+          return bookingDate.isAtSameMomentAs(startOfDay);
+        })
+        .toList();
   }
 
   // Create a new booking
