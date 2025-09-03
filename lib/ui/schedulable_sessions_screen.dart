@@ -27,6 +27,10 @@ class SchedulableSessionsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Schedulable Sessions'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/instructor/manage-sessions'),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),

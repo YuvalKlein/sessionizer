@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:myapp/models/session_type.dart';
 import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/session_type_service.dart';
@@ -23,6 +24,10 @@ class _SessionTypesScreenState extends State<SessionTypesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Session Types'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/instructor/manage-sessions'),
+        ),
       ),
       body: StreamBuilder<List<SessionType>>(
         stream: _sessionTypeService.getSessionTypes(instructorId),

@@ -22,7 +22,13 @@ class SchedulesListScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Schedules')),
+      appBar: AppBar(
+        title: const Text('My Schedules'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/instructor/manage-sessions'),
+        ),
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: scheduleService.getSchedulesStream(instructorId),
         builder: (context, snapshot) {

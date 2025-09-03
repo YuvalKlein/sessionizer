@@ -46,7 +46,6 @@ class SchedulableSessionService {
     return _firestore
         .collection('schedulable_sessions')
         .where('instructorId', isEqualTo: instructorId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => SchedulableSession.fromFirestore(doc))
@@ -59,7 +58,6 @@ class SchedulableSessionService {
         .collection('schedulable_sessions')
         .where('instructorId', isEqualTo: instructorId)
         .where('isActive', isEqualTo: true)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => SchedulableSession.fromFirestore(doc))
