@@ -83,7 +83,7 @@ class AvailabilityService with ChangeNotifier {
     required DateTime requestedEndTime,
   }) async {
     try {
-      final schedulableSession = await _schedulableSessionService.get(schedulableSessionId);
+      final schedulableSession = await _schedulableSessionService.getSchedulableSession(schedulableSessionId);
       if (schedulableSession == null || !schedulableSession.isActive) {
         return false;
       }
@@ -147,12 +147,7 @@ class AvailabilityService with ChangeNotifier {
     String? sessionTypeId, 
     List<String>? locationIds,
   ) async {
-    final allSessions = await _schedulableSessionService.getActiveSchedulableSessionsStream(instructorId).first;
-    
-    var sessions = allSessions.docs
-        .map((doc) => SchedulableSession.fromFirestore(doc))
-        .where((session) => session.isActive)
-        .toList();
+    var sessions = await _schedulableSessionService.getActiveSchedulableSessionsStream(instructorId).first;
 
     if (sessionTypeId != null) {
       sessions = sessions.where((s) => s.sessionTypeId == sessionTypeId).toList();
