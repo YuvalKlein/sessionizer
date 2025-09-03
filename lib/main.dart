@@ -11,9 +11,12 @@ import 'package:myapp/services/user_service.dart';
 import 'package:myapp/services/schedule_service.dart';
 import 'package:myapp/services/booking_service.dart';
 import 'package:myapp/services/session_service.dart';
+import 'package:myapp/services/schedulable_session_service.dart';
+import 'package:myapp/services/session_type_service.dart';
 import 'package:myapp/router.dart';
 import 'package:myapp/view_models/schedule_view_model.dart';
 import 'package:myapp/view_models/session_view_model.dart';
+import 'package:myapp/view_models/schedulable_session_view_model.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -56,12 +59,17 @@ class MyApp extends StatelessWidget {
         Provider<SessionService>(
           create: (_) => SessionService(FirebaseFirestore.instance),
         ),
+        Provider<SchedulableSessionService>(create: (_) => SchedulableSessionService()),
+        Provider<SessionTypeService>(create: (_) => SessionTypeService()),
         ChangeNotifierProvider<ScheduleViewModel>(
           create: (context) =>
               ScheduleViewModel(context.read<ScheduleService>()),
         ),
         ChangeNotifierProvider<SessionViewModel>(
           create: (context) => SessionViewModel(context.read<SessionService>()),
+        ),
+        ChangeNotifierProvider<SchedulableSessionViewModel>(
+          create: (context) => SchedulableSessionViewModel(context.read<SchedulableSessionService>()),
         ),
         ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
         ProxyProvider<AuthService, GoRouter>(

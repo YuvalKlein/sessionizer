@@ -11,6 +11,8 @@ import 'package:myapp/ui/client_dashboard_screen.dart';
 import 'package:myapp/ui/booking_screen.dart';
 import 'package:myapp/ui/schedules_list_screen.dart';
 import 'package:myapp/ui/schedule_detail_screen.dart';
+import 'package:myapp/ui/schedulable_sessions_screen.dart';
+import 'package:myapp/ui/schedulable_session_form_screen.dart';
 import 'package:myapp/ui/instructor/schedule_form_screen.dart';
 import 'package:myapp/ui/instructor/manage_sessions_screen.dart';
 import 'package:myapp/ui/session_types_screen.dart';
@@ -90,6 +92,34 @@ class AppRouter {
                     builder: (BuildContext context, GoRouterState state) {
                       final scheduleId = state.pathParameters['scheduleId']!;
                       return ScheduleDetailScreen(scheduleId: scheduleId);
+                    },
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: 'schedulable-sessions',
+                builder: (BuildContext context, GoRouterState state) {
+                  return const SchedulableSessionsScreen();
+                },
+                routes: [
+                  GoRoute(
+                    path: 'new',
+                    builder: (BuildContext context, GoRouterState state) {
+                      return const SchedulableSessionFormScreen();
+                    },
+                  ),
+                  GoRoute(
+                    path: ':schedulableSessionId',
+                    builder: (BuildContext context, GoRouterState state) {
+                      final schedulableSessionId = state.pathParameters['schedulableSessionId']!;
+                      return SchedulableSessionFormScreen(schedulableSessionId: schedulableSessionId);
+                    },
+                  ),
+                  GoRoute(
+                    path: ':schedulableSessionId/edit',
+                    builder: (BuildContext context, GoRouterState state) {
+                      final schedulableSessionId = state.pathParameters['schedulableSessionId']!;
+                      return SchedulableSessionFormScreen(schedulableSessionId: schedulableSessionId);
                     },
                   ),
                 ],

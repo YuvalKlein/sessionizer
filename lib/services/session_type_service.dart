@@ -16,6 +16,17 @@ class SessionTypeService {
     });
   }
 
+  Stream<QuerySnapshot> getSessionTypesStream(String instructorId) {
+    return _sessionTypesCollection
+        .where('idInstructor', isEqualTo: instructorId)
+        .snapshots();
+  }
+
+  Future<SessionType?> getSessionType(String id) async {
+    final doc = await _sessionTypesCollection.doc(id).get();
+    return doc.exists ? SessionType.fromFirestore(doc) : null;
+  }
+
   Future<void> addSessionType(SessionType sessionType) {
     return _sessionTypesCollection.add(sessionType.toFirestore());
   }

@@ -35,6 +35,14 @@ class ManageSessionsScreen extends StatelessWidget {
             subtitle: 'Create, edit, and view your availability',
             onTap: () => context.go('/instructor/schedules'),
           ),
+          const SizedBox(height: 16),
+          _DashboardCard(
+            theme: theme,
+            icon: Icons.link,
+            title: 'Schedulable Sessions',
+            subtitle: 'Connect session types, locations, and schedules',
+            onTap: () => context.go('/instructor/schedulable-sessions'),
+          ),
         ],
       ),
     );
