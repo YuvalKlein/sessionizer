@@ -55,7 +55,7 @@ class _AvailabilityDemoScreenState extends State<AvailabilityDemoScreen> {
         instructorId: user.uid,
         startDate: startDate,
         endDate: endDate,
-        slotDurationMinutes: 60, // 1-hour slots
+        slotDurationMinutes: null, // Will use each schedulable session's interval
       );
 
       print('Got ${availability.length} days of availability');

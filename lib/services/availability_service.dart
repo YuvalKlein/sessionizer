@@ -205,7 +205,7 @@ class AvailabilityService with ChangeNotifier {
         sessionType: sessionType,
         schedule: schedule,
         existingBookings: existingBookings,
-        slotDurationMinutes: slotDurationMinutes,
+        slotDurationMinutes: slotDurationMinutes ?? schedulableSession.slotIntervalMinutes,
       );
 
       allSlots.addAll(slots);

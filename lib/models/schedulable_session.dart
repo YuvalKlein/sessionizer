@@ -18,6 +18,9 @@ class SchedulableSession {
   // Override Options
   final int? durationOverride; // override session type duration if needed
   
+  // Slot Configuration
+  final int slotIntervalMinutes; // how often slots are generated (5, 10, 15, 30, 60)
+  
   // Status & Metadata
   final bool isActive;
   final DateTime createdAt;
@@ -38,6 +41,7 @@ class SchedulableSession {
     this.maxDaysAhead = 7,
     this.minHoursAhead = 2,
     this.durationOverride,
+    this.slotIntervalMinutes = 60, // Default to hourly slots
     this.isActive = true,
     required this.createdAt,
     this.updatedAt,
@@ -58,6 +62,7 @@ class SchedulableSession {
       maxDaysAhead: data['maxDaysAhead'] ?? 7,
       minHoursAhead: data['minHoursAhead'] ?? 2,
       durationOverride: data['durationOverride'],
+      slotIntervalMinutes: data['slotIntervalMinutes'] ?? 60,
       isActive: data['isActive'] ?? true,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
@@ -77,6 +82,7 @@ class SchedulableSession {
       'maxDaysAhead': maxDaysAhead,
       'minHoursAhead': minHoursAhead,
       'durationOverride': durationOverride,
+      'slotIntervalMinutes': slotIntervalMinutes,
       'isActive': isActive,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
@@ -96,6 +102,7 @@ class SchedulableSession {
     int? maxDaysAhead,
     int? minHoursAhead,
     int? durationOverride,
+    int? slotIntervalMinutes,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -113,6 +120,7 @@ class SchedulableSession {
       maxDaysAhead: maxDaysAhead ?? this.maxDaysAhead,
       minHoursAhead: minHoursAhead ?? this.minHoursAhead,
       durationOverride: durationOverride ?? this.durationOverride,
+      slotIntervalMinutes: slotIntervalMinutes ?? this.slotIntervalMinutes,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),

@@ -35,6 +35,7 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
   int _bufferAfter = 10;
   int _maxDaysAhead = 7;
   int _minHoursAhead = 2;
+  int _slotIntervalMinutes = 60; // Default to hourly slots
   bool _isActive = true;
 
   // Data lists
@@ -119,6 +120,7 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
         _bufferAfter = schedulableSession.bufferAfter;
         _maxDaysAhead = schedulableSession.maxDaysAhead;
         _minHoursAhead = schedulableSession.minHoursAhead;
+        _slotIntervalMinutes = schedulableSession.slotIntervalMinutes;
         _isActive = schedulableSession.isActive;
         _notesController.text = schedulableSession.notes ?? '';
         _durationOverrideController.text = 
@@ -157,6 +159,8 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
             _buildLocationsSection(),
             const SizedBox(height: 24),
             _buildBufferSection(),
+            const SizedBox(height: 24),
+            _buildSlotIntervalSection(),
             const SizedBox(height: 24),
             _buildBookingConstraintsSection(),
             const SizedBox(height: 24),
@@ -371,6 +375,52 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
     );
   }
 
+  Widget _buildSlotIntervalSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Slot Interval',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'How often should booking slots be available?',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<int>(
+              value: _slotIntervalMinutes,
+              decoration: const InputDecoration(
+                labelText: 'Slot Interval',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 5, child: Text('Every 5 minutes')),
+                DropdownMenuItem(value: 10, child: Text('Every 10 minutes')),
+                DropdownMenuItem(value: 15, child: Text('Every 15 minutes')),
+                DropdownMenuItem(value: 30, child: Text('Every 30 minutes')),
+                DropdownMenuItem(value: 60, child: Text('Every hour')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _slotIntervalMinutes = value ?? 60;
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBookingConstraintsSection() {
     return Card(
       child: Padding(
@@ -542,6 +592,7 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
       durationOverride: _durationOverrideController.text.isNotEmpty
           ? int.tryParse(_durationOverrideController.text)
           : null,
+      slotIntervalMinutes: _slotIntervalMinutes,
       isActive: _isActive,
       createdAt: DateTime.now(),
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
