@@ -34,6 +34,9 @@ class AvailabilityService with ChangeNotifier {
     List<String>? locationIds,
     int slotDurationMinutes = 60,
   }) async {
+    debugPrint('=== AVAILABILITY SERVICE CALLED ===');
+    debugPrint('Instructor ID: $instructorId');
+    debugPrint('Date range: ${startDate.toString().split(' ')[0]} to ${endDate.toString().split(' ')[0]}');
     try {
       // Get all active schedulable sessions for instructor
       final schedulableSessions = await _getActiveSchedulableSessions(

@@ -25,6 +25,7 @@ class _AvailabilityDemoScreenState extends State<AvailabilityDemoScreen> {
   }
 
   Future<void> _loadAvailability() async {
+    print('=== LOADING AVAILABILITY ===');
     setState(() {
       _isLoading = true;
       _error = null;
@@ -35,7 +36,10 @@ class _AvailabilityDemoScreenState extends State<AvailabilityDemoScreen> {
       final availabilityService = context.read<AvailabilityService>();
       final user = authService.currentUser;
       
+      print('User: ${user?.uid}');
+      
       if (user == null) {
+        print('ERROR: User not authenticated');
         setState(() {
           _error = 'User not authenticated';
           _isLoading = false;
@@ -46,6 +50,7 @@ class _AvailabilityDemoScreenState extends State<AvailabilityDemoScreen> {
       final startDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
       final endDate = startDate.add(Duration(days: 7)); // Load week view
 
+      print('Calling availability service...');
       final availability = await availabilityService.getAvailabilityForDateRange(
         instructorId: user.uid,
         startDate: startDate,
@@ -53,6 +58,7 @@ class _AvailabilityDemoScreenState extends State<AvailabilityDemoScreen> {
         slotDurationMinutes: 60, // 1-hour slots
       );
 
+      print('Got ${availability.length} days of availability');
       setState(() {
         _availability = availability;
         _isLoading = false;
