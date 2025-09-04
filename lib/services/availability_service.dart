@@ -37,6 +37,7 @@ class AvailabilityService with ChangeNotifier {
     debugPrint('=== AVAILABILITY SERVICE CALLED ===');
     debugPrint('Instructor ID: $instructorId');
     debugPrint('Date range: ${startDate.toString().split(' ')[0]} to ${endDate.toString().split(' ')[0]}');
+    debugPrint('Slot Duration Minutes: $slotDurationMinutes');
     try {
       // Get all active schedulable sessions for instructor
       final schedulableSessions = await _getActiveSchedulableSessions(
@@ -46,6 +47,9 @@ class AvailabilityService with ChangeNotifier {
       );
 
       debugPrint('Found ${schedulableSessions.length} schedulable sessions for instructor $instructorId');
+      for (final session in schedulableSessions) {
+        debugPrint('Schedulable Session: ${session.id} - Type: ${session.sessionTypeId} - Schedule: ${session.scheduleId}');
+      }
 
       if (schedulableSessions.isEmpty) {
         debugPrint('No schedulable sessions found - returning empty availability');
@@ -229,6 +233,13 @@ class AvailabilityService with ChangeNotifier {
     final availableRanges = _getAvailableRangesForDay(date, dayOfWeek, schedule);
     final effectiveDuration = schedulableSession.getEffectiveDuration(sessionType.duration, sessionType.durationUnit);
     final actualSlotInterval = slotDurationMinutes ?? schedulableSession.slotIntervalMinutes;
+    
+    debugPrint('=== SLOT GENERATION DEBUG ===');
+    debugPrint('Session Type: ${sessionType.title}');
+    debugPrint('Duration: ${sessionType.duration} ${sessionType.durationUnit}');
+    debugPrint('Effective Duration: $effectiveDuration minutes');
+    debugPrint('Slot Interval: $actualSlotInterval minutes');
+    debugPrint('Available Ranges: ${availableRanges.length}');
 
     for (final range in availableRanges) {
       var currentTime = range.start;
