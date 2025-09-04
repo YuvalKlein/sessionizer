@@ -220,12 +220,10 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
           // Only enable days that are:
           // 1. Today or in the future
           // 2. Within the max booking window
-          // 3. At least minHoursAhead from now
           final isTodayOrFuture = day.isAfter(now.subtract(const Duration(days: 1)));
           final isWithinMaxDays = day.isBefore(lastBookableDay.add(const Duration(days: 1)));
-          final isAfterMinHours = day.isAfter(now.add(Duration(hours: schedulableSession?.minHoursAhead ?? 2)));
           
-          return isTodayOrFuture && isWithinMaxDays && isAfterMinHours;
+          return isTodayOrFuture && isWithinMaxDays;
         },
         onDaySelected: (selectedDay, focusedDay) {
           if (!isSameDay(_selectedDay, selectedDay)) {

@@ -156,10 +156,40 @@ class EnhancedBookingService with ChangeNotifier {
       }
       
       final scheduleData = scheduleDoc.data() as Map<String, dynamic>;
+      final weeklyAvailability = scheduleData['weeklyAvailability'] as Map<String, dynamic>?;
+      
+      if (weeklyAvailability == null) {
+        return {
+          'id': scheduleId,
+          'name': scheduleData['name'] ?? 'Schedule',
+          'availability': [],
+        };
+      }
+      
+      // Convert weekly availability to the format expected by _calculateAvailableSlots
+      final availability = <Map<String, dynamic>>[];
+      final weekdayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      final weekdayName = weekdayNames[date.weekday - 1];
+      
+      if (weeklyAvailability.containsKey(weekdayName)) {
+        final daySlots = weeklyAvailability[weekdayName] as List<dynamic>?;
+        if (daySlots != null && daySlots.isNotEmpty) {
+          // Convert the day slots to the expected format
+          for (final slot in daySlots) {
+            final slotMap = slot as Map<String, dynamic>;
+            availability.add({
+              'dayOfWeek': date.weekday,
+              'startTime': slotMap['startTime'] ?? '09:00',
+              'endTime': slotMap['endTime'] ?? '17:00',
+            });
+          }
+        }
+      }
+      
       return {
         'id': scheduleId,
         'name': scheduleData['name'] ?? 'Schedule',
-        'availability': scheduleData['availability'] ?? [],
+        'availability': availability,
       };
     } catch (e) {
       debugPrint('Error getting schedule: $e');
@@ -181,7 +211,8 @@ class EnhancedBookingService with ChangeNotifier {
     debugPrint('Schedule data: $schedule');
     
     // Get schedule availability for this day
-    final dayAvailability = schedule['availability']?.cast<Map<String, dynamic>>().firstWhere(
+    final availability = schedule['availability'] as List<Map<String, dynamic>>? ?? [];
+    final dayAvailability = availability.firstWhere(
       (avail) => avail['dayOfWeek'] == date.weekday,
       orElse: () => <String, dynamic>{},
     );
