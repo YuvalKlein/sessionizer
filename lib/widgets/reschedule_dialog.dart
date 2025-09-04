@@ -305,30 +305,32 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Container(
-                          height: 350,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: TableCalendar<Map<String, dynamic>>(
-                            firstDay: DateTime.now(),
-                            lastDay: DateTime.now().add(const Duration(days: 90)),
-                            focusedDay: _focusedDay,
-                            selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
-                            onDaySelected: (selectedDay, focusedDay) {
-                              setState(() {
-                                _selectedDate = selectedDay;
-                                _focusedDay = focusedDay;
-                                _selectedSlot = null;
-                              });
-                              _loadAvailableSlots();
-                            },
-                            onPageChanged: (focusedDay) {
-                              setState(() {
-                                _focusedDay = focusedDay;
-                              });
-                            },
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: TableCalendar<Map<String, dynamic>>(
+                              firstDay: DateTime.now(),
+                              lastDay: DateTime.now().add(const Duration(days: 90)),
+                              focusedDay: _focusedDay,
+                              selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
+                              onDaySelected: (selectedDay, focusedDay) {
+                                setState(() {
+                                  _selectedDate = selectedDay;
+                                  _focusedDay = focusedDay;
+                                  _selectedSlot = null;
+                                });
+                                _loadAvailableSlots();
+                              },
+                              onPageChanged: (focusedDay) {
+                                setState(() {
+                                  _focusedDay = focusedDay;
+                                });
+                              },
                             calendarBuilders: CalendarBuilders(
                               defaultBuilder: (context, day, focusedDay) {
                                 final isToday = isSameDay(day, DateTime.now());
@@ -363,6 +365,7 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
                                 );
                               },
                             ),
+                            ),
                           ),
                         ),
                       ],
@@ -383,13 +386,14 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Container(
-                          height: 350,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                            borderRadius: BorderRadius.circular(8),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: _buildSlotsList(),
                           ),
-                          child: _buildSlotsList(),
                         ),
                       ],
                     ),
