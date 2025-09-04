@@ -2,11 +2,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'package:myapp/services/user_service.dart';
 
 class AuthService with ChangeNotifier {
   final FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
   final GoogleSignIn _googleSignIn;
+  final UserService _userService;
   User? _user;
 
   AuthService(
@@ -14,7 +16,8 @@ class AuthService with ChangeNotifier {
     required FirebaseFirestore firestore,
     required GoogleSignIn googleSignIn,
   }) : _firestore = firestore,
-       _googleSignIn = googleSignIn {
+       _googleSignIn = googleSignIn,
+       _userService = UserService() {
     _firebaseAuth.authStateChanges().listen((user) {
       _user = user;
       notifyListeners();
@@ -58,11 +61,13 @@ class AuthService with ChangeNotifier {
     if (user != null) {
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
       if (!userDoc.exists) {
-        _firestore.collection('users').doc(user.uid).set({
-          'displayName': user.displayName,
-          'email': user.email,
-          'isInstructor': isInstructor,
-        });
+        await _userService.createUser(
+          user.uid,
+          user.email ?? '',
+          isInstructor,
+          name: user.displayName,
+          photoURL: user.photoURL,
+        );
       }
     }
 
@@ -83,11 +88,12 @@ class AuthService with ChangeNotifier {
       final user = result.user;
       if (user != null) {
         await user.updateDisplayName(displayName);
-        await _firestore.collection('users').doc(user.uid).set({
-          'name': displayName,
-          'email': email,
-          'isInstructor': isInstructor,
-        });
+        await _userService.createUser(
+          user.uid,
+          email,
+          isInstructor,
+          name: displayName,
+        );
       }
       return user;
     } on FirebaseAuthException {
