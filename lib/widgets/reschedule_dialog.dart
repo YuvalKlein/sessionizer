@@ -3,9 +3,11 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:myapp/models/booking.dart';
 import 'package:myapp/services/enhanced_booking_service.dart';
+import 'package:myapp/services/booking_service.dart';
 import 'package:myapp/services/session_type_service.dart';
 import 'package:myapp/services/location_service.dart';
 import 'package:myapp/models/session_type.dart';
+import 'package:myapp/models/schedulable_session.dart';
 
 class RescheduleDialog extends StatefulWidget {
   final Booking booking;
@@ -22,7 +24,8 @@ class RescheduleDialog extends StatefulWidget {
 }
 
 class _RescheduleDialogState extends State<RescheduleDialog> {
-  final EnhancedBookingService _bookingService = EnhancedBookingService();
+  final EnhancedBookingService _enhancedBookingService = EnhancedBookingService();
+  final BookingService _bookingService = BookingService();
   final SessionTypeService _sessionTypeService = SessionTypeService();
   final LocationService _locationService = LocationService();
   
@@ -73,11 +76,31 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
     });
 
     try {
-      final slots = await _bookingService.getAvailableSlots(
-        widget.instructorId,
-        _selectedDate,
-        _sessionType!,
-        _location?['id'],
+      // Get schedulable sessions for the instructor
+      final schedulableSessions = await _enhancedBookingService.getSchedulableSessions(widget.instructorId);
+      
+      // Find a matching schedulable session for this session type and location
+      SchedulableSession? matchingSession;
+      for (final session in schedulableSessions) {
+        if (session.sessionTypeId == widget.booking.sessionTypeId) {
+          if (widget.booking.locationId == null || session.locationId == widget.booking.locationId) {
+            matchingSession = session;
+            break;
+          }
+        }
+      }
+
+      if (matchingSession == null) {
+        setState(() {
+          _error = 'No matching schedulable session found';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final slots = await _enhancedBookingService.getAvailableSlots(
+        schedulableSessionId: matchingSession.id!,
+        date: _selectedDate,
       );
       
       setState(() {
