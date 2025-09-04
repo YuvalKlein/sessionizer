@@ -34,13 +34,6 @@ class InstructorDashboardScreen extends StatelessWidget {
           ),
           _DashboardCard(
             theme: theme,
-            icon: Icons.schedule,
-            title: 'View Schedule',
-            subtitle: 'See your upcoming schedule.',
-            onTap: () => context.go('/instructor/schedules'),
-          ),
-          _DashboardCard(
-            theme: theme,
             icon: Icons.calendar_today,
             title: 'Manage Bookings',
             subtitle: 'View and manage client bookings.',
