@@ -98,15 +98,17 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
               );
             }
 
-            return Column(
-              children: [
-                _buildSchedulableSessionSelector(viewModel),
-                if (viewModel.selectedSchedulableSession != null) ...[
-                  const Divider(),
-                  _buildCalendar(viewModel),
-                  _buildAvailableSlots(viewModel),
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildSchedulableSessionSelector(viewModel),
+                  if (viewModel.selectedSchedulableSession != null) ...[
+                    const Divider(),
+                    _buildCalendar(viewModel),
+                    _buildAvailableSlots(viewModel),
+                  ],
                 ],
-              ],
+              ),
             );
           },
         ),
@@ -199,7 +201,8 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
 
   Widget _buildAvailableSlots(EnhancedBookingViewModel viewModel) {
     if (_selectedDay == null) {
-      return const Expanded(
+      return const SizedBox(
+        height: 200,
         child: Center(
           child: Text('Select a date to see available slots'),
         ),
@@ -207,13 +210,15 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
     }
 
     if (viewModel.isLoading) {
-      return const Expanded(
+      return const SizedBox(
+        height: 200,
         child: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (viewModel.availableSlots.isEmpty) {
-      return Expanded(
+      return SizedBox(
+        height: 200,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -237,31 +242,21 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
       );
     }
 
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Available Slots - ${DateFormat.yMMMd().format(_selectedDay!)}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'Available Slots - ${DateFormat.yMMMd().format(_selectedDay!)}',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
           ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: viewModel.availableSlots.length,
-              itemBuilder: (context, index) {
-                final slot = viewModel.availableSlots[index];
-                return _buildSlotCard(slot, viewModel);
-              },
-            ),
-          ),
-        ],
-      ),
+        ),
+        ...viewModel.availableSlots.map((slot) => _buildSlotCard(slot, viewModel)),
+        const SizedBox(height: 16), // Add some bottom padding
+      ],
     );
   }
 
