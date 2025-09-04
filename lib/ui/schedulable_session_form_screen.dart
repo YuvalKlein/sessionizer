@@ -162,16 +162,6 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
     });
   }
 
-  void _tryAutoGenerateTitle() {
-    // Only auto-generate if we're creating a new session (not editing) and title is empty
-    if (!_isEditing && _title.isEmpty && 
-        _selectedSessionTypeId != null && 
-        _selectedScheduleId != null && 
-        _selectedLocationIds.isNotEmpty) {
-      _generateAutoTitle();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -197,8 +187,10 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
           children: [
             _buildSessionTypeSection(),
             const SizedBox(height: 24),
-            _buildTitleSection(),
-            const SizedBox(height: 24),
+            if (_isEditing) ...[
+              _buildTitleSection(),
+              const SizedBox(height: 24),
+            ],
             _buildScheduleSection(),
             const SizedBox(height: 24),
             _buildLocationsSection(),
@@ -248,7 +240,6 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
                 setState(() {
                   _selectedSessionTypeId = value;
                 });
-                _tryAutoGenerateTitle();
               },
               validator: (value) => value == null ? 'Please select a session type' : null,
             ),
@@ -342,7 +333,6 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
                 setState(() {
                   _selectedScheduleId = value;
                 });
-                _tryAutoGenerateTitle();
               },
               validator: (value) => value == null ? 'Please select a schedule' : null,
             ),
@@ -385,7 +375,6 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
                       _selectedLocationIds.remove(location);
                     }
                   });
-                  _tryAutoGenerateTitle();
                 },
                 contentPadding: EdgeInsets.zero,
               );
@@ -681,6 +670,20 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
 
     final viewModel = context.read<SchedulableSessionViewModel>();
 
+    // Auto-generate title for new sessions
+    String finalTitle = _title;
+    if (!_isEditing) {
+      final sessionType = _sessionTypes.firstWhere((st) => st.id == _selectedSessionTypeId);
+      final schedule = _schedules.firstWhere((s) => s.id == _selectedScheduleId);
+      final locationName = _selectedLocationIds.first; // TODO: Get actual location name from location service
+      
+      finalTitle = SchedulableSession.generateTitle(
+        sessionTypeTitle: sessionType.title,
+        locationName: locationName,
+        scheduleName: schedule.name,
+      );
+    }
+
     final schedulableSession = SchedulableSession(
       id: _isEditing ? widget.schedulableSessionId : null,
       instructorId: user.uid,
@@ -695,7 +698,7 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
           ? int.tryParse(_durationOverrideController.text)
           : null,
       slotIntervalMinutes: _slotIntervalMinutes,
-      title: _title,
+      title: finalTitle,
       isActive: _isActive,
       createdAt: DateTime.now(),
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
