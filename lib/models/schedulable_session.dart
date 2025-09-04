@@ -132,13 +132,23 @@ class SchedulableSession {
   // Helper methods for business logic
   
   /// Get the effective duration (override or from session type)
-  int getEffectiveDuration(int sessionTypeDuration) {
-    return durationOverride ?? sessionTypeDuration;
+  int getEffectiveDuration(int sessionTypeDuration, String durationUnit) {
+    final baseDuration = durationOverride ?? sessionTypeDuration;
+    
+    // Convert to minutes based on duration unit
+    switch (durationUnit.toLowerCase()) {
+      case 'hours':
+        return baseDuration * 60; // Convert hours to minutes
+      case 'minutes':
+        return baseDuration; // Already in minutes
+      default:
+        return baseDuration * 60; // Default to hours if unknown
+    }
   }
   
   /// Calculate total time needed (duration + buffers)
-  int getTotalTimeSlot(int sessionTypeDuration) {
-    return bufferBefore + getEffectiveDuration(sessionTypeDuration) + bufferAfter;
+  int getTotalTimeSlot(int sessionTypeDuration, String durationUnit) {
+    return bufferBefore + getEffectiveDuration(sessionTypeDuration, durationUnit) + bufferAfter;
   }
   
   /// Check if booking is within allowed time window
@@ -152,8 +162,8 @@ class SchedulableSession {
   }
   
   /// Check if this schedulable session can accommodate a time slot
-  bool canAccommodateTimeSlot(DateTime startTime, DateTime endTime, int sessionTypeDuration) {
-    final requiredDuration = Duration(minutes: getTotalTimeSlot(sessionTypeDuration));
+  bool canAccommodateTimeSlot(DateTime startTime, DateTime endTime, int sessionTypeDuration, String durationUnit) {
+    final requiredDuration = Duration(minutes: getTotalTimeSlot(sessionTypeDuration, durationUnit));
     final availableDuration = endTime.difference(startTime);
     
     return availableDuration >= requiredDuration;

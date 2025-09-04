@@ -110,6 +110,7 @@ class AvailabilityService with ChangeNotifier {
         requestedStartTime, 
         requestedEndTime, 
         sessionType.duration,
+        sessionType.durationUnit,
       )) {
         return false;
       }
@@ -226,7 +227,7 @@ class AvailabilityService with ChangeNotifier {
     final slots = <AvailabilitySlot>[];
     final dayOfWeek = _getDayOfWeek(date);
     final availableRanges = _getAvailableRangesForDay(date, dayOfWeek, schedule);
-    final effectiveDuration = schedulableSession.getEffectiveDuration(sessionType.duration);
+    final effectiveDuration = schedulableSession.getEffectiveDuration(sessionType.duration, sessionType.durationUnit);
     final actualSlotInterval = slotDurationMinutes ?? schedulableSession.slotIntervalMinutes;
 
     for (final range in availableRanges) {
@@ -238,7 +239,7 @@ class AvailabilityService with ChangeNotifier {
         final slotEndTime = currentTime.add(Duration(minutes: actualSlotInterval));
         
         final canAccommodate = schedulableSession.canAccommodateTimeSlot(
-          currentTime, slotEndTime, sessionType.duration);
+          currentTime, slotEndTime, sessionType.duration, sessionType.durationUnit);
 
         String? conflictReason;
         bool isAvailable = canAccommodate;
