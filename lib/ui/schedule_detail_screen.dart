@@ -222,6 +222,9 @@ class _ScheduleDetailScreenState extends State<ScheduleDetailScreen> {
     }
 
     try {
+      // Reload the schedule to get the latest data including specific date availability
+      final latestSchedule = await context.read<ScheduleService>().getSchedule(_schedule!.id);
+      
       final updatedSchedule = Schedule(
         id: _schedule!.id,
         instructorId: _schedule!.instructorId,
@@ -229,7 +232,7 @@ class _ScheduleDetailScreenState extends State<ScheduleDetailScreen> {
         isDefault: _schedule!.isDefault,
         timezone: _schedule!.timezone,
         weeklyAvailability: _schedule!.weeklyAvailability,
-        specificDateAvailability: _schedule!.specificDateAvailability,
+        specificDateAvailability: latestSchedule?.specificDateAvailability ?? _schedule!.specificDateAvailability,
         holidays: _schedule!.holidays,
       );
 
