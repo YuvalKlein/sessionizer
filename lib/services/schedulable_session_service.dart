@@ -52,6 +52,18 @@ class SchedulableSessionService {
             .toList());
   }
 
+  /// Get all schedulable sessions for an instructor (one-time fetch)
+  Future<List<SchedulableSession>> getSchedulableSessionsForInstructor(String instructorId) async {
+    final snapshot = await _firestore
+        .collection('schedulable_sessions')
+        .where('instructorId', isEqualTo: instructorId)
+        .get();
+    
+    return snapshot.docs
+        .map((doc) => SchedulableSession.fromFirestore(doc))
+        .toList();
+  }
+
   /// Get active schedulable sessions for an instructor
   Stream<List<SchedulableSession>> getActiveSchedulableSessionsStream(String instructorId) {
     return _firestore
