@@ -156,25 +156,18 @@ class EnhancedBookingService with ChangeNotifier {
       }
       
       final scheduleData = scheduleDoc.data() as Map<String, dynamic>;
-      final weeklyAvailability = scheduleData['weeklyAvailability'] as Map<String, dynamic>?;
-      
-      if (weeklyAvailability == null) {
-        return {
-          'id': scheduleId,
-          'name': scheduleData['name'] ?? 'Schedule',
-          'availability': [],
-        };
-      }
-      
-      // Convert weekly availability to the format expected by _calculateAvailableSlots
       final availability = <Map<String, dynamic>>[];
-      final weekdayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-      final weekdayName = weekdayNames[date.weekday - 1];
       
-      if (weeklyAvailability.containsKey(weekdayName)) {
-        final daySlots = weeklyAvailability[weekdayName] as List<dynamic>?;
+      // Check for specific date overrides first
+      final specificDateAvailability = scheduleData['specificDateAvailability'] as Map<String, dynamic>?;
+      final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      
+      debugPrint('Checking for specific date override: $dateKey');
+      
+      if (specificDateAvailability != null && specificDateAvailability.containsKey(dateKey)) {
+        debugPrint('Found specific date override for $dateKey');
+        final daySlots = specificDateAvailability[dateKey] as List<dynamic>?;
         if (daySlots != null && daySlots.isNotEmpty) {
-          // Convert the day slots to the expected format
           for (final slot in daySlots) {
             final slotMap = slot as Map<String, dynamic>;
             availability.add({
@@ -184,7 +177,31 @@ class EnhancedBookingService with ChangeNotifier {
             });
           }
         }
+      } else {
+        // Fallback to weekly availability
+        final weeklyAvailability = scheduleData['weeklyAvailability'] as Map<String, dynamic>?;
+        
+        if (weeklyAvailability != null) {
+          final weekdayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+          final weekdayName = weekdayNames[date.weekday - 1];
+          
+          if (weeklyAvailability.containsKey(weekdayName)) {
+            final daySlots = weeklyAvailability[weekdayName] as List<dynamic>?;
+            if (daySlots != null && daySlots.isNotEmpty) {
+              for (final slot in daySlots) {
+                final slotMap = slot as Map<String, dynamic>;
+                availability.add({
+                  'dayOfWeek': date.weekday,
+                  'startTime': slotMap['startTime'] ?? '09:00',
+                  'endTime': slotMap['endTime'] ?? '17:00',
+                });
+              }
+            }
+          }
+        }
       }
+      
+      debugPrint('Final availability for $dateKey: ${availability.length} slots');
       
       return {
         'id': scheduleId,
