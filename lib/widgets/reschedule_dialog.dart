@@ -223,7 +223,11 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
     return Dialog(
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.8,
+        height: MediaQuery.of(context).size.height * 0.85,
+        constraints: BoxConstraints(
+          maxWidth: 1000,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,23 +289,26 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
 
             // Calendar
             Expanded(
-              child: Row(
-                children: [
-                  // Calendar
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Select New Date',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+              child: SingleChildScrollView(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Calendar
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Select New Date',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: TableCalendar<Map<String, dynamic>>(
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 350, // Fixed height to prevent overflow
+                            child: TableCalendar<Map<String, dynamic>>(
                             firstDay: DateTime.now(),
                             lastDay: DateTime.now().add(const Duration(days: 90)),
                             focusedDay: _focusedDay,
@@ -353,11 +360,11 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
                                 );
                               },
                             ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   const SizedBox(width: 16),
 
                   // Available slots
@@ -373,7 +380,8 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Expanded(
+                        SizedBox(
+                          height: 350, // Fixed height to match calendar
                           child: _buildSlotsList(),
                         ),
                       ],
