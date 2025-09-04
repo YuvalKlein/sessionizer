@@ -12,16 +12,6 @@ class ClientDashboardScreen extends StatelessWidget {
     final userService = Provider.of<UserService>(context, listen: false);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Client Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_today),
-            onPressed: () => context.go('/client/bookings'),
-            tooltip: 'My Bookings',
-          ),
-        ],
-      ),
       body: StreamBuilder<List<UserModel>>(
         stream: userService.getInstructorsStream(),
         builder: (context, snapshot) {
@@ -41,7 +31,7 @@ class ClientDashboardScreen extends StatelessWidget {
               final instructor = instructors[index];
               return ListTile(
                 title: Text(instructor.name),
-                subtitle: Text(instructor.email),
+                subtitle: Text('Click to book a session'),
                 onTap: () => context.go('/booking/${instructor.id}'),
               );
             },

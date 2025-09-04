@@ -46,7 +46,7 @@ class MainScreen extends StatelessWidget {
           ),
           body: child,
           bottomNavigationBar: BottomNavigationBar(
-            items: const [
+            items: isInstructor ? const [
               BottomNavigationBarItem(
                 icon: Icon(Icons.home),
                 label: 'Dashboard',
@@ -55,9 +55,22 @@ class MainScreen extends StatelessWidget {
                 icon: Icon(Icons.person),
                 label: 'Profile',
               ),
+            ] : const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: 'Dashboard',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.calendar_today),
+                label: 'My Sessions',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
             ],
-            currentIndex: _calculateSelectedIndex(context),
-            onTap: (index) => _onItemTapped(index, context),
+            currentIndex: _calculateSelectedIndex(context, isInstructor),
+            onTap: (index) => _onItemTapped(index, context, isInstructor),
             type: BottomNavigationBarType.fixed,
           ),
         );
@@ -65,22 +78,38 @@ class MainScreen extends StatelessWidget {
     );
   }
 
-  int _calculateSelectedIndex(BuildContext context) {
+  int _calculateSelectedIndex(BuildContext context, bool isInstructor) {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/profile')) {
+      return isInstructor ? 1 : 2;
+    } else if (location.startsWith('/client/bookings')) {
       return 1;
     }
     return 0;
   }
 
-  void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        context.go('/');
-        break;
-      case 1:
-        context.go('/profile');
-        break;
+  void _onItemTapped(int index, BuildContext context, bool isInstructor) {
+    if (isInstructor) {
+      switch (index) {
+        case 0:
+          context.go('/instructor');
+          break;
+        case 1:
+          context.go('/profile');
+          break;
+      }
+    } else {
+      switch (index) {
+        case 0:
+          context.go('/client');
+          break;
+        case 1:
+          context.go('/client/bookings');
+          break;
+        case 2:
+          context.go('/profile');
+          break;
+      }
     }
   }
 }

@@ -7,7 +7,9 @@ import 'package:myapp/services/booking_service.dart';
 import 'package:myapp/models/booking.dart';
 import 'package:myapp/services/session_type_service.dart';
 import 'package:myapp/services/location_service.dart';
+import 'package:myapp/services/user_service.dart';
 import 'package:myapp/models/session_type.dart';
+import 'package:myapp/models/user_model.dart';
 
 class ClientBookingManagementScreen extends StatefulWidget {
   const ClientBookingManagementScreen({super.key});
@@ -20,11 +22,13 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
   final BookingService _bookingService = BookingService();
   final SessionTypeService _sessionTypeService = SessionTypeService();
   final LocationService _locationService = LocationService();
+  final UserService _userService = UserService();
   
   String? _clientId;
   List<Booking> _bookings = [];
   List<SessionType> _sessionTypes = [];
   List<Map<String, dynamic>> _locations = [];
+  List<UserModel> _instructors = [];
   bool _isLoading = true;
   String? _error;
 
@@ -99,6 +103,21 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
           _locations.add(location);
         }
       }
+
+      // Load instructors
+      final instructorIds = _bookings
+          .map((b) => b.instructorId)
+          .where((id) => id != null)
+          .toSet()
+          .toList();
+      
+      _instructors = [];
+      for (final instructorId in instructorIds) {
+        final instructor = await _userService.getUser(instructorId!);
+        if (instructor != null) {
+          _instructors.add(instructor);
+        }
+      }
     } catch (e) {
       debugPrint('Error loading related data: $e');
     }
@@ -117,6 +136,15 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
     if (locationId == null) return null;
     try {
       return _locations.firstWhere((loc) => loc['id'] == locationId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  UserModel? _getInstructor(String? instructorId) {
+    if (instructorId == null) return null;
+    try {
+      return _instructors.firstWhere((instructor) => instructor.id == instructorId);
     } catch (e) {
       return null;
     }
@@ -276,6 +304,7 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
           final booking = _bookings[index];
           final sessionType = _getSessionType(booking.sessionTypeId);
           final location = _getLocation(booking.locationId);
+          final instructor = _getInstructor(booking.instructorId);
           final isUpcoming = booking.startTime.isAfter(DateTime.now());
           final isPast = booking.endTime.isBefore(DateTime.now());
 
@@ -310,6 +339,8 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
                     '${DateFormat.yMMMd().format(booking.startTime)} at ${DateFormat.jm().format(booking.startTime)}',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
+                  const SizedBox(height: 2),
+                  Text('Instructor: ${instructor?.name ?? 'Unknown'}'),
                   if (sessionType != null) ...[
                     const SizedBox(height: 2),
                     Text('Duration: ${_formatDuration(sessionType)}'),
