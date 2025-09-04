@@ -7,8 +7,11 @@ import 'package:myapp/services/booking_service.dart';
 import 'package:myapp/models/booking.dart';
 import 'package:myapp/services/session_type_service.dart';
 import 'package:myapp/services/location_service.dart';
+import 'package:myapp/services/user_service.dart';
 import 'package:myapp/models/session_type.dart';
+import 'package:myapp/models/user_model.dart';
 import 'package:myapp/widgets/reschedule_dialog.dart';
+import 'package:myapp/widgets/user_avatar.dart';
 
 class InstructorBookingManagementScreen extends StatefulWidget {
   const InstructorBookingManagementScreen({super.key});
@@ -21,11 +24,13 @@ class _InstructorBookingManagementScreenState extends State<InstructorBookingMan
   final BookingService _bookingService = BookingService();
   final SessionTypeService _sessionTypeService = SessionTypeService();
   final LocationService _locationService = LocationService();
+  final UserService _userService = UserService();
   
   String? _instructorId;
   List<Booking> _bookings = [];
   List<SessionType> _sessionTypes = [];
   List<Map<String, dynamic>> _locations = [];
+  Map<String, UserModel> _oppositeUsers = {}; // Store opposite users (clients for instructor)
   bool _isLoading = true;
   String? _error;
   String _selectedFilter = 'all'; // all, upcoming, past, today
@@ -58,6 +63,9 @@ class _InstructorBookingManagementScreenState extends State<InstructorBookingMan
       
       // Load session types and locations for display
       await _loadRelatedData();
+      
+      // Load opposite users (clients for instructor)
+      await _loadOppositeUsers();
       
       setState(() {
         _isLoading = false;
@@ -103,6 +111,41 @@ class _InstructorBookingManagementScreenState extends State<InstructorBookingMan
       }
     } catch (e) {
       debugPrint('Error loading related data: $e');
+    }
+  }
+
+  Future<void> _loadOppositeUsers() async {
+    print('=== LOADING OPPOSITE USERS (INSTRUCTOR) ===');
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print('No current user found');
+        return;
+      }
+      print('Current user: ${user.uid}');
+
+      // Get unique client IDs from bookings
+      final Set<String> clientIds = {};
+      for (final booking in _bookings) {
+        print('Booking: clientId=${booking.clientId}, instructorId=${booking.instructorId}, currentUser=${user.uid}');
+        clientIds.add(booking.clientId);
+        print('Adding client: ${booking.clientId}');
+      }
+
+      print('Loading client users: ${clientIds.toList()}');
+
+      // Load client users
+      for (final clientId in clientIds) {
+        final clientUser = await _userService.getUser(clientId);
+        if (clientUser != null) {
+          _oppositeUsers[clientId] = clientUser;
+          print('Loaded client user: ${clientUser.displayName} (${clientUser.id})');
+        } else {
+          print('Failed to load client user: $clientId');
+        }
+      }
+    } catch (e) {
+      print('Error loading opposite users: $e');
     }
   }
 
@@ -337,25 +380,24 @@ class _InstructorBookingManagementScreenState extends State<InstructorBookingMan
                       final location = _getLocation(booking.locationId);
                       final isUpcoming = booking.startTime.isAfter(DateTime.now());
                       final isPast = booking.endTime.isBefore(DateTime.now());
+                      
+                      // Get the client user for this booking
+                      final clientUser = _oppositeUsers[booking.clientId];
+                      print('Booking ${index}: clientId=${booking.clientId}, clientUser=${clientUser?.displayName}');
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(16),
-                          leading: CircleAvatar(
-                            backgroundColor: isUpcoming 
+                          leading: UserAvatar(
+                            user: clientUser,
+                            size: 48,
+                            showBorder: true,
+                            borderColor: isUpcoming 
                                 ? Colors.blue 
                                 : isPast 
                                     ? Colors.grey 
                                     : Colors.orange,
-                            child: Icon(
-                              isUpcoming 
-                                  ? Icons.schedule 
-                                  : isPast 
-                                      ? Icons.check 
-                                      : Icons.access_time,
-                              color: Colors.white,
-                            ),
                           ),
                           title: Text(
                             sessionType?.title ?? 'Session',
@@ -370,7 +412,7 @@ class _InstructorBookingManagementScreenState extends State<InstructorBookingMan
                                 style: const TextStyle(fontWeight: FontWeight.w500),
                               ),
                               const SizedBox(height: 2),
-                              Text('Client: ${booking.clientName}'),
+                              Text('Client: ${clientUser?.displayName ?? booking.clientName}'),
                               if (booking.clientEmail.isNotEmpty) ...[
                                 const SizedBox(height: 2),
                                 Text('Email: ${booking.clientEmail}'),
