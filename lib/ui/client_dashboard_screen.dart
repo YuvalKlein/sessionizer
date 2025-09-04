@@ -25,12 +25,39 @@ class ClientDashboardScreen extends StatelessWidget {
 
           final instructors = snapshot.data ?? [];
 
+          // Debug: Print instructor data
+          debugPrint('Instructors loaded: ${instructors.length}');
+          for (final instructor in instructors) {
+            debugPrint('Instructor: ${instructor.name} (${instructor.email}) - isInstructor: ${instructor.isInstructor}');
+          }
+
+          if (instructors.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.person_off, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No instructors available',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Please check back later or contact support.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          }
+
           return ListView.builder(
             itemCount: instructors.length,
             itemBuilder: (context, index) {
               final instructor = instructors[index];
               return ListTile(
-                title: Text(instructor.name),
+                title: Text(instructor.name.isNotEmpty ? instructor.name : instructor.email),
                 subtitle: Text('Click to book a session'),
                 onTap: () => context.go('/booking/${instructor.id}'),
               );

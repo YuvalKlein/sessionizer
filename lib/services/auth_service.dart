@@ -84,7 +84,7 @@ class AuthService with ChangeNotifier {
       if (user != null) {
         await user.updateDisplayName(displayName);
         await _firestore.collection('users').doc(user.uid).set({
-          'displayName': displayName,
+          'name': displayName,
           'email': email,
           'isInstructor': isInstructor,
         });

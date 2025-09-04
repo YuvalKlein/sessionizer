@@ -5,9 +5,10 @@ class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collectionPath = 'users';
 
-  Future<void> createUser(String uid, String email, bool isInstructor) async {
+  Future<void> createUser(String uid, String email, bool isInstructor, {String? name}) async {
     await _firestore.collection(_collectionPath).doc(uid).set({
       'email': email,
+      'name': name ?? email.split('@')[0], // Use email prefix as default name
       'isInstructor': isInstructor,
       // Add other user details as needed
     });

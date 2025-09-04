@@ -18,7 +18,7 @@ class UserModel {
     return UserModel(
       id: doc.id,
       email: data['email'] ?? '',
-      name: data['name'] ?? '',
+      name: data['name'] ?? data['displayName'] ?? data['email']?.split('@')[0] ?? 'Unknown',
       isInstructor: data['isInstructor'] ?? false,
     );
   }
