@@ -1,3 +1,3 @@
-1. change the interval slots to be equal to the session duration, 
-and make option when can session start, if in every rounded hour, every 30 minutes, 15, 10 or 5
+1. make the session type to be a list in schedulable session and then the name shuold change from the 
+type name to X types..
 

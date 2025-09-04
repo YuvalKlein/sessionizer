@@ -24,6 +24,7 @@ class SchedulableSessionFormScreen extends StatefulWidget {
 
 class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
   final _notesController = TextEditingController();
   final _durationOverrideController = TextEditingController();
 
@@ -31,6 +32,7 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
   String? _selectedSessionTypeId;
   String? _selectedScheduleId;
   List<String> _selectedLocationIds = [];
+  String _title = '';
   int _bufferBefore = 15;
   int _bufferAfter = 10;
   int _maxDaysAhead = 7;
@@ -121,11 +123,52 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
         _maxDaysAhead = schedulableSession.maxDaysAhead;
         _minHoursAhead = schedulableSession.minHoursAhead;
         _slotIntervalMinutes = schedulableSession.slotIntervalMinutes;
+        _title = schedulableSession.title;
+        _titleController.text = schedulableSession.title;
         _isActive = schedulableSession.isActive;
         _notesController.text = schedulableSession.notes ?? '';
         _durationOverrideController.text = 
             schedulableSession.durationOverride?.toString() ?? '';
       });
+    }
+  }
+
+  void _generateAutoTitle() {
+    if (_selectedSessionTypeId == null || _selectedScheduleId == null || _selectedLocationIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select session type, schedule, and at least one location first'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final sessionType = _sessionTypes.firstWhere((st) => st.id == _selectedSessionTypeId);
+    final schedule = _schedules.firstWhere((s) => s.id == _selectedScheduleId);
+    
+    // For now, use the first selected location. In the future, we might want to handle multiple locations differently
+    final locationName = _selectedLocationIds.first; // TODO: Get actual location name from location service
+    
+    final autoTitle = SchedulableSession.generateTitle(
+      sessionTypeTitle: sessionType.title,
+      locationName: locationName,
+      scheduleName: schedule.name,
+    );
+
+    setState(() {
+      _title = autoTitle;
+      _titleController.text = autoTitle;
+    });
+  }
+
+  void _tryAutoGenerateTitle() {
+    // Only auto-generate if we're creating a new session (not editing) and title is empty
+    if (!_isEditing && _title.isEmpty && 
+        _selectedSessionTypeId != null && 
+        _selectedScheduleId != null && 
+        _selectedLocationIds.isNotEmpty) {
+      _generateAutoTitle();
     }
   }
 
@@ -153,6 +196,8 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
           padding: const EdgeInsets.all(16.0),
           children: [
             _buildSessionTypeSection(),
+            const SizedBox(height: 24),
+            _buildTitleSection(),
             const SizedBox(height: 24),
             _buildScheduleSection(),
             const SizedBox(height: 24),
@@ -203,8 +248,63 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
                 setState(() {
                   _selectedSessionTypeId = value;
                 });
+                _tryAutoGenerateTitle();
               },
               validator: (value) => value == null ? 'Please select a session type' : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTitleSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Session Title',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Auto-generated from session type, location, and schedule',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: 'Title',
+                border: OutlineInputBorder(),
+                hintText: 'e.g., Yoga Class at Studio A at Morning Schedule',
+              ),
+              validator: (value) => value == null || value.trim().isEmpty 
+                  ? 'Please enter a title' 
+                  : null,
+              onChanged: (value) {
+                setState(() {
+                  _title = value.trim();
+                });
+              },
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: _generateAutoTitle,
+              icon: const Icon(Icons.auto_awesome, size: 16),
+              label: const Text('Generate Auto Title'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[50],
+                foregroundColor: Colors.blue[700],
+                elevation: 0,
+              ),
             ),
           ],
         ),
@@ -242,6 +342,7 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
                 setState(() {
                   _selectedScheduleId = value;
                 });
+                _tryAutoGenerateTitle();
               },
               validator: (value) => value == null ? 'Please select a schedule' : null,
             ),
@@ -284,6 +385,7 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
                       _selectedLocationIds.remove(location);
                     }
                   });
+                  _tryAutoGenerateTitle();
                 },
                 contentPadding: EdgeInsets.zero,
               );
@@ -593,6 +695,7 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
           ? int.tryParse(_durationOverrideController.text)
           : null,
       slotIntervalMinutes: _slotIntervalMinutes,
+      title: _title,
       isActive: _isActive,
       createdAt: DateTime.now(),
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,

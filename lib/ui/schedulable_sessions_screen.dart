@@ -180,19 +180,11 @@ class _SchedulableSessionCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: FutureBuilder<SessionType?>(
-                      future: context
-                          .read<SessionTypeService>()
-                          .getSessionType(schedulableSession.sessionTypeId),
-                      builder: (context, snapshot) {
-                        final sessionType = snapshot.data;
-                        return Text(
-                          sessionType?.title ?? 'Loading...',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      },
+                    child:                     Text(
+                      schedulableSession.title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   Row(

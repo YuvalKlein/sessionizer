@@ -22,6 +22,7 @@ class SchedulableSession {
   final int slotIntervalMinutes; // how often slots are generated (5, 10, 15, 30, 60)
   
   // Status & Metadata
+  final String title; // Auto-generated or user-edited title
   final bool isActive;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -42,6 +43,7 @@ class SchedulableSession {
     this.minHoursAhead = 2,
     this.durationOverride,
     this.slotIntervalMinutes = 60, // Default to hourly slots
+    required this.title,
     this.isActive = true,
     required this.createdAt,
     this.updatedAt,
@@ -63,6 +65,7 @@ class SchedulableSession {
       minHoursAhead: data['minHoursAhead'] ?? 2,
       durationOverride: data['durationOverride'],
       slotIntervalMinutes: data['slotIntervalMinutes'] ?? 60,
+      title: data['title'] ?? 'Untitled Session',
       isActive: data['isActive'] ?? true,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
@@ -83,6 +86,7 @@ class SchedulableSession {
       'minHoursAhead': minHoursAhead,
       'durationOverride': durationOverride,
       'slotIntervalMinutes': slotIntervalMinutes,
+      'title': title,
       'isActive': isActive,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
@@ -103,6 +107,7 @@ class SchedulableSession {
     int? minHoursAhead,
     int? durationOverride,
     int? slotIntervalMinutes,
+    String? title,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -121,6 +126,7 @@ class SchedulableSession {
       minHoursAhead: minHoursAhead ?? this.minHoursAhead,
       durationOverride: durationOverride ?? this.durationOverride,
       slotIntervalMinutes: slotIntervalMinutes ?? this.slotIntervalMinutes,
+      title: title ?? this.title,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
@@ -130,6 +136,15 @@ class SchedulableSession {
   }
 
   // Helper methods for business logic
+  
+  /// Generate auto-title from session type, location, and schedule
+  static String generateTitle({
+    required String sessionTypeTitle,
+    required String locationName,
+    required String scheduleName,
+  }) {
+    return '$sessionTypeTitle at $locationName at $scheduleName';
+  }
   
   /// Get the effective duration (override or from session type)
   int getEffectiveDuration(int sessionTypeDuration, String durationUnit) {
