@@ -50,6 +50,7 @@ class EnhancedBookingService with ChangeNotifier {
 
       // Get existing bookings for this date and instructor
       final bookings = await _getBookingsForDate(schedulableSession.instructorId, date);
+      debugPrint('Found ${bookings.length} existing bookings for this date');
 
       // Calculate available slots
       return _calculateAvailableSlots(
@@ -158,7 +159,18 @@ class EnhancedBookingService with ChangeNotifier {
       final scheduleData = scheduleDoc.data() as Map<String, dynamic>;
       final availability = <Map<String, dynamic>>[];
       
-      // Check for specific date overrides first
+      // Check for holidays/vacations first - if date falls within a holiday period, return no availability
+      final holidays = scheduleData['holidays'] as Map<String, dynamic>?;
+      if (holidays != null && _isDateInHolidayPeriod(date, holidays)) {
+        debugPrint('Date $date falls within a holiday period - no availability');
+        return {
+          'id': scheduleId,
+          'name': scheduleData['name'] ?? 'Schedule',
+          'availability': [], // No availability during holidays
+        };
+      }
+      
+      // Check for specific date overrides
       final specificDateAvailability = scheduleData['specificDateAvailability'] as Map<String, dynamic>?;
       final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       
@@ -304,6 +316,35 @@ class EnhancedBookingService with ChangeNotifier {
 
     return bookings.any((booking) =>
         (bufferStart.isBefore(booking.endTime) && bufferEnd.isAfter(booking.startTime)));
+  }
+
+  /// Check if a date falls within any holiday period
+  bool _isDateInHolidayPeriod(DateTime date, Map<String, dynamic> holidays) {
+    try {
+      for (final holidayEntry in holidays.entries) {
+        final holidayData = holidayEntry.value as Map<String, dynamic>?;
+        if (holidayData != null) {
+          final startDateStr = holidayData['startDate'] as String?;
+          final endDateStr = holidayData['endDate'] as String?;
+          
+          if (startDateStr != null && endDateStr != null) {
+            final startDate = DateTime.parse(startDateStr);
+            final endDate = DateTime.parse(endDateStr);
+            
+            // Check if the date falls within this holiday period
+            if (date.isAfter(startDate.subtract(const Duration(days: 1))) && 
+                date.isBefore(endDate.add(const Duration(days: 1)))) {
+              debugPrint('Date $date falls within holiday period: ${holidayEntry.key} ($startDateStr to $endDateStr)');
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error checking holiday period: $e');
+      return false;
+    }
   }
 
   /// Parse time string to DateTime
