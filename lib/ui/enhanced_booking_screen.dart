@@ -196,12 +196,20 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
     // Calculate the last bookable day based on schedulable session constraints
     final lastBookableDay = now.add(Duration(days: schedulableSession?.maxDaysAhead ?? 7));
     
+    // Ensure focusedDay is within bounds
+    final currentFocusedDay = _focusedDay.value;
+    final validFocusedDay = currentFocusedDay.isBefore(now) 
+        ? now 
+        : currentFocusedDay.isAfter(lastBookableDay) 
+            ? lastBookableDay 
+            : currentFocusedDay;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       child: TableCalendar<DateTime>(
         firstDay: now,
         lastDay: lastBookableDay,
-        focusedDay: _focusedDay.value,
+        focusedDay: validFocusedDay,
         calendarFormat: CalendarFormat.month,
         startingDayOfWeek: StartingDayOfWeek.monday,
         calendarStyle: CalendarStyle(
@@ -235,7 +243,13 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
           }
         },
         onPageChanged: (focusedDay) {
-          _focusedDay.value = focusedDay;
+          // Ensure focusedDay stays within bounds
+          final validFocusedDay = focusedDay.isBefore(now) 
+              ? now 
+              : focusedDay.isAfter(lastBookableDay) 
+                  ? lastBookableDay 
+                  : focusedDay;
+          _focusedDay.value = validFocusedDay;
         },
         // Custom day builder to show availability status
         calendarBuilders: CalendarBuilders(
@@ -282,9 +296,15 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: isActuallyClickable ? () {
+                // Ensure the focused day stays within bounds
+                final validFocusedDay = day.isBefore(now) 
+                    ? now 
+                    : day.isAfter(lastBookableDay) 
+                        ? lastBookableDay 
+                        : day;
                 setState(() {
                   _selectedDay = day;
-                  _focusedDay.value = day;
+                  _focusedDay.value = validFocusedDay;
                 });
                 viewModel.loadAvailableSlots(day);
               } : null,
