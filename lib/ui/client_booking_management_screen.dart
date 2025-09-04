@@ -355,7 +355,7 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 2),
-                  Text('Instructor: ${instructor?.name ?? 'Unknown'}'),
+                  Text('Instructor: ${instructor?.displayName ?? 'Unknown'}'),
                   if (sessionType != null) ...[
                     const SizedBox(height: 2),
                     Text('Duration: ${_formatDuration(sessionType)}'),
