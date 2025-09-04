@@ -169,12 +169,12 @@ class EnhancedBookingService with ChangeNotifier {
     final now = DateTime.now();
     
     // Get schedule availability for this day
-    final dayAvailability = schedule['availability']?.firstWhere(
+    final dayAvailability = schedule['availability']?.cast<Map<String, dynamic>>().firstWhere(
       (avail) => avail['dayOfWeek'] == date.weekday,
-      orElse: () => null,
+      orElse: () => <String, dynamic>{},
     );
 
-    if (dayAvailability == null) {
+    if (dayAvailability.isEmpty) {
       return availableSlots;
     }
 
