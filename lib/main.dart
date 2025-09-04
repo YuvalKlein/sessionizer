@@ -1,28 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:myapp/services/auth_service.dart';
-import 'package:myapp/services/user_service.dart';
-import 'package:myapp/services/schedule_service.dart';
-import 'package:myapp/services/booking_service.dart';
-import 'package:myapp/services/session_service.dart';
-import 'package:myapp/services/schedulable_session_service.dart';
-import 'package:myapp/services/session_type_service.dart';
-import 'package:myapp/services/availability_service.dart';
-import 'package:myapp/router.dart';
-import 'package:myapp/view_models/schedule_view_model.dart';
-import 'package:myapp/view_models/session_view_model.dart';
-import 'package:myapp/view_models/schedulable_session_view_model.dart';
+import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:myapp/features/auth/presentation/bloc/auth_event.dart';
+import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
+import 'package:myapp/router_clean.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await initializeDependencies();
   runApp(const MyApp());
 }
 

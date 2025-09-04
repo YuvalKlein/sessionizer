@@ -21,6 +21,8 @@ Add: Recurring bookings
 Add: Waitlist functionality
 Add: Payment integration
 
+refactor to clean code architucture (domain, data, presentation) with bloc as state management
+
 Done
 1. make the session type to be a list in schedulable session and then the name shuold change from the 
 type name to X types..
