@@ -8,6 +8,7 @@ import 'package:myapp/models/booking.dart';
 import 'package:myapp/services/session_type_service.dart';
 import 'package:myapp/services/location_service.dart';
 import 'package:myapp/models/session_type.dart';
+import 'package:myapp/widgets/reschedule_dialog.dart';
 
 class InstructorBookingManagementScreen extends StatefulWidget {
   const InstructorBookingManagementScreen({super.key});
@@ -217,6 +218,20 @@ class _InstructorBookingManagementScreenState extends State<InstructorBookingMan
     }
   }
 
+  Future<void> _rescheduleBooking(Booking booking) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => RescheduleDialog(
+        booking: booking,
+        instructorId: booking.instructorId,
+      ),
+    );
+
+    if (result == true && mounted) {
+      _loadData(); // Refresh the list
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredBookings = _getFilteredBookings();
@@ -405,11 +420,23 @@ class _InstructorBookingManagementScreenState extends State<InstructorBookingMan
                           trailing: isUpcoming
                               ? PopupMenuButton<String>(
                                   onSelected: (value) {
-                                    if (value == 'cancel') {
+                                    if (value == 'reschedule') {
+                                      _rescheduleBooking(booking);
+                                    } else if (value == 'cancel') {
                                       _cancelBooking(booking);
                                     }
                                   },
                                   itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'reschedule',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.schedule, color: Colors.blue),
+                                          SizedBox(width: 8),
+                                          Text('Reschedule'),
+                                        ],
+                                      ),
+                                    ),
                                     const PopupMenuItem(
                                       value: 'cancel',
                                       child: Row(

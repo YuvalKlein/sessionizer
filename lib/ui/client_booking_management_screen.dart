@@ -10,6 +10,7 @@ import 'package:myapp/services/location_service.dart';
 import 'package:myapp/services/user_service.dart';
 import 'package:myapp/models/session_type.dart';
 import 'package:myapp/models/user_model.dart';
+import 'package:myapp/widgets/reschedule_dialog.dart';
 
 class ClientBookingManagementScreen extends StatefulWidget {
   const ClientBookingManagementScreen({super.key});
@@ -224,6 +225,20 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
     }
   }
 
+  Future<void> _rescheduleBooking(Booking booking) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => RescheduleDialog(
+        booking: booking,
+        instructorId: booking.instructorId,
+      ),
+    );
+
+    if (result == true && mounted) {
+      _loadData(); // Refresh the list
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -386,11 +401,23 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
               trailing: isUpcoming
                   ? PopupMenuButton<String>(
                       onSelected: (value) {
-                        if (value == 'cancel') {
+                        if (value == 'reschedule') {
+                          _rescheduleBooking(booking);
+                        } else if (value == 'cancel') {
                           _cancelBooking(booking);
                         }
                       },
                       itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'reschedule',
+                          child: Row(
+                            children: [
+                              Icon(Icons.schedule, color: Colors.blue),
+                              SizedBox(width: 8),
+                              Text('Reschedule'),
+                            ],
+                          ),
+                        ),
                         const PopupMenuItem(
                           value: 'cancel',
                           child: Row(

@@ -79,4 +79,19 @@ class BookingService with ChangeNotifier {
       rethrow;
     }
   }
+
+  // Reschedule a booking
+  Future<void> rescheduleBooking(String bookingId, DateTime newStartTime, DateTime newEndTime) async {
+    try {
+      await _firestore.collection('bookings').doc(bookingId).update({
+        'startTime': newStartTime,
+        'endTime': newEndTime,
+        'updatedAt': DateTime.now(),
+      });
+      notifyListeners();
+    } catch (e) {
+      // In a real app, you'd have more robust error handling
+      rethrow;
+    }
+  }
 }
