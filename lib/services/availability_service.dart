@@ -254,7 +254,10 @@ class AvailabilityService with ChangeNotifier {
       while (currentTime.add(Duration(minutes: effectiveDuration)).isBefore(range.end) ||
              currentTime.add(Duration(minutes: effectiveDuration)) == range.end) {
         
-        final slotEndTime = currentTime.add(Duration(minutes: actualSlotInterval));
+        final totalTimeNeeded = schedulableSession.getTotalTimeSlot(sessionType.duration, sessionType.durationUnit);
+        final slotEndTime = currentTime.add(Duration(minutes: totalTimeNeeded));
+        
+        debugPrint('Slot: ${currentTime} - ${slotEndTime} (${totalTimeNeeded}min total, ${actualSlotInterval}min interval)');
         
         final canAccommodate = schedulableSession.canAccommodateTimeSlot(
           currentTime, slotEndTime, sessionType.duration, sessionType.durationUnit);
