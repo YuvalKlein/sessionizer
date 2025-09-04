@@ -237,7 +237,84 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
         onPageChanged: (focusedDay) {
           _focusedDay.value = focusedDay;
         },
+        // Custom day builder to show availability status
+        calendarBuilders: CalendarBuilders(
+          defaultBuilder: (context, day, focusedDay) {
+            return _buildDayCell(day, viewModel, now, lastBookableDay);
+          },
+          selectedBuilder: (context, day, focusedDay) {
+            return _buildDayCell(day, viewModel, now, lastBookableDay, isSelected: true);
+          },
+          todayBuilder: (context, day, focusedDay) {
+            return _buildDayCell(day, viewModel, now, lastBookableDay, isToday: true);
+          },
+          disabledBuilder: (context, day, focusedDay) {
+            return _buildDayCell(day, viewModel, now, lastBookableDay, isDisabled: true);
+          },
+        ),
       ),
+    );
+  }
+
+  Widget _buildDayCell(DateTime day, EnhancedBookingViewModel viewModel, DateTime now, DateTime lastBookableDay, {bool isSelected = false, bool isToday = false, bool isDisabled = false}) {
+    final isPast = day.isBefore(now.subtract(const Duration(days: 1)));
+    final isFuture = day.isAfter(lastBookableDay);
+    final isClickable = !isPast && !isFuture;
+    
+    return FutureBuilder<bool>(
+      future: isClickable ? viewModel.hasAvailabilityForDay(day) : Future.value(false),
+      builder: (context, snapshot) {
+        final hasAvailability = snapshot.data ?? false;
+        final isActuallyClickable = isClickable && hasAvailability;
+        
+        return Container(
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isSelected 
+                ? Theme.of(context).primaryColor
+                : isToday 
+                    ? Theme.of(context).primaryColor.withOpacity(0.3)
+                    : null,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: isActuallyClickable ? () {
+                setState(() {
+                  _selectedDay = day;
+                  _focusedDay.value = day;
+                });
+                viewModel.loadAvailableSlots(day);
+              } : null,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isActuallyClickable 
+                      ? null 
+                      : Colors.grey.withOpacity(0.3),
+                ),
+                child: Center(
+                  child: Text(
+                    '${day.day}',
+                    style: TextStyle(
+                      color: isSelected 
+                          ? Colors.white
+                          : isActuallyClickable 
+                              ? Colors.black
+                              : Colors.grey[400],
+                      fontWeight: isSelected || isToday ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

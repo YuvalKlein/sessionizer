@@ -176,6 +176,22 @@ class EnhancedBookingViewModel extends ChangeNotifier {
     }).toList();
   }
 
+  /// Check if a day has available slots (for calendar display)
+  Future<bool> hasAvailabilityForDay(DateTime day) async {
+    if (_selectedSchedulableSession == null) return false;
+    
+    try {
+      final slots = await _bookingService.getAvailableSlots(
+        schedulableSessionId: _selectedSchedulableSession!.id!,
+        date: day,
+      );
+      return slots.isNotEmpty;
+    } catch (e) {
+      debugPrint('Error checking availability for day $day: $e');
+      return false;
+    }
+  }
+
   /// Cancel a booking
   Future<bool> cancelBooking(String bookingId) async {
     _setLoading(true);
