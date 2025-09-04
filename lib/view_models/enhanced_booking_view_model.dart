@@ -77,6 +77,10 @@ class EnhancedBookingViewModel extends ChangeNotifier {
 
       // Load locations
       _locations = await _locationService.getLocations();
+      debugPrint('Loaded ${_locations.length} locations');
+      for (var loc in _locations) {
+        debugPrint('Loaded location: ${loc['name']} (${loc['id']})');
+      }
     } catch (e) {
       debugPrint('Error loading related data: $e');
     }

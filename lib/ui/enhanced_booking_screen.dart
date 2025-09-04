@@ -403,6 +403,10 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
     final startTime = slot['startTime'] as DateTime;
     final endTime = slot['endTime'] as DateTime;
     final locationIds = slot['locationIds'] as List<String>;
+    
+    debugPrint('Slot locationIds: $locationIds');
+    debugPrint('Selected session: ${viewModel.selectedSchedulableSession?.title}');
+    
     final availableLocations = viewModel.getAvailableLocationsForSession(
       viewModel.selectedSchedulableSession!,
     );
