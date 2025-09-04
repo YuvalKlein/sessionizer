@@ -1,0 +1,195 @@
+import 'package:get_it/get_it.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
+import 'package:myapp/core/config/app_config.dart';
+
+// Features
+import 'package:myapp/features/auth/data/datasources/auth_remote_data_source.dart';
+import 'package:myapp/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:myapp/features/auth/domain/repositories/auth_repository.dart';
+import 'package:myapp/features/auth/domain/usecases/sign_in_with_email.dart';
+import 'package:myapp/features/auth/domain/usecases/sign_in_with_google.dart';
+import 'package:myapp/features/auth/domain/usecases/sign_up_with_email.dart';
+import 'package:myapp/features/auth/domain/usecases/sign_out.dart';
+import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
+
+import 'package:myapp/features/schedule/data/datasources/schedule_remote_data_source.dart';
+import 'package:myapp/features/schedule/data/repositories/schedule_repository_impl.dart';
+import 'package:myapp/features/schedule/domain/repositories/schedule_repository.dart';
+import 'package:myapp/features/schedule/domain/usecases/get_schedules.dart';
+import 'package:myapp/features/schedule/domain/usecases/create_schedule.dart';
+import 'package:myapp/features/schedule/presentation/bloc/schedule_bloc.dart';
+
+import 'package:myapp/features/user/data/datasources/user_remote_data_source.dart';
+import 'package:myapp/features/user/data/repositories/user_repository_impl.dart';
+import 'package:myapp/features/user/domain/repositories/user_repository.dart';
+import 'package:myapp/features/user/domain/usecases/get_instructors.dart';
+import 'package:myapp/features/user/domain/usecases/get_user.dart';
+import 'package:myapp/features/user/domain/usecases/get_instructor_by_id.dart';
+import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
+
+import 'package:myapp/features/schedulable_session/data/datasources/schedulable_session_remote_data_source.dart';
+import 'package:myapp/features/schedulable_session/data/repositories/schedulable_session_repository_impl.dart';
+import 'package:myapp/features/schedulable_session/domain/repositories/schedulable_session_repository.dart';
+import 'package:myapp/features/schedulable_session/domain/usecases/get_schedulable_sessions.dart';
+import 'package:myapp/features/schedulable_session/domain/usecases/create_schedulable_session.dart';
+import 'package:myapp/features/schedulable_session/domain/usecases/update_schedulable_session.dart';
+import 'package:myapp/features/schedulable_session/domain/usecases/delete_schedulable_session.dart';
+import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_bloc.dart';
+
+import 'package:myapp/features/session_type/data/datasources/session_type_remote_data_source.dart';
+import 'package:myapp/features/session_type/data/repositories/session_type_repository_impl.dart';
+import 'package:myapp/features/session_type/domain/repositories/session_type_repository.dart';
+import 'package:myapp/features/session_type/domain/usecases/get_session_types.dart';
+import 'package:myapp/features/session_type/domain/usecases/create_session_type.dart';
+import 'package:myapp/features/session_type/domain/usecases/update_session_type.dart';
+import 'package:myapp/features/session_type/domain/usecases/delete_session_type.dart';
+import 'package:myapp/features/session_type/presentation/bloc/session_type_bloc.dart';
+
+import 'package:myapp/features/booking/data/datasources/booking_remote_data_source.dart';
+import 'package:myapp/features/booking/data/repositories/booking_repository_impl.dart';
+import 'package:myapp/features/booking/domain/repositories/booking_repository.dart';
+import 'package:myapp/features/booking/domain/usecases/get_bookings.dart';
+import 'package:myapp/features/booking/domain/usecases/create_booking.dart';
+import 'package:myapp/features/booking/domain/usecases/cancel_booking.dart';
+import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
+
+final sl = GetIt.instance;
+
+Future<void> initializeDependencies() async {
+  // External dependencies
+  sl.registerLazySingleton(() => FirebaseAuth.instance);
+  sl.registerLazySingleton(() => FirebaseFirestore.instance);
+  sl.registerLazySingleton(() => GoogleSignIn(
+    clientId: kIsWeb ? AppConfig.googleClientId : null,
+  ));
+
+  // Data sources
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(
+      firebaseAuth: sl(),
+      firestore: sl(),
+      googleSignIn: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<ScheduleRemoteDataSource>(
+    () => ScheduleRemoteDataSourceImpl(firestore: sl()),
+  );
+
+  sl.registerLazySingleton<UserRemoteDataSource>(
+    () => UserRemoteDataSourceImpl(firestore: sl()),
+  );
+  sl.registerLazySingleton<SchedulableSessionRemoteDataSource>(
+    () => SchedulableSessionRemoteDataSourceImpl(firestore: sl()),
+  );
+  sl.registerLazySingleton<SessionTypeRemoteDataSource>(
+    () => SessionTypeRemoteDataSourceImpl(firestore: sl()),
+  );
+  sl.registerLazySingleton<BookingRemoteDataSource>(
+    () => BookingRemoteDataSourceImpl(firestore: sl()),
+  );
+
+  // Repositories
+  sl.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(sl()),
+  );
+
+  sl.registerLazySingleton<ScheduleRepository>(
+    () => ScheduleRepositoryImpl(sl()),
+  );
+
+  sl.registerLazySingleton<UserRepository>(
+    () => UserRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<SchedulableSessionRepository>(
+    () => SchedulableSessionRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<SessionTypeRepository>(
+    () => SessionTypeRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<BookingRepository>(
+    () => BookingRepositoryImpl(sl()),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => SignInWithEmail(sl()));
+  sl.registerLazySingleton(() => SignInWithGoogle(sl()));
+  sl.registerLazySingleton(() => SignUpWithEmail(sl()));
+  sl.registerLazySingleton(() => SignOut(sl()));
+
+  sl.registerLazySingleton(() => GetSchedules(sl()));
+  sl.registerLazySingleton(() => CreateSchedule(sl()));
+
+  sl.registerLazySingleton(() => GetInstructors(sl()));
+  sl.registerLazySingleton(() => GetUser(sl()));
+  sl.registerLazySingleton(() => GetInstructorById(sl()));
+
+  sl.registerLazySingleton(() => GetSchedulableSessions(sl()));
+  sl.registerLazySingleton(() => CreateSchedulableSession(sl()));
+  sl.registerLazySingleton(() => UpdateSchedulableSession(sl()));
+  sl.registerLazySingleton(() => DeleteSchedulableSession(sl()));
+
+  sl.registerLazySingleton(() => GetSessionTypes(sl()));
+  sl.registerLazySingleton(() => CreateSessionType(sl()));
+  sl.registerLazySingleton(() => UpdateSessionType(sl()));
+  sl.registerLazySingleton(() => DeleteSessionType(sl()));
+
+  sl.registerLazySingleton(() => GetBookings(sl()));
+  sl.registerLazySingleton(() => CreateBooking(sl()));
+  sl.registerLazySingleton(() => CancelBooking(sl()));
+
+  // BLoCs
+  sl.registerFactory(
+    () => AuthBloc(
+      signInWithEmail: sl(),
+      signInWithGoogle: sl(),
+      signUpWithEmail: sl(),
+      signOut: sl(),
+      authRepository: sl(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => ScheduleBloc(
+      getSchedules: sl(),
+      createSchedule: sl(),
+      scheduleRepository: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => UserBloc(
+      getInstructors: sl(),
+      getUser: sl(),
+      userRepository: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => SchedulableSessionBloc(
+      getSchedulableSessions: sl(),
+      createSchedulableSession: sl(),
+      updateSchedulableSession: sl(),
+      deleteSchedulableSession: sl(),
+      repository: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => SessionTypeBloc(
+      getSessionTypes: sl(),
+      createSessionType: sl(),
+      updateSessionType: sl(),
+      deleteSessionType: sl(),
+      repository: sl(),
+    ),
+  );
+  sl.registerFactory(
+    () => BookingBloc(
+      getBookings: sl(),
+      createBooking: sl(),
+      cancelBooking: sl(),
+      repository: sl(),
+    ),
+  );
+}

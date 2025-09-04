@@ -1140,9 +1140,20 @@ class MockUserService extends _i1.Mock implements _i14.UserService {
   }
 
   @override
-  _i7.Future<void> createUser(String? uid, String? email, bool? isInstructor) =>
+  _i7.Future<void> createUser(
+    String? uid,
+    String? email,
+    bool? isInstructor, {
+    String? name,
+    String? phone,
+    String? photoURL,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#createUser, [uid, email, isInstructor]),
+            Invocation.method(
+              #createUser,
+              [uid, email, isInstructor],
+              {#name: name, #phone: phone, #photoURL: photoURL},
+            ),
             returnValue: _i7.Future<void>.value(),
             returnValueForMissingStub: _i7.Future<void>.value(),
           )
@@ -1168,6 +1179,116 @@ class MockUserService extends _i1.Mock implements _i14.UserService {
   _i7.Future<void> updateUser(String? uid, Map<String, dynamic>? data) =>
       (super.noSuchMethod(
             Invocation.method(#updateUser, [uid, data]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Stream<List<_i15.UserModel>> getInstructorsStream() =>
+      (super.noSuchMethod(
+            Invocation.method(#getInstructorsStream, []),
+            returnValue: _i7.Stream<List<_i15.UserModel>>.empty(),
+          )
+          as _i7.Stream<List<_i15.UserModel>>);
+
+  @override
+  _i7.Future<void> updateUserProfile(
+    String? uid, {
+    String? displayName,
+    String? phone,
+    String? photoURL,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #updateUserProfile,
+              [uid],
+              {#displayName: displayName, #phone: phone, #photoURL: photoURL},
+            ),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> addRecentAddress(String? uid, String? address) =>
+      (super.noSuchMethod(
+            Invocation.method(#addRecentAddress, [uid, address]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> addSavedAddress(String? uid, String? address) =>
+      (super.noSuchMethod(
+            Invocation.method(#addSavedAddress, [uid, address]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> removeSavedAddress(String? uid, String? address) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeSavedAddress, [uid, address]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> addSessionId(String? uid, String? sessionId) =>
+      (super.noSuchMethod(
+            Invocation.method(#addSessionId, [uid, sessionId]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> removeSessionId(String? uid, String? sessionId) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeSessionId, [uid, sessionId]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> updateSubscriptionType(
+    String? uid,
+    String? subscriptionType,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateSubscriptionType, [uid, subscriptionType]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> setUserVerified(String? uid, bool? isVerified) =>
+      (super.noSuchMethod(
+            Invocation.method(#setUserVerified, [uid, isVerified]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> setUserDisabled(String? uid, bool? disabled) =>
+      (super.noSuchMethod(
+            Invocation.method(#setUserDisabled, [uid, disabled]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> setAdminStatus(String? uid, bool? isAdmin) =>
+      (super.noSuchMethod(
+            Invocation.method(#setAdminStatus, [uid, isAdmin]),
             returnValue: _i7.Future<void>.value(),
             returnValueForMissingStub: _i7.Future<void>.value(),
           )

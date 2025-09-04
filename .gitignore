@@ -8,6 +8,12 @@
 .build/
 .buildlog/
 .history
+
+# Environment variables and sensitive data
+.env
+keys.json
+.env.local
+.env.production
 .svn/
 .swiftpm/
 migrate_working_dir/
