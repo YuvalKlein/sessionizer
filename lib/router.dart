@@ -7,7 +7,9 @@ import 'package:myapp/ui/login_screen.dart';
 import 'package:myapp/ui/registration_screen.dart';
 import 'package:myapp/ui/profile_screen.dart';
 import 'package:myapp/ui/instructor_dashboard_screen.dart';
+import 'package:myapp/ui/instructor_booking_management_screen.dart';
 import 'package:myapp/ui/client_dashboard_screen.dart';
+import 'package:myapp/ui/client_booking_management_screen.dart';
 import 'package:myapp/ui/booking_screen.dart';
 import 'package:myapp/ui/enhanced_booking_screen.dart';
 import 'package:myapp/ui/schedules_list_screen.dart';
@@ -61,6 +63,12 @@ class AppRouter {
                 path: 'manage-sessions',
                 builder: (BuildContext context, GoRouterState state) {
                   return const ManageSessionsScreen();
+                },
+              ),
+              GoRoute(
+                path: 'bookings',
+                builder: (BuildContext context, GoRouterState state) {
+                  return const InstructorBookingManagementScreen();
                 },
               ),
               GoRoute(
@@ -138,6 +146,12 @@ class AppRouter {
             path: '/client',
             builder: (BuildContext context, GoRouterState state) {
               return const ClientDashboardScreen();
+            },
+          ),
+          GoRoute(
+            path: '/client/bookings',
+            builder: (BuildContext context, GoRouterState state) {
+              return const ClientBookingManagementScreen();
             },
           ),
           GoRoute(
