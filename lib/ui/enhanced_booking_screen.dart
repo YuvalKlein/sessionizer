@@ -170,16 +170,24 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
   }
 
   Widget _buildCalendar(EnhancedBookingViewModel viewModel) {
+    final now = DateTime.now();
+    final schedulableSession = viewModel.selectedSchedulableSession;
+    
+    // Calculate the last bookable day based on schedulable session constraints
+    final lastBookableDay = now.add(Duration(days: schedulableSession?.maxDaysAhead ?? 7));
+    
     return Container(
       padding: const EdgeInsets.all(16),
       child: TableCalendar<DateTime>(
-        firstDay: DateTime.now(),
-        lastDay: DateTime.now().add(const Duration(days: 90)),
+        firstDay: now,
+        lastDay: lastBookableDay,
         focusedDay: _focusedDay.value,
         calendarFormat: CalendarFormat.month,
         startingDayOfWeek: StartingDayOfWeek.monday,
-        calendarStyle: const CalendarStyle(
+        calendarStyle: CalendarStyle(
           outsideDaysVisible: false,
+          // Disable past days and days beyond max booking window
+          disabledTextStyle: TextStyle(color: Colors.grey[400]),
         ),
         headerStyle: const HeaderStyle(
           formatButtonVisible: false,
@@ -187,6 +195,17 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
         ),
         selectedDayPredicate: (day) {
           return isSameDay(_selectedDay, day);
+        },
+        enabledDayPredicate: (day) {
+          // Only enable days that are:
+          // 1. Today or in the future
+          // 2. Within the max booking window
+          // 3. At least minHoursAhead from now
+          final isTodayOrFuture = day.isAfter(now.subtract(const Duration(days: 1)));
+          final isWithinMaxDays = day.isBefore(lastBookableDay.add(const Duration(days: 1)));
+          final isAfterMinHours = day.isAfter(now.add(Duration(hours: schedulableSession?.minHoursAhead ?? 2)));
+          
+          return isTodayOrFuture && isWithinMaxDays && isAfterMinHours;
         },
         onDaySelected: (selectedDay, focusedDay) {
           if (!isSameDay(_selectedDay, selectedDay)) {
@@ -314,7 +333,7 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
 
     String? selectedLocationId;
     if (availableLocations.length == 1) {
-      selectedLocationId = availableLocations.first['id'];
+      selectedLocationId = availableLocations.first['id'] as String;
     }
 
     final bool? confirmed = await showDialog(
@@ -350,7 +369,7 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: selectedLocationId != null
+              onPressed: (selectedLocationId != null || availableLocations.length == 1)
                   ? () => Navigator.of(ctx).pop(true)
                   : null,
               child: const Text('Book'),
