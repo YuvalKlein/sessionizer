@@ -142,7 +142,9 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
               margin: const EdgeInsets.only(bottom: 8),
               elevation: isSelected ? 4 : 1,
               color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : null,
-              child: ListTile(
+              child: Opacity(
+                opacity: session.isActive ? 1.0 : 0.6,
+                child: ListTile(
                 title: Text(
                   session.title,
                   style: TextStyle(
@@ -157,10 +159,28 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
                     Text('${session.slotIntervalMinutes}-min slots'),
                     if (session.bufferBefore > 0 || session.bufferAfter > 0)
                       Text('${session.bufferBefore + session.bufferAfter}-min buffer'),
+                    Row(
+                      children: [
+                        Icon(
+                          session.isActive ? Icons.check_circle : Icons.cancel,
+                          size: 16,
+                          color: session.isActive ? Colors.green : Colors.red,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          session.isActive ? 'Active' : 'Inactive',
+                          style: TextStyle(
+                            color: session.isActive ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.green) : null,
-                onTap: () => viewModel.selectSchedulableSession(session),
+                onTap: session.isActive ? () => viewModel.selectSchedulableSession(session) : null,
+                ),
               ),
             );
           }),

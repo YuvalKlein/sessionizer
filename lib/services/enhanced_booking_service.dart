@@ -23,9 +23,11 @@ class EnhancedBookingService with ChangeNotifier {
        _sessionTypeService = sessionTypeService ?? SessionTypeService(),
        _locationService = locationService ?? LocationService();
 
-  /// Get all schedulable sessions for an instructor
+  /// Get all active schedulable sessions for an instructor
   Future<List<SchedulableSession>> getSchedulableSessions(String instructorId) async {
-    return await _schedulableSessionService.getSchedulableSessionsForInstructor(instructorId);
+    final allSessions = await _schedulableSessionService.getSchedulableSessionsForInstructor(instructorId);
+    // Filter to only show active sessions
+    return allSessions.where((session) => session.isActive).toList();
   }
 
   /// Get available time slots for a specific schedulable session on a given date
@@ -147,15 +149,22 @@ class EnhancedBookingService with ChangeNotifier {
 
   /// Get schedule data for a specific date
   Future<Map<String, dynamic>?> _getScheduleForDate(String scheduleId, DateTime date) async {
-    // This is a simplified version - in a real app, you'd get the actual schedule
-    // For now, we'll return a mock schedule
-    return {
-      'id': scheduleId,
-      'name': 'Default Schedule',
-      'availability': [
-        {'dayOfWeek': date.weekday, 'startTime': '09:00', 'endTime': '17:00'}
-      ]
-    };
+    try {
+      final scheduleDoc = await _firestore.collection('schedules').doc(scheduleId).get();
+      if (!scheduleDoc.exists) {
+        return null;
+      }
+      
+      final scheduleData = scheduleDoc.data() as Map<String, dynamic>;
+      return {
+        'id': scheduleId,
+        'name': scheduleData['name'] ?? 'Schedule',
+        'availability': scheduleData['availability'] ?? [],
+      };
+    } catch (e) {
+      debugPrint('Error getting schedule: $e');
+      return null;
+    }
   }
 
   /// Calculate available slots based on schedule, buffers, and existing bookings
@@ -168,19 +177,27 @@ class EnhancedBookingService with ChangeNotifier {
     final availableSlots = <Map<String, dynamic>>[];
     final now = DateTime.now();
     
+    debugPrint('Calculating slots for date: $date (weekday: ${date.weekday})');
+    debugPrint('Schedule data: $schedule');
+    
     // Get schedule availability for this day
     final dayAvailability = schedule['availability']?.cast<Map<String, dynamic>>().firstWhere(
       (avail) => avail['dayOfWeek'] == date.weekday,
       orElse: () => <String, dynamic>{},
     );
 
+    debugPrint('Day availability: $dayAvailability');
+
     if (dayAvailability.isEmpty) {
+      debugPrint('No availability found for weekday ${date.weekday}');
       return availableSlots;
     }
 
     // Parse start and end times
     final startTime = _parseTime(date, dayAvailability['startTime']);
     final endTime = _parseTime(date, dayAvailability['endTime']);
+
+    debugPrint('Time range: ${startTime.hour}:${startTime.minute.toString().padLeft(2, '0')} - ${endTime.hour}:${endTime.minute.toString().padLeft(2, '0')}');
 
     // Generate slots based on slot interval
     DateTime current = startTime;
@@ -200,11 +217,14 @@ class EnhancedBookingService with ChangeNotifier {
           'sessionTypeId': schedulableSession.sessionTypeId,
           'locationIds': schedulableSession.locationIds,
         });
+        
+        debugPrint('Added slot: ${current.hour}:${current.minute.toString().padLeft(2, '0')} - ${slotEnd.hour}:${slotEnd.minute.toString().padLeft(2, '0')}');
       }
       
       current = current.add(Duration(minutes: schedulableSession.slotIntervalMinutes));
     }
 
+    debugPrint('Total available slots: ${availableSlots.length}');
     return availableSlots;
   }
 

@@ -1,4 +1,4 @@
 1. make the session type to be a list in schedulable session and then the name shuold change from the 
 type name to X types..
 2. in weekly hours- 1. to change one field for nim and max to 2, one for each 2. when click on it, show a list of time, not the watch picker. 3. when open a new slot in the same day, can't pick the hours that already picked.
-
+3. spesific dates- when change more than one day, it save just the last one
