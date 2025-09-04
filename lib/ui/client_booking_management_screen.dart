@@ -31,6 +31,7 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
   List<SessionType> _sessionTypes = [];
   List<Map<String, dynamic>> _locations = [];
   List<UserModel> _instructors = [];
+  Map<String, UserModel> _oppositeUsers = {}; // Store opposite users (instructor for client, client for instructor)
   bool _isLoading = true;
   String? _error;
 
@@ -63,6 +64,9 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
       // Load session types and locations for display
       await _loadRelatedData();
       
+      // Load opposite users (instructor for client, client for instructor)
+      await _loadOppositeUsers();
+      
       setState(() {
         _isLoading = false;
       });
@@ -71,6 +75,35 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
         _error = 'Failed to load bookings: $e';
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadOppositeUsers() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      // Get unique user IDs from bookings
+      final Set<String> userIds = {};
+      for (final booking in _bookings) {
+        if (user.uid == booking.clientId) {
+          // Current user is client, load instructor
+          userIds.add(booking.instructorId);
+        } else {
+          // Current user is instructor, load client
+          userIds.add(booking.clientId);
+        }
+      }
+
+      // Load opposite users
+      for (final userId in userIds) {
+        final oppositeUser = await _userService.getUser(userId);
+        if (oppositeUser != null) {
+          _oppositeUsers[userId] = oppositeUser;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading opposite users: $e');
     }
   }
 
@@ -323,13 +356,20 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
           final instructor = _getInstructor(booking.instructorId);
           final isUpcoming = booking.startTime.isAfter(DateTime.now());
           final isPast = booking.endTime.isBefore(DateTime.now());
+          
+          // Get the opposite user (instructor for client, client for instructor)
+          final currentUser = FirebaseAuth.instance.currentUser;
+          final oppositeUserId = currentUser?.uid == booking.clientId 
+              ? booking.instructorId 
+              : booking.clientId;
+          final oppositeUser = _oppositeUsers[oppositeUserId];
 
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
               contentPadding: const EdgeInsets.all(16),
               leading: UserAvatar(
-                user: instructor,
+                user: oppositeUser,
                 size: 48,
                 showBorder: true,
                 borderColor: isUpcoming 
@@ -351,7 +391,11 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 2),
-                  Text('Instructor: ${instructor?.displayName ?? 'Unknown'}'),
+                  Text(
+                    currentUser?.uid == booking.clientId 
+                        ? 'Instructor: ${oppositeUser?.displayName ?? 'Unknown'}'
+                        : 'Client: ${oppositeUser?.displayName ?? 'Unknown'}'
+                  ),
                   if (sessionType != null) ...[
                     const SizedBox(height: 2),
                     Text('Duration: ${_formatDuration(sessionType)}'),
