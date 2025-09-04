@@ -365,7 +365,6 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
                                 );
                               },
                             ),
-                            ),
                           ),
                         ),
                       ],
