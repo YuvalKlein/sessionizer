@@ -8,6 +8,7 @@ import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/schedulable_session_service.dart';
 import 'package:myapp/services/session_type_service.dart';
 import 'package:myapp/services/schedule_service.dart';
+import 'package:myapp/services/location_service.dart';
 import 'package:myapp/view_models/schedulable_session_view_model.dart';
 
 class SchedulableSessionFormScreen extends StatefulWidget {
@@ -43,7 +44,7 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
   // Data lists
   List<SessionType> _sessionTypes = [];
   List<Schedule> _schedules = [];
-  List<String> _availableLocations = []; // TODO: Replace with actual location model
+  List<Map<String, dynamic>> _availableLocations = [];
 
   bool _isLoading = true;
   bool _isEditing = false;
@@ -86,8 +87,12 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
         }
       });
 
-      // TODO: Load actual locations from location service
-      _availableLocations = ['Location 1', 'Location 2', 'Location 3'];
+      // Load locations from location service
+      final locationService = LocationService();
+      final locations = await locationService.getLocations();
+      setState(() {
+        _availableLocations = locations;
+      });
 
       // If editing, load existing data
       if (_isEditing) {
@@ -185,12 +190,12 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
-            _buildSessionTypeSection(),
-            const SizedBox(height: 24),
             if (_isEditing) ...[
               _buildTitleSection(),
               const SizedBox(height: 24),
             ],
+            _buildSessionTypeSection(),
+            const SizedBox(height: 24),
             _buildScheduleSection(),
             const SizedBox(height: 24),
             _buildLocationsSection(),
@@ -364,15 +369,17 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
             ),
             const SizedBox(height: 12),
             ..._availableLocations.map((location) {
+              final locationId = location['id'] as String;
+              final locationName = location['name'] as String;
               return CheckboxListTile(
-                title: Text(location),
-                value: _selectedLocationIds.contains(location),
+                title: Text(locationName),
+                value: _selectedLocationIds.contains(locationId),
                 onChanged: (checked) {
                   setState(() {
                     if (checked == true) {
-                      _selectedLocationIds.add(location);
+                      _selectedLocationIds.add(locationId);
                     } else {
-                      _selectedLocationIds.remove(location);
+                      _selectedLocationIds.remove(locationId);
                     }
                   });
                 },
@@ -675,7 +682,9 @@ class _SchedulableSessionFormScreenState extends State<SchedulableSessionFormScr
     if (!_isEditing) {
       final sessionType = _sessionTypes.firstWhere((st) => st.id == _selectedSessionTypeId);
       final schedule = _schedules.firstWhere((s) => s.id == _selectedScheduleId);
-      final locationName = _selectedLocationIds.first; // TODO: Get actual location name from location service
+      final firstLocationId = _selectedLocationIds.first;
+      final firstLocation = _availableLocations.firstWhere((loc) => loc['id'] == firstLocationId);
+      final locationName = firstLocation['name'] as String;
       
       finalTitle = SchedulableSession.generateTitle(
         sessionTypeTitle: sessionType.title,
