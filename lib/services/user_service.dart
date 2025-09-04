@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/models/user_model.dart';
+import 'package:myapp/services/avatar_service.dart';
 
 class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -7,9 +8,14 @@ class UserService {
 
   Future<void> createUser(String uid, String email, bool isInstructor, {String? name, String? phone, String? photoURL}) async {
     final now = DateTime.now().toIso8601String();
+    final displayName = name ?? email.split('@')[0];
+    
+    // Generate avatar URL if no photoURL provided
+    final avatarURL = photoURL ?? AvatarService.generateAvatarUrl(displayName, email);
+    
     await _firestore.collection(_collectionPath).doc(uid).set({
       'email': email,
-      'displayName': name ?? email.split('@')[0],
+      'displayName': displayName,
       'isInstructor': isInstructor,
       'admin': false,
       'authSource': 'email',
@@ -18,7 +24,7 @@ class UserService {
       'disabled': false,
       'isVerified': false,
       'phone': phone,
-      'photoURL': photoURL,
+      'photoURL': avatarURL,
       'recentAddresses': [],
       'referralsIds': [],
       'referredById': null,

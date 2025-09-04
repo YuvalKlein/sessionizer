@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/models/user_model.dart';
 import 'package:myapp/services/user_service.dart';
+import 'package:myapp/widgets/user_avatar.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -57,6 +58,12 @@ class ClientDashboardScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final instructor = instructors[index];
               return ListTile(
+                leading: UserAvatar(
+                  user: instructor,
+                  size: 48,
+                  showBorder: true,
+                  borderColor: Theme.of(context).primaryColor,
+                ),
                 title: Text(instructor.displayName.isNotEmpty ? instructor.displayName : instructor.email),
                 subtitle: Text('Click to book a session'),
                 onTap: () => context.go('/booking/${instructor.id}'),

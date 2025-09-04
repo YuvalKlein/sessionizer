@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:myapp/services/auth_service.dart';
 import 'package:myapp/services/user_service.dart';
 import 'package:myapp/models/user_model.dart';
+import 'package:myapp/widgets/user_avatar.dart';
+import 'package:myapp/services/avatar_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,6 +17,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final UserService _userService = UserService();
+  bool _isUpdating = false;
+
+  Future<void> _changeAvatar(UserModel user) async {
+    setState(() {
+      _isUpdating = true;
+    });
+
+    try {
+      // Generate a new random avatar
+      final newAvatarURL = AvatarService.generateAvatarUrl(user.displayName, user.email);
+      
+      await _userService.updateUserProfile(
+        user.id,
+        photoURL: newAvatarURL,
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Avatar updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update avatar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +86,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       key: _formKey,
                       child: Column(
                         children: [
+                          // Avatar Section
+                          Center(
+                            child: Column(
+                              children: [
+                                Stack(
+                                  children: [
+                                    UserAvatar(
+                                      user: userModel,
+                                      size: 100,
+                                      showBorder: true,
+                                      borderColor: Theme.of(context).primaryColor,
+                                      borderWidth: 3,
+                                    ),
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).primaryColor,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: IconButton(
+                                          icon: _isUpdating
+                                              ? const SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                  ),
+                                                )
+                                              : const Icon(
+                                                  Icons.camera_alt,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                ),
+                                          onPressed: _isUpdating ? null : () => _changeAvatar(userModel),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Tap the camera icon to change your avatar',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 32),
                           TextFormField(
                             controller: _nameController,
                             decoration: const InputDecoration(

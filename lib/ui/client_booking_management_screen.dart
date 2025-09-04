@@ -11,6 +11,7 @@ import 'package:myapp/services/user_service.dart';
 import 'package:myapp/models/session_type.dart';
 import 'package:myapp/models/user_model.dart';
 import 'package:myapp/widgets/reschedule_dialog.dart';
+import 'package:myapp/widgets/user_avatar.dart';
 
 class ClientBookingManagementScreen extends StatefulWidget {
   const ClientBookingManagementScreen({super.key});
@@ -327,20 +328,15 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
             margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
               contentPadding: const EdgeInsets.all(16),
-              leading: CircleAvatar(
-                backgroundColor: isUpcoming 
+              leading: UserAvatar(
+                user: instructor,
+                size: 48,
+                showBorder: true,
+                borderColor: isUpcoming 
                     ? Colors.blue 
                     : isPast 
                         ? Colors.grey 
                         : Colors.orange,
-                child: Icon(
-                  isUpcoming 
-                      ? Icons.schedule 
-                      : isPast 
-                          ? Icons.check 
-                          : Icons.access_time,
-                  color: Colors.white,
-                ),
               ),
               title: Text(
                 sessionType?.title ?? 'Session',
