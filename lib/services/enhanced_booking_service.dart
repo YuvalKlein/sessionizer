@@ -138,14 +138,22 @@ class EnhancedBookingService with ChangeNotifier {
 
   /// Check if there's a booking conflict
   Future<bool> _checkBookingConflict(String instructorId, DateTime startTime, DateTime endTime) async {
+    // Get all bookings for the instructor and check conflicts in memory
+    // This avoids the need for a composite index
     final snapshot = await _firestore
         .collection('bookings')
         .where('instructorId', isEqualTo: instructorId)
-        .where('startTime', isLessThan: endTime)
-        .where('endTime', isGreaterThan: startTime)
         .get();
 
-    return snapshot.docs.isNotEmpty;
+    for (final doc in snapshot.docs) {
+      final booking = Booking.fromFirestore(doc);
+      // Check if the new booking overlaps with existing booking
+      if (startTime.isBefore(booking.endTime) && endTime.isAfter(booking.startTime)) {
+        return true; // Conflict found
+      }
+    }
+
+    return false; // No conflicts
   }
 
   /// Get schedule data for a specific date
