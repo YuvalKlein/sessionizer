@@ -64,12 +64,6 @@ class _ScheduleDetailScreenState extends State<ScheduleDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Schedule Settings'),
-        actions: [
-          TextButton(
-            onPressed: _saveChanges,
-            child: const Text('Save', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
@@ -106,6 +100,7 @@ class _ScheduleDetailScreenState extends State<ScheduleDetailScreen> {
                       labelText: 'Schedule Name',
                       border: OutlineInputBorder(),
                     ),
+                    onChanged: (value) => _autoSaveName(value),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -128,6 +123,7 @@ class _ScheduleDetailScreenState extends State<ScheduleDetailScreen> {
                           holidays: _schedule!.holidays,
                         );
                       });
+                      _autoSaveDefault(value);
                     },
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -213,51 +209,68 @@ class _ScheduleDetailScreenState extends State<ScheduleDetailScreen> {
     );
   }
 
-  Future<void> _saveChanges() async {
-    if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Schedule name cannot be empty')),
-      );
-      return;
-    }
-
+  Future<void> _autoSaveName(String name) async {
+    if (name.trim().isEmpty) return;
+    
     try {
-      // Reload the schedule to get the latest data including specific date availability
+      // Reload the schedule to get the latest data
       final latestSchedule = await context.read<ScheduleService>().getSchedule(_schedule!.id);
       
+      if (latestSchedule == null) return;
+      
       final updatedSchedule = Schedule(
-        id: _schedule!.id,
-        instructorId: _schedule!.instructorId,
-        name: _nameController.text.trim(),
-        isDefault: _schedule!.isDefault,
-        timezone: _schedule!.timezone,
-        weeklyAvailability: _schedule!.weeklyAvailability,
-        specificDateAvailability: latestSchedule?.specificDateAvailability ?? _schedule!.specificDateAvailability,
-        holidays: _schedule!.holidays,
+        id: latestSchedule.id,
+        instructorId: latestSchedule.instructorId,
+        name: name.trim(),
+        isDefault: latestSchedule.isDefault,
+        timezone: latestSchedule.timezone,
+        weeklyAvailability: latestSchedule.weeklyAvailability,
+        specificDateAvailability: latestSchedule.specificDateAvailability,
+        holidays: latestSchedule.holidays,
       );
 
-      if (_schedule!.isDefault) {
+      await context.read<ScheduleService>().updateSchedule(
+        latestSchedule.id,
+        updatedSchedule.toMap(),
+      );
+    } catch (e) {
+      debugPrint('Error auto-saving name: $e');
+    }
+  }
+
+  Future<void> _autoSaveDefault(bool isDefault) async {
+    try {
+      // Reload the schedule to get the latest data
+      final latestSchedule = await context.read<ScheduleService>().getSchedule(_schedule!.id);
+      
+      if (latestSchedule == null) return;
+      
+      final updatedSchedule = Schedule(
+        id: latestSchedule.id,
+        instructorId: latestSchedule.instructorId,
+        name: latestSchedule.name,
+        isDefault: isDefault,
+        timezone: latestSchedule.timezone,
+        weeklyAvailability: latestSchedule.weeklyAvailability,
+        specificDateAvailability: latestSchedule.specificDateAvailability,
+        holidays: latestSchedule.holidays,
+      );
+
+      // If setting as default, unset other defaults first
+      if (isDefault) {
         await context.read<ScheduleService>().setDefaultSchedule(
-          _schedule!.instructorId,
-          _schedule!.id,
+          latestSchedule.instructorId,
+          latestSchedule.id,
           true,
         );
       }
 
       await context.read<ScheduleService>().updateSchedule(
-        _schedule!.id,
+        latestSchedule.id,
         updatedSchedule.toMap(),
       );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Schedule updated successfully')),
-      );
-
-      context.pop();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating schedule: $e')),
-      );
+      debugPrint('Error auto-saving default status: $e');
     }
   }
 
