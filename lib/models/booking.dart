@@ -8,6 +8,9 @@ class Booking {
   final String clientName;
   final String clientEmail;
   final String scheduleId;
+  final String schedulableSessionId; // New field for schedulable session
+  final String sessionTypeId; // New field for session type
+  final String locationId; // New field for location
   final DateTime startTime;
   final DateTime endTime;
 
@@ -19,6 +22,9 @@ class Booking {
     required this.clientName,
     required this.clientEmail,
     required this.scheduleId,
+    required this.schedulableSessionId,
+    required this.sessionTypeId,
+    required this.locationId,
     required this.startTime,
     required this.endTime,
   });
@@ -33,6 +39,9 @@ class Booking {
       clientName: data['clientName'] ?? '',
       clientEmail: data['clientEmail'] ?? '',
       scheduleId: data['scheduleId'] ?? '',
+      schedulableSessionId: data['schedulableSessionId'] ?? '',
+      sessionTypeId: data['sessionTypeId'] ?? '',
+      locationId: data['locationId'] ?? '',
       startTime: (data['startTime'] as Timestamp).toDate(),
       endTime: (data['endTime'] as Timestamp).toDate(),
     );
@@ -46,6 +55,9 @@ class Booking {
       'clientName': clientName,
       'clientEmail': clientEmail,
       'scheduleId': scheduleId,
+      'schedulableSessionId': schedulableSessionId,
+      'sessionTypeId': sessionTypeId,
+      'locationId': locationId,
       'startTime': startTime,
       'endTime': endTime,
     };

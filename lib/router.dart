@@ -9,6 +9,7 @@ import 'package:myapp/ui/profile_screen.dart';
 import 'package:myapp/ui/instructor_dashboard_screen.dart';
 import 'package:myapp/ui/client_dashboard_screen.dart';
 import 'package:myapp/ui/booking_screen.dart';
+import 'package:myapp/ui/enhanced_booking_screen.dart';
 import 'package:myapp/ui/schedules_list_screen.dart';
 import 'package:myapp/ui/schedule_detail_screen.dart';
 import 'package:myapp/ui/schedulable_sessions_screen.dart';
@@ -149,7 +150,7 @@ class AppRouter {
             path: '/booking/:instructorId',
             builder: (BuildContext context, GoRouterState state) {
               final instructorId = state.pathParameters['instructorId']!;
-              return BookingScreen(instructorId: instructorId);
+              return EnhancedBookingScreen(instructorId: instructorId);
             },
           ),
         ],
