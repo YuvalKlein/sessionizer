@@ -65,7 +65,9 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
       await _loadRelatedData();
       
       // Load opposite users (instructor for client, client for instructor)
+      print('About to load opposite users...');
       await _loadOppositeUsers();
+      print('Finished loading opposite users');
       
       setState(() {
         _isLoading = false;
@@ -79,9 +81,14 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
   }
 
   Future<void> _loadOppositeUsers() async {
+    print('=== LOADING OPPOSITE USERS ===');
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
+      if (user == null) {
+        print('No current user found');
+        return;
+      }
+      print('Current user: ${user.uid}');
 
       // Get unique user IDs from bookings
       final Set<String> userIds = {};
