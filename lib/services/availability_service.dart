@@ -217,6 +217,13 @@ class AvailabilityService with ChangeNotifier {
     }
 
     allSlots.sort((a, b) => a.startTime.compareTo(b.startTime));
+    
+    debugPrint('=== DAY AVAILABILITY RESULT ===');
+    debugPrint('Date: $date');
+    debugPrint('Total slots: ${allSlots.length}');
+    debugPrint('Available slots: ${allSlots.where((s) => s.isAvailable).length}');
+    debugPrint('Unavailable slots: ${allSlots.where((s) => !s.isAvailable).length}');
+    
     return DayAvailability(date: date, slots: allSlots);
   }
 
@@ -274,7 +281,7 @@ class AvailabilityService with ChangeNotifier {
           }
         }
 
-        slots.add(AvailabilitySlot(
+        final slot = AvailabilitySlot(
           startTime: currentTime,
           endTime: slotEndTime,
           schedulableSessionId: schedulableSession.id!,
@@ -286,7 +293,14 @@ class AvailabilityService with ChangeNotifier {
           bufferAfter: schedulableSession.bufferAfter,
           isAvailable: isAvailable,
           conflictReason: conflictReason,
-        ));
+        );
+        
+        debugPrint('Generated slot: ${slot.startTime} - ${slot.endTime}, available: ${slot.isAvailable}');
+        if (!slot.isAvailable) {
+          debugPrint('  Conflict reason: ${slot.conflictReason}');
+        }
+        
+        slots.add(slot);
 
         currentTime = currentTime.add(Duration(minutes: actualSlotInterval));
       }
