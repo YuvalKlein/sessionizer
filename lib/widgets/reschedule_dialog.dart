@@ -83,7 +83,7 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
       SchedulableSession? matchingSession;
       for (final session in schedulableSessions) {
         if (session.sessionTypeId == widget.booking.sessionTypeId) {
-          if (widget.booking.locationId == null || session.locationId == widget.booking.locationId) {
+          if (widget.booking.locationId == null || session.locationIds.contains(widget.booking.locationId)) {
             matchingSession = session;
             break;
           }
