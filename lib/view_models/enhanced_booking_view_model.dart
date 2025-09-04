@@ -9,6 +9,7 @@ class EnhancedBookingViewModel extends ChangeNotifier {
   final EnhancedBookingService _bookingService;
   final SessionTypeService _sessionTypeService;
   final LocationService _locationService;
+  String? _instructorId;
 
   EnhancedBookingViewModel({
     required EnhancedBookingService bookingService,
@@ -41,6 +42,7 @@ class EnhancedBookingViewModel extends ChangeNotifier {
 
   /// Load schedulable sessions for an instructor
   Future<void> loadSchedulableSessions(String instructorId) async {
+    _instructorId = instructorId;
     _setLoading(true);
     _clearError();
 
@@ -75,11 +77,16 @@ class EnhancedBookingViewModel extends ChangeNotifier {
         }
       }
 
-      // Load locations
-      _locations = await _locationService.getLocations();
-      debugPrint('Loaded ${_locations.length} locations');
-      for (var loc in _locations) {
-        debugPrint('Loaded location: ${loc['name']} (${loc['id']})');
+      // Load locations for the instructor we're booking with
+      if (_instructorId != null) {
+        _locations = await _locationService.getLocationsForInstructor(_instructorId!);
+        debugPrint('Loaded ${_locations.length} locations for instructor $_instructorId');
+        for (var loc in _locations) {
+          debugPrint('Loaded location: ${loc['name']} (${loc['id']})');
+        }
+      } else {
+        debugPrint('No instructor ID available for loading locations');
+        _locations = [];
       }
     } catch (e) {
       debugPrint('Error loading related data: $e');

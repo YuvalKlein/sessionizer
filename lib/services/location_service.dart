@@ -42,6 +42,20 @@ class LocationService {
     }).toList();
   }
 
+  /// Get all locations for a specific instructor (one-time fetch)
+  Future<List<Map<String, dynamic>>> getLocationsForInstructor(String instructorId) async {
+    final snapshot = await _firestore
+        .collection(_collectionPath)
+        .where('instructorId', isEqualTo: instructorId)
+        .get();
+
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      data['id'] = doc.id;
+      return data;
+    }).toList();
+  }
+
   /// Get a specific location by ID
   Future<Map<String, dynamic>?> getLocation(String locationId) async {
     try {
