@@ -287,28 +287,31 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
             ),
             const SizedBox(height: 16),
 
-            // Calendar
+            // Calendar and slots in a row
             Expanded(
-              child: SingleChildScrollView(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Calendar
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Select New Date',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Calendar section
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Select New Date',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 350, // Fixed height to prevent overflow
-                            child: TableCalendar<Map<String, dynamic>>(
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 350,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: TableCalendar<Map<String, dynamic>>(
                             firstDay: DateTime.now(),
                             lastDay: DateTime.now().add(const Duration(days: 90)),
                             focusedDay: _focusedDay,
@@ -360,14 +363,14 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
                                 );
                               },
                             ),
-                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
+                  ),
                   const SizedBox(width: 16),
 
-                  // Available slots
+                  // Available slots section
                   Expanded(
                     flex: 1,
                     child: Column(
@@ -380,8 +383,12 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        SizedBox(
-                          height: 350, // Fixed height to match calendar
+                        Container(
+                          height: 350,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           child: _buildSlotsList(),
                         ),
                       ],
@@ -462,6 +469,7 @@ class _RescheduleDialogState extends State<RescheduleDialog> {
     }
 
     return ListView.builder(
+      padding: const EdgeInsets.all(8),
       itemCount: _availableSlots.length,
       itemBuilder: (context, index) {
         final slot = _availableSlots[index];
