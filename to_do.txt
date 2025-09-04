@@ -1,4 +1,26 @@
-1. make the session type to be a list in schedulable session and then the name shuold change from the 
-type name to X types..
+
 2. in weekly hours- 1. to change one field for nim and max to 2, one for each 2. when click on it, show a list of time, not the watch picker. 3. when open a new slot in the same day, can't pick the hours that already picked.
 3. spesific dates- when change more than one day, it save just the last one
+4. When create or update sessin type, check that the max players isn't < min players, just max >= min.
+5. 
+
+Option 2: Complete the Booking System
+Add: Booking management (view, cancel, reschedule bookings)
+Add: Email notifications for bookings
+Add: Booking history and analytics
+Option 3: Enhance the Instructor Dashboard
+Add: Better booking management interface
+Add: Revenue tracking and reporting
+Add: Client management features
+Option 4: Improve User Experience
+Add: Better error handling and user feedback
+Add: Mobile responsiveness improvements
+Add: Loading states and animations
+Option 5: Add New Features
+Add: Recurring bookings
+Add: Waitlist functionality
+Add: Payment integration
+
+Done
+1. make the session type to be a list in schedulable session and then the name shuold change from the 
+type name to X types..
