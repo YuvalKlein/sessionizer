@@ -19,6 +19,7 @@ class _DateOverrideFormState extends State<DateOverrideForm> {
   DateTime _currentMonth = DateTime.now();
   bool _isLoading = true;
   List<Map<String, String>> _currentTimeSlots = [];
+  Schedule? _schedule;
 
   @override
   void initState() {
@@ -29,8 +30,9 @@ class _DateOverrideFormState extends State<DateOverrideForm> {
   Future<void> _loadExistingData() async {
     try {
       final schedule = await context.read<ScheduleService>().getSchedule(widget.scheduleId);
-      if (schedule?.specificDateAvailability != null) {
-        setState(() {
+      setState(() {
+        _schedule = schedule;
+        if (schedule?.specificDateAvailability != null) {
           _specificDateOverrides.addAll(
             Map<String, List<Map<String, String>>>.from(
               schedule!.specificDateAvailability!.map(
@@ -43,8 +45,8 @@ class _DateOverrideFormState extends State<DateOverrideForm> {
               ),
             ),
           );
-        });
-      }
+        }
+      });
     } catch (e) {
       debugPrint('Error loading specific date availability: $e');
     } finally {
@@ -280,7 +282,14 @@ class _DateOverrideFormState extends State<DateOverrideForm> {
                   setState(() {
                     _selectedDate = date;
                     final dateKey = DateFormat('yyyy-MM-dd').format(date);
-                    _currentTimeSlots = List.from(_specificDateOverrides[dateKey] ?? []);
+                    
+                    // If there's a specific override for this date, use it
+                    if (_specificDateOverrides.containsKey(dateKey)) {
+                      _currentTimeSlots = List.from(_specificDateOverrides[dateKey]!);
+                    } else {
+                      // Otherwise, initialize with weekly hours for this day of the week
+                      _currentTimeSlots = _getWeeklyHoursForDate(date);
+                    }
                   });
                 },
                 child: Container(
@@ -519,5 +528,21 @@ class _DateOverrideFormState extends State<DateOverrideForm> {
         );
       }
     }
+  }
+
+  List<Map<String, String>> _getWeeklyHoursForDate(DateTime date) {
+    if (_schedule?.weeklyAvailability == null) return [];
+    
+    // Get the day of the week (0 = Sunday, 1 = Monday, etc.)
+    final weekday = date.weekday % 7; // Convert to 0-based Sunday start
+    final dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    final dayName = dayNames[weekday];
+    
+    final weeklyHours = _schedule!.weeklyAvailability![dayName];
+    if (weeklyHours == null) return [];
+    
+    return List<Map<String, String>>.from(
+      weeklyHours.map((item) => Map<String, String>.from(item)),
+    );
   }
 }
