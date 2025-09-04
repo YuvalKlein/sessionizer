@@ -389,6 +389,15 @@ class _DateOverrideFormState extends State<DateOverrideForm> {
                   onPressed: () {
                     setState(() {
                       _currentTimeSlots.removeAt(index);
+                      // Immediately save the current time slots to the overrides map
+                      if (_selectedDate != null) {
+                        final dateKey = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+                        if (_currentTimeSlots.isEmpty) {
+                          _specificDateOverrides.remove(dateKey);
+                        } else {
+                          _specificDateOverrides[dateKey] = List.from(_currentTimeSlots);
+                        }
+                      }
                     });
                   },
                   icon: const Icon(Icons.close, color: Colors.grey),
@@ -436,6 +445,11 @@ class _DateOverrideFormState extends State<DateOverrideForm> {
       setState(() {
         _currentTimeSlots.add(timeSlot);
         _currentTimeSlots.sort((a, b) => a['startTime']!.compareTo(b['startTime']!));
+        // Immediately save the current time slots to the overrides map
+        if (_selectedDate != null) {
+          final dateKey = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+          _specificDateOverrides[dateKey] = List.from(_currentTimeSlots);
+        }
       });
     }
   }
@@ -460,6 +474,7 @@ class _DateOverrideFormState extends State<DateOverrideForm> {
   }
 
   Future<void> _saveOverrides() async {
+    // Save the current date's time slots if there's a selected date
     if (_selectedDate != null) {
       final dateKey = DateFormat('yyyy-MM-dd').format(_selectedDate!);
       if (_currentTimeSlots.isNotEmpty) {
