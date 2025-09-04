@@ -171,9 +171,19 @@ class EnhancedBookingViewModel extends ChangeNotifier {
 
   /// Get available locations for a schedulable session
   List<Map<String, dynamic>> getAvailableLocationsForSession(SchedulableSession schedulableSession) {
-    return _locations.where((location) {
+    debugPrint('Getting locations for session: ${schedulableSession.title}');
+    debugPrint('Session location IDs: ${schedulableSession.locationIds}');
+    debugPrint('All locations: ${_locations.length}');
+    for (var loc in _locations) {
+      debugPrint('Location: ${loc['name']} (${loc['id']})');
+    }
+    
+    final availableLocations = _locations.where((location) {
       return schedulableSession.locationIds.contains(location['id']);
     }).toList();
+    
+    debugPrint('Available locations found: ${availableLocations.length}');
+    return availableLocations;
   }
 
   /// Check if a day has available slots (for calendar display)

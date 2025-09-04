@@ -446,51 +446,72 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
       return;
     }
 
+    // Debug logging
+    debugPrint('Available locations: ${availableLocations.length}');
+    for (var loc in availableLocations) {
+      debugPrint('Location: ${loc['name']} (${loc['id']})');
+    }
+
     String? selectedLocationId;
     if (availableLocations.length == 1) {
       selectedLocationId = availableLocations.first['id'] as String;
+      debugPrint('Auto-selected location: $selectedLocationId');
     }
 
     final bool? confirmed = await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Confirm Booking'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Book session on ${DateFormat.yMMMd().format(slot['startTime'])} at ${DateFormat.jm().format(slot['startTime'])}?',
-              ),
-              const SizedBox(height: 16),
-              if (availableLocations.length > 1) ...[
-                const Text('Select Location:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ...availableLocations.map((location) => RadioListTile<String>(
-                  title: Text(location['name']),
-                  value: location['id'],
-                  groupValue: selectedLocationId,
-                  onChanged: (value) => setState(() => selectedLocationId = value),
-                )),
-              ] else if (availableLocations.length == 1) ...[
-                Text('Location: ${availableLocations.first['name']}'),
+        builder: (context, setState) {
+          // Debug the button state
+          final isButtonEnabled = selectedLocationId != null || availableLocations.length == 1;
+          debugPrint('Button enabled: $isButtonEnabled, selectedLocationId: $selectedLocationId, locations: ${availableLocations.length}');
+          
+          return AlertDialog(
+            title: const Text('Confirm Booking'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Book session on ${DateFormat.yMMMd().format(slot['startTime'])} at ${DateFormat.jm().format(slot['startTime'])}?',
+                ),
+                const SizedBox(height: 16),
+                if (availableLocations.length > 1) ...[
+                  const Text('Select Location:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  ...availableLocations.map((location) => RadioListTile<String>(
+                    title: Text(location['name']),
+                    value: location['id'],
+                    groupValue: selectedLocationId,
+                    onChanged: (value) {
+                      debugPrint('Location selected: $value');
+                      setState(() => selectedLocationId = value);
+                    },
+                  )),
+                ] else if (availableLocations.length == 1) ...[
+                  Text('Location: ${availableLocations.first['name']}'),
+                ] else ...[
+                  const Text('No locations available', style: TextStyle(color: Colors.red)),
+                ],
               ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: isButtonEnabled
+                    ? () {
+                        debugPrint('Booking confirmed with location: $selectedLocationId');
+                        Navigator.of(ctx).pop(true);
+                      }
+                    : null,
+                child: const Text('Book'),
+              ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: (selectedLocationId != null || availableLocations.length == 1)
-                  ? () => Navigator.of(ctx).pop(true)
-                  : null,
-              child: const Text('Book'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
 
