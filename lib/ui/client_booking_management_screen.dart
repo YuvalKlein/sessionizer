@@ -86,20 +86,28 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
       // Get unique user IDs from bookings
       final Set<String> userIds = {};
       for (final booking in _bookings) {
+        debugPrint('Booking: clientId=${booking.clientId}, instructorId=${booking.instructorId}, currentUser=${user.uid}');
         if (user.uid == booking.clientId) {
           // Current user is client, load instructor
+          debugPrint('User is client, loading instructor: ${booking.instructorId}');
           userIds.add(booking.instructorId);
         } else {
           // Current user is instructor, load client
+          debugPrint('User is instructor, loading client: ${booking.clientId}');
           userIds.add(booking.clientId);
         }
       }
+
+      debugPrint('Loading opposite users: ${userIds.toList()}');
 
       // Load opposite users
       for (final userId in userIds) {
         final oppositeUser = await _userService.getUser(userId);
         if (oppositeUser != null) {
           _oppositeUsers[userId] = oppositeUser;
+          debugPrint('Loaded opposite user: ${oppositeUser.displayName} (${oppositeUser.id})');
+        } else {
+          debugPrint('Failed to load opposite user: $userId');
         }
       }
     } catch (e) {
@@ -363,6 +371,9 @@ class _ClientBookingManagementScreenState extends State<ClientBookingManagementS
               ? booking.instructorId 
               : booking.clientId;
           final oppositeUser = _oppositeUsers[oppositeUserId];
+          
+          debugPrint('Booking ${index}: currentUser=${currentUser?.uid}, clientId=${booking.clientId}, instructorId=${booking.instructorId}');
+          debugPrint('oppositeUserId=$oppositeUserId, oppositeUser=${oppositeUser?.displayName}');
 
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
