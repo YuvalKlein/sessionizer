@@ -19,6 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _emailController = TextEditingController();
   final UserService _userService = UserService();
   bool _isUpdating = false;
+  UserModel? _currentUser;
 
   Future<void> _changeAvatar(UserModel user) async {
     setState(() {
@@ -61,6 +62,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
     final userService = context.read<UserService>();
@@ -78,8 +86,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (userModel == null) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  _nameController.text = userModel.displayName;
-                  _emailController.text = userModel.email;
+                  
+                  // Update controllers only when user data changes
+                  if (_currentUser != userModel) {
+                    _currentUser = userModel;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        _nameController.text = userModel.displayName;
+                        _emailController.text = userModel.email;
+                      }
+                    });
+                  }
                   return Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Form(
@@ -162,14 +179,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ElevatedButton(
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
-                                await userService.updateUser(user.uid, {
-                                  'name': _nameController.text,
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Profile updated'),
-                                  ),
-                                );
+                                try {
+                                  await _userService.updateUserProfile(
+                                    user.uid,
+                                    displayName: _nameController.text,
+                                  );
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Profile updated successfully!'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Failed to update profile: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
                               }
                             },
                             child: const Text('Save'),
