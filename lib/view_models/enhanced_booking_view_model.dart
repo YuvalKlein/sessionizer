@@ -99,7 +99,7 @@ class EnhancedBookingViewModel extends ChangeNotifier {
 
     try {
       _availableSlots = await _bookingService.getAvailableSlots(
-        schedulableSessionId: _selectedSchedulableSession!.id,
+        schedulableSessionId: _selectedSchedulableSession!.id!,
         date: date,
       );
       notifyListeners();
@@ -125,7 +125,7 @@ class EnhancedBookingViewModel extends ChangeNotifier {
 
     try {
       final bookingId = await _bookingService.createBooking(
-        schedulableSessionId: _selectedSchedulableSession!.id,
+        schedulableSessionId: _selectedSchedulableSession!.id!,
         clientId: clientId,
         clientName: clientName,
         clientEmail: clientEmail,
@@ -151,10 +151,13 @@ class EnhancedBookingViewModel extends ChangeNotifier {
 
   /// Get session type for a schedulable session
   SessionType? getSessionTypeForSchedulableSession(SchedulableSession schedulableSession) {
-    return _sessionTypes.firstWhere(
-      (st) => st.id == schedulableSession.sessionTypeId,
-      orElse: () => null,
-    );
+    try {
+      return _sessionTypes.firstWhere(
+        (st) => st.id == schedulableSession.sessionTypeId,
+      );
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Get location name by ID

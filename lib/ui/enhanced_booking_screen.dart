@@ -145,10 +145,10 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (sessionType != null)
-                      Text('${sessionType.title} • ${sessionType.durationMinutes} min'),
+                      Text('${sessionType.title} • ${sessionType.duration} min'),
                     Text('${session.slotIntervalMinutes}-min slots'),
-                    if (session.bufferTimeMinutes > 0)
-                      Text('${session.bufferTimeMinutes}-min buffer'),
+                    if (session.bufferBefore > 0 || session.bufferAfter > 0)
+                      Text('${session.bufferBefore + session.bufferAfter}-min buffer'),
                   ],
                 ),
                 trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.green) : null,
@@ -365,7 +365,7 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
         clientId: currentUser.uid,
         clientName: currentUser.displayName ?? 'User',
         clientEmail: currentUser.email ?? '',
-        locationId: selectedLocationId,
+        locationId: selectedLocationId!,
       );
 
       if (mounted) {

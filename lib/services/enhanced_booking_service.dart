@@ -25,7 +25,7 @@ class EnhancedBookingService with ChangeNotifier {
 
   /// Get all schedulable sessions for an instructor
   Future<List<SchedulableSession>> getSchedulableSessions(String instructorId) async {
-    return await _schedulableSessionService.getSchedulableSessions(instructorId);
+    return await _schedulableSessionService.getSchedulableSessionsForInstructor(instructorId);
   }
 
   /// Get available time slots for a specific schedulable session on a given date
@@ -80,7 +80,7 @@ class EnhancedBookingService with ChangeNotifier {
 
       // Calculate end time based on session type duration
       final sessionType = await _sessionTypeService.getSessionType(schedulableSession.sessionTypeId);
-      final duration = sessionType?.durationMinutes ?? 60;
+      final duration = sessionType?.duration ?? 60;
       final endTime = startTime.add(Duration(minutes: duration));
 
       // Check for conflicts
@@ -191,7 +191,7 @@ class EnhancedBookingService with ChangeNotifier {
       if (current.isAfter(now) && 
           _isWithinBookingConstraints(current, schedulableSession) &&
           !_isSlotBooked(current, slotEnd, bookings) &&
-          !_hasBufferConflict(current, slotEnd, bookings, schedulableSession.bufferTimeMinutes)) {
+          !_hasBufferConflict(current, slotEnd, bookings, schedulableSession.bufferBefore + schedulableSession.bufferAfter)) {
         
         availableSlots.add({
           'startTime': current,
@@ -214,8 +214,7 @@ class EnhancedBookingService with ChangeNotifier {
     final daysAhead = slotTime.difference(now).inDays;
     final hoursAhead = slotTime.difference(now).inHours;
 
-    return daysAhead >= schedulableSession.minDaysAhead &&
-           daysAhead <= schedulableSession.maxDaysAhead &&
+    return daysAhead <= schedulableSession.maxDaysAhead &&
            hoursAhead >= schedulableSession.minHoursAhead;
   }
 
