@@ -34,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (userModel == null) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  _nameController.text = userModel.name;
+                  _nameController.text = userModel.displayName;
                   _emailController.text = userModel.email;
                   return Padding(
                     padding: const EdgeInsets.all(16.0),

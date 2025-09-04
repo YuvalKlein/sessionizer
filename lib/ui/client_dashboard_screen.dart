@@ -28,7 +28,7 @@ class ClientDashboardScreen extends StatelessWidget {
           // Debug: Print instructor data
           debugPrint('Instructors loaded: ${instructors.length}');
           for (final instructor in instructors) {
-            debugPrint('Instructor: ${instructor.name} (${instructor.email}) - isInstructor: ${instructor.isInstructor}');
+            debugPrint('Instructor: ${instructor.displayName} (${instructor.email}) - isInstructor: ${instructor.isInstructor}');
           }
 
           if (instructors.isEmpty) {
@@ -57,7 +57,7 @@ class ClientDashboardScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final instructor = instructors[index];
               return ListTile(
-                title: Text(instructor.name.isNotEmpty ? instructor.name : instructor.email),
+                title: Text(instructor.displayName.isNotEmpty ? instructor.displayName : instructor.email),
                 subtitle: Text('Click to book a session'),
                 onTap: () => context.go('/booking/${instructor.id}'),
               );
