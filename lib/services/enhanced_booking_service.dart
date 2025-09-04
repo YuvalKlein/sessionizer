@@ -225,10 +225,15 @@ class EnhancedBookingService with ChangeNotifier {
     }
 
     // Parse start and end times
-    final startTime = _parseTime(date, dayAvailability['startTime']);
-    final endTime = _parseTime(date, dayAvailability['endTime']);
+    final startTimeStr = dayAvailability['startTime'] as String;
+    final endTimeStr = dayAvailability['endTime'] as String;
+    
+    debugPrint('Parsing times: "$startTimeStr" to "$endTimeStr"');
+    
+    final startTime = _parseTime(date, startTimeStr);
+    final endTime = _parseTime(date, endTimeStr);
 
-    debugPrint('Time range: ${startTime.hour}:${startTime.minute.toString().padLeft(2, '0')} - ${endTime.hour}:${endTime.minute.toString().padLeft(2, '0')}');
+    debugPrint('Parsed time range: ${startTime.hour}:${startTime.minute.toString().padLeft(2, '0')} - ${endTime.hour}:${endTime.minute.toString().padLeft(2, '0')}');
 
     // Generate slots based on slot interval
     DateTime current = startTime;
@@ -286,10 +291,45 @@ class EnhancedBookingService with ChangeNotifier {
 
   /// Parse time string to DateTime
   DateTime _parseTime(DateTime date, String timeStr) {
-    final parts = timeStr.split(':');
-    final hour = int.parse(parts[0]);
-    final minute = int.parse(parts[1]);
-    return DateTime(date.year, date.month, date.day, hour, minute);
+    try {
+      // Handle 12-hour format with AM/PM
+      if (timeStr.contains('AM') || timeStr.contains('PM')) {
+        final cleanTime = timeStr.replaceAll(' ', '').toUpperCase();
+        final isPM = cleanTime.contains('PM');
+        final timeWithoutPeriod = cleanTime.replaceAll(RegExp(r'[AP]M'), '');
+        final parts = timeWithoutPeriod.split(':');
+        
+        if (parts.length != 2) {
+          throw FormatException('Invalid time format: $timeStr');
+        }
+        
+        int hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        
+        // Convert 12-hour to 24-hour format
+        if (isPM && hour != 12) {
+          hour += 12;
+        } else if (!isPM && hour == 12) {
+          hour = 0;
+        }
+        
+        return DateTime(date.year, date.month, date.day, hour, minute);
+      } else {
+        // Handle 24-hour format (HH:MM)
+        final parts = timeStr.split(':');
+        if (parts.length != 2) {
+          throw FormatException('Invalid time format: $timeStr');
+        }
+        
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        return DateTime(date.year, date.month, date.day, hour, minute);
+      }
+    } catch (e) {
+      debugPrint('Error parsing time "$timeStr": $e');
+      // Fallback to 9 AM if parsing fails
+      return DateTime(date.year, date.month, date.day, 9, 0);
+    }
   }
 
   /// Cancel a booking
