@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import 'package:myapp/view_models/enhanced_booking_view_model.dart';
 import 'package:myapp/services/enhanced_booking_service.dart';
 import 'package:myapp/services/session_type_service.dart';
@@ -33,7 +34,11 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
       locationService: LocationService(),
     );
     _selectedDay = _focusedDay.value;
-    _viewModel.loadSchedulableSessions(widget.instructorId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _viewModel.loadSchedulableSessions(widget.instructorId);
+      }
+    });
   }
 
   @override
@@ -43,7 +48,7 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
         title: const Text('Book a Session'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.go('/client'),
         ),
       ),
       body: ListenableProvider.value(
@@ -356,26 +361,37 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
     );
 
     if (confirmed == true && selectedLocationId != null) {
-      final success = await viewModel.bookSlot(
-        slot: slot,
-        clientId: currentUser.uid,
-        clientName: currentUser.displayName ?? 'User',
-        clientEmail: currentUser.email ?? '',
-        locationId: selectedLocationId!,
-      );
+      try {
+        final success = await viewModel.bookSlot(
+          slot: slot,
+          clientId: currentUser.uid,
+          clientName: currentUser.displayName ?? 'User',
+          clientEmail: currentUser.email ?? '',
+          locationId: selectedLocationId!,
+        );
 
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Booking successful!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
+        if (mounted) {
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Booking successful!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(viewModel.error ?? 'Booking failed'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(viewModel.error ?? 'Booking failed'),
+              content: Text('Booking failed: $e'),
               backgroundColor: Colors.red,
             ),
           );
@@ -415,6 +431,7 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
   @override
   void dispose() {
     _focusedDay.dispose();
+    _viewModel.dispose();
     super.dispose();
   }
 }
