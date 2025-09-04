@@ -8,6 +8,7 @@ import 'package:myapp/services/enhanced_booking_service.dart';
 import 'package:myapp/services/session_type_service.dart';
 import 'package:myapp/services/location_service.dart';
 import 'package:myapp/models/schedulable_session.dart';
+import 'package:myapp/models/session_type.dart';
 
 class EnhancedBookingScreen extends StatefulWidget {
   final String instructorId;
@@ -145,7 +146,7 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (sessionType != null)
-                      Text('${sessionType.title} • ${sessionType.duration} min'),
+                      Text('${sessionType.title} • ${_formatDuration(sessionType)}'),
                     Text('${session.slotIntervalMinutes}-min slots'),
                     if (session.bufferBefore > 0 || session.bufferAfter > 0)
                       Text('${session.bufferBefore + session.bufferAfter}-min buffer'),
@@ -385,6 +386,34 @@ class _EnhancedBookingScreenState extends State<EnhancedBookingScreen> {
           );
         }
       }
+    }
+  }
+
+  String _formatDuration(SessionType sessionType) {
+    final duration = sessionType.duration;
+    final unit = sessionType.durationUnit.toLowerCase();
+    
+    if (unit == 'hours' || unit == 'hour') {
+      if (duration == 1) {
+        return '1 hour';
+      } else {
+        return '$duration hours';
+      }
+    } else if (unit == 'minutes' || unit == 'minute' || unit == 'min') {
+      if (duration >= 60) {
+        final hours = duration ~/ 60;
+        final minutes = duration % 60;
+        if (minutes == 0) {
+          return hours == 1 ? '1 hour' : '$hours hours';
+        } else {
+          return '${hours}h ${minutes}m';
+        }
+      } else {
+        return '$duration min';
+      }
+    } else {
+      // Default to minutes if unit is unknown
+      return '$duration min';
     }
   }
 
