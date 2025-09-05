@@ -21,6 +21,7 @@ import 'package:myapp/features/schedule/domain/repositories/schedule_repository.
 import 'package:myapp/features/schedule/domain/usecases/get_schedules.dart';
 import 'package:myapp/features/schedule/domain/usecases/get_schedule_by_id.dart';
 import 'package:myapp/features/schedule/domain/usecases/create_schedule.dart';
+import 'package:myapp/features/schedule/domain/usecases/update_schedule.dart';
 import 'package:myapp/features/schedule/presentation/bloc/schedule_bloc.dart';
 
 import 'package:myapp/features/user/data/datasources/user_remote_data_source.dart';
@@ -147,6 +148,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => GetSchedules(sl()));
   sl.registerLazySingleton(() => GetScheduleById(sl()));
   sl.registerLazySingleton(() => CreateSchedule(sl()));
+  sl.registerLazySingleton(() => UpdateSchedule(sl()));
 
   sl.registerLazySingleton(() => GetInstructors(sl()));
   sl.registerLazySingleton(() => GetUser(sl()));
@@ -187,6 +189,7 @@ Future<void> initializeDependencies() async {
       getSchedules: sl(),
       getScheduleById: sl(),
       createSchedule: sl(),
+      updateSchedule: sl(),
       scheduleRepository: sl(),
     ),
   );

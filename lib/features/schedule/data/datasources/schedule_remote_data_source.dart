@@ -7,6 +7,7 @@ abstract class ScheduleRemoteDataSource {
   Future<ScheduleModel?> getSchedule(String scheduleId);
   Future<ScheduleModel> createSchedule(ScheduleModel schedule);
   Future<ScheduleModel> updateSchedule(String scheduleId, Map<String, dynamic> data);
+  Future<void> updateScheduleEntity(ScheduleModel schedule);
   Future<void> deleteSchedule(String scheduleId);
   Future<void> setDefaultSchedule(String instructorId, String scheduleId, bool isDefault);
   Future<void> unsetAllDefaultSchedules();
@@ -67,6 +68,15 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
       return ScheduleModel.fromFirestore(updatedDoc);
     } catch (e) {
       throw ServerException('Failed to update schedule: $e');
+    }
+  }
+
+  @override
+  Future<void> updateScheduleEntity(ScheduleModel schedule) async {
+    try {
+      await _firestore.collection('schedules').doc(schedule.id).set(schedule.toFirestore());
+    } catch (e) {
+      throw ServerException('Failed to update schedule entity: $e');
     }
   }
 
