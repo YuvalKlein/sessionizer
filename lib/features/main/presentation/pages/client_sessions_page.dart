@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:myapp/core/utils/logger.dart';
 
 class ClientSessionsPage extends StatefulWidget {
   const ClientSessionsPage({super.key});
@@ -34,7 +35,7 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
           .collection('schedulable_sessions')
           .get();
 
-      print('📊 Found ${snapshot.docs.length} schedulable sessions total');
+      AppLogger.info('📊 Found ${snapshot.docs.length} schedulable sessions total');
 
       // Filter for active sessions
       var templates = snapshot.docs
@@ -42,11 +43,11 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
           .where((template) => template['isActive'] == true)
           .toList();
 
-      print('📊 Found ${templates.length} active schedulable sessions');
+      AppLogger.info('📊 Found ${templates.length} active schedulable sessions');
 
       // If no active templates found, show all templates for debugging
       if (templates.isEmpty && snapshot.docs.isNotEmpty) {
-        print('⚠️ No active templates found, showing all templates for debugging');
+        AppLogger.warning('⚠️ No active templates found, showing all templates for debugging');
         templates = snapshot.docs
             .map((doc) => {'id': doc.id, ...doc.data()})
             .toList();
@@ -54,7 +55,7 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
 
       // If still no templates, create a sample one for testing
       if (templates.isEmpty) {
-        print('⚠️ No templates found at all, creating sample data');
+        AppLogger.info('⚠️ No templates found at all, creating sample data');
         await _createSampleTemplate();
         // Reload after creating sample
         final newSnapshot = await FirebaseFirestore.instance
@@ -70,7 +71,7 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ Error loading templates: $e');
+      AppLogger.error('❌ Error loading templates: $e');
       setState(() {
         _error = 'Failed to load session templates: $e';
         _isLoading = false;
@@ -80,7 +81,7 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('🔍 ClientSessionsPage build called - templates: ${_templates.length}, loading: $_isLoading, error: $_error');
+    AppLogger.debug('🔍 ClientSessionsPage build called - templates: ${_templates.length}, loading: $_isLoading, error: $_error');
     return _buildSessionsContent();
   }
 
@@ -112,7 +113,7 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
         children: [
           IconButton(
             onPressed: () {
-              print('🔙 Back button pressed');
+              AppLogger.debug('🔙 Back button pressed');
               if (Navigator.of(context).canPop()) {
                 context.pop();
               } else {
@@ -656,9 +657,9 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      print('✅ Sample template created successfully');
+      AppLogger.info('✅ Sample template created successfully');
     } catch (e) {
-      print('❌ Error creating sample template: $e');
+      AppLogger.error('❌ Error creating sample template: $e');
     }
   }
 }

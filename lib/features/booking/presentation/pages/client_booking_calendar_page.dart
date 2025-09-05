@@ -81,7 +81,7 @@ class _ClientBookingCalendarPageState extends State<ClientBookingCalendarPage> {
             .get();
         
         _existingBookings = bookingsSnapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+            .map((doc) => {'id': doc.id, ...doc.data()})
             .toList();
       }
 
@@ -452,7 +452,7 @@ class _ClientBookingCalendarPageState extends State<ClientBookingCalendarPage> {
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             subtitle: Text(
-              '${DateFormat('EEEE, MMMM d').format(_selectedDate)}',
+              DateFormat('EEEE, MMMM d').format(_selectedDate),
             ),
             trailing: ElevatedButton(
               onPressed: () => _showBookingConfirmation(slot),

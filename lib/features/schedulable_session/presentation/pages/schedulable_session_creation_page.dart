@@ -37,8 +37,8 @@ class _SchedulableSessionCreationPageState extends State<SchedulableSessionCreat
   List<String> _selectedLocationIds = [];
   List<String> _selectedAvailabilityIds = [];
   List<SessionTypeEntity> _sessionTypes = [];
-  List<Map<String, dynamic>> _locations = [];
-  List<Map<String, dynamic>> _schedules = [];
+  final List<Map<String, dynamic>> _locations = [];
+  final List<Map<String, dynamic>> _schedules = [];
 
   @override
   void initState() {

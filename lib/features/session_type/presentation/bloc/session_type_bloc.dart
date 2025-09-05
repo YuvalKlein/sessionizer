@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:myapp/features/session_type/domain/repositories/session_type_repository.dart';
 import 'package:myapp/features/session_type/domain/usecases/get_session_types.dart';
 import 'package:myapp/features/session_type/domain/usecases/create_session_type.dart';
 import 'package:myapp/features/session_type/domain/usecases/update_session_type.dart';
@@ -13,19 +12,16 @@ class SessionTypeBloc extends Bloc<SessionTypeEvent, SessionTypeState> {
   final CreateSessionType _createSessionType;
   final UpdateSessionType _updateSessionType;
   final DeleteSessionType _deleteSessionType;
-  final SessionTypeRepository _repository;
 
   SessionTypeBloc({
     required GetSessionTypes getSessionTypes,
     required CreateSessionType createSessionType,
     required UpdateSessionType updateSessionType,
     required DeleteSessionType deleteSessionType,
-    required SessionTypeRepository repository,
   })  : _getSessionTypes = getSessionTypes,
         _createSessionType = createSessionType,
         _updateSessionType = updateSessionType,
         _deleteSessionType = deleteSessionType,
-        _repository = repository,
         super(SessionTypeInitial()) {
     on<LoadSessionTypes>(_onLoadSessionTypes);
     on<CreateSessionTypeEvent>(_onCreateSessionType);

@@ -128,6 +128,10 @@ class _MainScreenState extends State<MainScreen> {
                       title: Text(title),
                       actions: [
                         IconButton(
+                          icon: const Icon(Icons.notifications),
+                          onPressed: () => context.go('/notifications'),
+                        ),
+                        IconButton(
                           icon: const Icon(Icons.logout),
                           onPressed: () {
                             if (mounted) {

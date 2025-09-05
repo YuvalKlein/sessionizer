@@ -133,44 +133,44 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     SignOutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    print('🔄 Sign out requested - emitting AuthLoading');
+    AppLogger.info('🔄 Sign out requested - emitting AuthLoading');
     emit(AuthLoading());
     
     // Add a fallback timer that will force unauthenticated state after 4 seconds
     Timer(const Duration(seconds: 4), () {
       if (state is AuthLoading) {
-        print('⏰ Fallback timer triggered - forcing AuthUnauthenticated');
+        AppLogger.warning('⏰ Fallback timer triggered - forcing AuthUnauthenticated');
         emit(AuthUnauthenticated());
       }
     });
     
     try {
-      print('🔄 Calling sign out use case...');
+      AppLogger.info('🔄 Calling sign out use case...');
       
       // Add a timeout to prevent endless loading
       final result = await _signOut(NoParams()).timeout(
         const Duration(seconds: 3),
         onTimeout: () {
-          print('⏰ Sign out timed out after 3 seconds');
+          AppLogger.warning('⏰ Sign out timed out after 3 seconds');
           throw Exception('Sign out timed out');
         },
       );
 
       result.fold(
         (failure) {
-          print('❌ Sign out failed: ${failure.message}');
+          AppLogger.error('❌ Sign out failed: ${failure.message}');
           // Even on failure, emit unauthenticated to prevent endless loading
           emit(AuthUnauthenticated());
         },
         (_) {
-          print('✅ Sign out successful - immediately emitting AuthUnauthenticated');
+          AppLogger.info('✅ Sign out successful - immediately emitting AuthUnauthenticated');
           // Immediately emit AuthUnauthenticated instead of waiting for listener
           // This prevents endless loading and ensures UI updates
           emit(AuthUnauthenticated());
         },
       );
     } catch (e) {
-      print('❌ Sign out exception: $e');
+      AppLogger.error('❌ Sign out exception: $e');
       // Even if there's an error, emit unauthenticated to prevent endless loading
       emit(AuthUnauthenticated());
     }

@@ -76,12 +76,14 @@ class _SimpleSchedulableSessionFormState extends State<SimpleSchedulableSessionF
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading data: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -180,22 +182,26 @@ class _SimpleSchedulableSessionFormState extends State<SimpleSchedulableSessionF
 
       if (widget.schedulableSessionDoc != null && !widget.isDuplicate) {
         await widget.schedulableSessionDoc!.reference.update(setData);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Template updated successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Template updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } else {
         await FirebaseFirestore.instance
             .collection('schedulable_sessions')
             .add(setData);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Template created successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Template created successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
 
       if (!mounted) return;
@@ -246,7 +252,7 @@ class _SimpleSchedulableSessionFormState extends State<SimpleSchedulableSessionF
               // Session Type Selection
               _buildSectionTitle('Session Type'),
               DropdownButtonFormField<String>(
-                value: _selectedSessionTypeId,
+                initialValue: _selectedSessionTypeId,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   labelText: 'Select Session Type',
@@ -265,7 +271,7 @@ class _SimpleSchedulableSessionFormState extends State<SimpleSchedulableSessionF
               // Location Selection
               _buildSectionTitle('Location'),
               DropdownButtonFormField<String>(
-                value: _selectedLocationId,
+                initialValue: _selectedLocationId,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   labelText: 'Select Location',
@@ -284,7 +290,7 @@ class _SimpleSchedulableSessionFormState extends State<SimpleSchedulableSessionF
               // Schedule Selection
               _buildSectionTitle('Schedule'),
               DropdownButtonFormField<String>(
-                value: _selectedScheduleId,
+                initialValue: _selectedScheduleId,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   labelText: 'Select Schedule',

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:myapp/core/utils/logger.dart';
 import 'package:myapp/features/session_type/data/models/session_type_model.dart';
 
 abstract class SessionTypeRemoteDataSource {
@@ -33,11 +34,11 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
         try {
           allSessionTypes.add(SessionTypeModel.fromMap({...doc.data(), 'id': doc.id}));
         } catch (e) {
-          print('Error parsing new session type ${doc.id}: $e');
+          AppLogger.error('Error parsing new session type ${doc.id}: $e');
         }
       }
     } catch (e) {
-      print('Error getting new session types: $e');
+      AppLogger.error('Error getting new session types: $e');
     }
     
     try {
@@ -68,11 +69,11 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
           };
           allSessionTypes.add(SessionTypeModel.fromMap(convertedData));
         } catch (e) {
-          print('Error converting old session type ${doc.id}: $e');
+          AppLogger.error('Error converting old session type ${doc.id}: $e');
         }
       }
     } catch (e) {
-      print('Error getting old session types: $e');
+      AppLogger.error('Error getting old session types: $e');
     }
     
     return allSessionTypes;

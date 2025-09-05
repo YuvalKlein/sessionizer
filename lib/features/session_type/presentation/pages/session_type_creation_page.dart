@@ -311,7 +311,7 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedDurationUnit,
+                    initialValue: _selectedDurationUnit,
                     decoration: const InputDecoration(
                       labelText: 'Unit',
                       border: OutlineInputBorder(),

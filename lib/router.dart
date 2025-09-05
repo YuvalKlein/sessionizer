@@ -29,7 +29,10 @@ import 'package:myapp/features/location/presentation/pages/location_creation_pag
 import 'package:myapp/features/location/presentation/bloc/location_bloc.dart';
 import 'package:myapp/features/location/domain/entities/location_entity.dart';
 import 'package:myapp/features/session_type/domain/entities/session_type_entity.dart';
+import 'package:myapp/features/notification/presentation/pages/notification_management_page.dart';
+import 'package:myapp/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/core/utils/logger.dart';
 
 // Stream to listen to auth state changes
 Stream<AuthState> get _authStateStream {
@@ -221,6 +224,14 @@ class AppRouter {
           child: const MainScreen(child: LocationCreationPage()),
         ),
       ),
+      // Notification Management Routes
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => BlocProvider.value(
+          value: sl<NotificationBloc>(),
+          child: const MainScreen(child: NotificationManagementPage()),
+        ),
+      ),
       GoRoute(
         path: '/locations/edit',
         builder: (context, state) {
@@ -271,7 +282,7 @@ class AppRouter {
         return null;
       } catch (e) {
         // If there's an error reading the auth state, don't redirect
-        print('⚠️ Error in router redirect: $e');
+        AppLogger.error('⚠️ Error in router redirect: $e');
         return null;
       }
     },
