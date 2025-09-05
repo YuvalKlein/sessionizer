@@ -35,6 +35,15 @@ class CreateScheduleEvent extends ScheduleEvent {
   List<Object> get props => [schedule];
 }
 
+class UpdateScheduleEvent extends ScheduleEvent {
+  final ScheduleEntity schedule;
+
+  const UpdateScheduleEvent({required this.schedule});
+
+  @override
+  List<Object> get props => [schedule];
+}
+
 class UpdateSchedule extends ScheduleEvent {
   final String scheduleId;
   final Map<String, dynamic> data;
