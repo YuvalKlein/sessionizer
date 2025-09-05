@@ -12,9 +12,14 @@ class SimpleSchedulableSessionPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Schedulable Session Templates'),
+        title: const Text('Bookable Slots'),
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to Dashboard',
+        ),
         actions: [
           IconButton(
             onPressed: () {
@@ -46,7 +51,7 @@ class SimpleSchedulableSessionPage extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             children: snapshot.data!.docs.map((doc) {
               final data = doc.data() as Map<String, dynamic>;
-              final title = data['title'] as String? ?? 'Untitled Template';
+              final title = data['title'] as String? ?? 'Untitled Bookable Slot';
               final sessionTypeId = data['sessionTypeId'] as String?;
               final locationIds = (data['locationIds'] as List?) ?? [];
               final scheduleId = data['scheduleId'] as String?;
@@ -170,7 +175,7 @@ class SimpleSchedulableSessionPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _createNewSession(context),
         icon: const Icon(Icons.add),
-        label: const Text('Create Template'),
+        label: const Text('Create Bookable Slot'),
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
       ),
@@ -189,14 +194,14 @@ class SimpleSchedulableSessionPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No Schedulable Session Templates',
+            'No Bookable Slots',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Create your first schedulable session template to get started',
+            'Create your first bookable slot to get started',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.grey[500],
             ),
@@ -206,7 +211,7 @@ class SimpleSchedulableSessionPage extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: () => _createNewSession(context),
             icon: const Icon(Icons.add),
-            label: const Text('Create Template'),
+            label: const Text('Create Bookable Slot'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue[600],
               foregroundColor: Colors.white,
@@ -285,8 +290,8 @@ class SimpleSchedulableSessionPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Template'),
-        content: const Text('Are you sure you want to delete this template? This action cannot be undone.'),
+        title: const Text('Delete Bookable Slot'),
+        content: const Text('Are you sure you want to delete this bookable slot? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -298,7 +303,7 @@ class SimpleSchedulableSessionPage extends StatelessWidget {
               doc.reference.delete();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Template deleted successfully'),
+                  content: Text('Bookable slot deleted successfully'),
                   backgroundColor: Colors.green,
                 ),
               );
