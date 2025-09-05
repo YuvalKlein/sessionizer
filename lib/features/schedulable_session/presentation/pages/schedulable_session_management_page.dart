@@ -80,7 +80,7 @@ class _SchedulableSessionManagementPageState extends State<SchedulableSessionMan
         },
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('Bookable Templates'),
+            title: const Text('Bookable Slots'),
             backgroundColor: Colors.blue[600],
             foregroundColor: Colors.white,
             leading: IconButton(

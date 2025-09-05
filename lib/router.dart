@@ -171,10 +171,9 @@ class AppRouter {
         path: '/schedule/:scheduleId/edit',
         builder: (context, state) {
           final scheduleId = state.pathParameters['scheduleId']!;
-          // TODO: Implement schedule edit page
           return BlocProvider.value(
             value: sl<ScheduleBloc>(),
-            child: MainScreen(child: ScheduleDetailPage(scheduleId: scheduleId)),
+            child: MainScreen(child: ScheduleCreationPage()),
           );
         },
       ),

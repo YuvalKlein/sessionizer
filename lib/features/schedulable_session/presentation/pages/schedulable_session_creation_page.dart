@@ -95,7 +95,7 @@ class _SchedulableSessionCreationPageState extends State<SchedulableSessionCreat
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.isEdit ? 'Edit Template' : 'Create Template'),
+          title: Text(widget.isEdit ? 'Edit Bookable Slot' : 'Create Bookable Slot'),
           backgroundColor: Colors.blue[600],
           foregroundColor: Colors.white,
           leading: IconButton(
@@ -169,7 +169,9 @@ class _SchedulableSessionCreationPageState extends State<SchedulableSessionCreat
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _sessionTypes.map((type) {
+                children: _sessionTypes
+                    .where((type) => type.id != null)
+                    .map((type) {
                   final isSelected = _selectedTypeIds.contains(type.id);
                   return FilterChip(
                     label: Text(type.title),
