@@ -1,14 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:myapp/core/utils/injection_container.dart';
-import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_bloc.dart';
-import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_event.dart';
-import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_state.dart';
-import 'package:myapp/features/session_type/presentation/bloc/session_type_bloc.dart';
-import 'package:myapp/features/session_type/presentation/bloc/session_type_event.dart';
-import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
-import 'package:myapp/features/user/presentation/bloc/user_state.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ClientSessionsPage extends StatefulWidget {
   const ClientSessionsPage({super.key});
@@ -20,43 +12,76 @@ class ClientSessionsPage extends StatefulWidget {
 class _ClientSessionsPageState extends State<ClientSessionsPage> {
   String _selectedFilter = 'all';
   String _searchQuery = '';
+  List<Map<String, dynamic>> _templates = [];
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    // Data will be loaded when BLoCs are created
+    _loadTemplates();
+  }
+
+  Future<void> _loadTemplates() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      // First, let's try to get all schedulable sessions to see what's available
+      final snapshot = await FirebaseFirestore.instance
+          .collection('schedulable_sessions')
+          .get();
+
+      print('📊 Found ${snapshot.docs.length} schedulable sessions total');
+
+      // Filter for active sessions
+      var templates = snapshot.docs
+          .map((doc) => {'id': doc.id, ...doc.data()})
+          .where((template) => template['isActive'] == true)
+          .toList();
+
+      print('📊 Found ${templates.length} active schedulable sessions');
+
+      // If no active templates found, show all templates for debugging
+      if (templates.isEmpty && snapshot.docs.isNotEmpty) {
+        print('⚠️ No active templates found, showing all templates for debugging');
+        templates = snapshot.docs
+            .map((doc) => {'id': doc.id, ...doc.data()})
+            .toList();
+      }
+
+      // If still no templates, create a sample one for testing
+      if (templates.isEmpty) {
+        print('⚠️ No templates found at all, creating sample data');
+        await _createSampleTemplate();
+        // Reload after creating sample
+        final newSnapshot = await FirebaseFirestore.instance
+            .collection('schedulable_sessions')
+            .get();
+        templates = newSnapshot.docs
+            .map((doc) => {'id': doc.id, ...doc.data()})
+            .toList();
+      }
+
+      setState(() {
+        _templates = templates;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('❌ Error loading templates: $e');
+      setState(() {
+        _error = 'Failed to load session templates: $e';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<UserBloc, UserState>(
-      builder: (context, userState) {
-        if (userState is UserLoaded) {
-          return BlocProvider(
-            create: (context) => SchedulableSessionBloc(
-              getSchedulableSessions: sl(),
-              createSchedulableSession: sl(),
-              updateSchedulableSession: sl(),
-              deleteSchedulableSession: sl(),
-              repository: sl(),
-            )..add(LoadSchedulableSessions(instructorId: userState.user.id)),
-            child: BlocProvider(
-              create: (context) => SessionTypeBloc(
-                getSessionTypes: sl(),
-                createSessionType: sl(),
-                updateSessionType: sl(),
-                deleteSessionType: sl(),
-                repository: sl(),
-              )..add(LoadSessionTypes()),
-              child: _buildSessionsContent(),
-            ),
-          );
-        }
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
-      },
-    );
+    print('🔍 ClientSessionsPage build called - templates: ${_templates.length}, loading: $_isLoading, error: $_error');
+    return _buildSessionsContent();
   }
 
   Widget _buildSessionsContent() {
@@ -86,7 +111,14 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
       child: Row(
         children: [
           IconButton(
-            onPressed: () => context.pop(),
+            onPressed: () {
+              print('🔙 Back button pressed');
+              if (Navigator.of(context).canPop()) {
+                context.pop();
+              } else {
+                context.go('/client-dashboard');
+              }
+            },
             icon: const Icon(Icons.arrow_back),
           ),
           const SizedBox(width: 8),
@@ -165,77 +197,63 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
   }
 
   Widget _buildSessionsList() {
-    return BlocBuilder<SchedulableSessionBloc, SchedulableSessionState>(
-      builder: (context, state) {
-        if (state is SchedulableSessionLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is SchedulableSessionLoaded) {
-          final sessions = _filterSessions(state.sessions);
-          
-          if (sessions.isEmpty) {
-            return _buildEmptyState();
-          }
-          
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: sessions.length,
-            itemBuilder: (context, index) {
-              final session = sessions[index];
-              return _buildSessionCard(session);
-            },
-          );
-        } else if (state is SchedulableSessionError) {
-          return _buildErrorState(state.message);
-        }
-        return const SizedBox.shrink();
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return _buildErrorState(_error!);
+    }
+
+    final filteredTemplates = _filterSessions(_templates);
+    
+    if (filteredTemplates.isEmpty) {
+      return _buildEmptyState();
+    }
+    
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: filteredTemplates.length,
+      itemBuilder: (context, index) {
+        final template = filteredTemplates[index];
+        return _buildSessionTemplateCard(template);
       },
     );
   }
 
-  List<dynamic> _filterSessions(List<dynamic> sessions) {
-    var filteredSessions = sessions.where((session) {
+  List<dynamic> _filterSessions(List<dynamic> templates) {
+    var filteredTemplates = templates.where((template) {
       // Apply search filter
       if (_searchQuery.isNotEmpty) {
-        final title = (session.title ?? '').toLowerCase();
-        final description = (session.description ?? '').toLowerCase();
-        if (!title.contains(_searchQuery) && !description.contains(_searchQuery)) {
+        final title = (template['title'] ?? '').toLowerCase();
+        final notes = (template['notes'] ?? '').toLowerCase();
+        if (!title.contains(_searchQuery) && !notes.contains(_searchQuery)) {
           return false;
         }
       }
       
-      // Apply date filter
-      final now = DateTime.now();
-      final sessionDate = session.startTime;
-      
-      switch (_selectedFilter) {
-        case 'today':
-          return sessionDate.year == now.year &&
-                 sessionDate.month == now.month &&
-                 sessionDate.day == now.day;
-        case 'this_week':
-          final weekStart = now.subtract(Duration(days: now.weekday - 1));
-          final weekEnd = weekStart.add(const Duration(days: 6));
-          return sessionDate.isAfter(weekStart.subtract(const Duration(days: 1))) &&
-                 sessionDate.isBefore(weekEnd.add(const Duration(days: 1)));
-        case 'this_month':
-          return sessionDate.year == now.year && sessionDate.month == now.month;
-        default:
-          return true;
+      // Only show active templates
+      if (template['isActive'] != true) {
+        return false;
       }
+      
+      // For templates, we don't filter by date since they're available for booking
+      // The date filtering would be applied when showing available time slots
+      return true;
     }).toList();
     
-    // Sort by start time
-    filteredSessions.sort((a, b) => a.startTime.compareTo(b.startTime));
+    // Sort by title
+    filteredTemplates.sort((a, b) => (a['title'] ?? '').compareTo(b['title'] ?? ''));
     
-    return filteredSessions;
+    return filteredTemplates;
   }
 
-  Widget _buildSessionCard(dynamic session) {
+  Widget _buildSessionTemplateCard(dynamic template) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       child: InkWell(
-        onTap: () => _showSessionDetails(session),
+        onTap: () => _showTemplateDetails(template),
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -257,16 +275,16 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          session.title ?? 'Session',
+                          template['title'] ?? 'Session Template',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (session.description != null) ...[
+                        if (template['notes'] != null && template['notes'].isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(
-                            session.description,
+                            template['notes'],
                             style: TextStyle(
                               color: Colors.grey.shade600,
                               fontSize: 14,
@@ -278,26 +296,16 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
                       ],
                     ),
                   ),
-                  _buildStatusChip(session),
+                  _buildTemplateStatusChip(template),
                 ],
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatDateTime(session.startTime),
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
                   Icon(Icons.schedule, size: 16, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(
-                    _formatDuration(session.startTime, session.endTime),
+                    'Duration: ${template['slotIntervalMinutes'] ?? 60} min slots',
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 14,
@@ -305,20 +313,31 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
                   ),
                 ],
               ),
-              if (session.location != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.timer, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Booking: ${template['minHoursAhead'] ?? 2}h ahead, ${template['maxDaysAhead'] ?? 7} days max',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              if (template['bufferBefore'] != null || template['bufferAfter'] != null) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.location_on, size: 16, color: Colors.grey.shade600),
+                    Icon(Icons.pause, size: 16, color: Colors.grey.shade600),
                     const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        session.location,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      'Buffer: ${template['bufferBefore'] ?? 0}min before, ${template['bufferAfter'] ?? 0}min after',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -328,14 +347,14 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _showBookingDialog(session),
+                    child: ElevatedButton(
+                      onPressed: () => _showBookingDialog(template),
                       child: const Text('Book Session'),
                     ),
                   ),
                   const SizedBox(width: 8),
                   TextButton(
-                    onPressed: () => _showSessionDetails(session),
+                    onPressed: () => _showTemplateDetails(template),
                     child: const Text('Details'),
                   ),
                 ],
@@ -347,63 +366,75 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
     );
   }
 
-  Widget _buildStatusChip(dynamic session) {
-    final now = DateTime.now();
-    final sessionDate = session.startTime;
-    
-    if (sessionDate.isBefore(now)) {
+  Widget _buildTemplateStatusChip(dynamic template) {
+    final isActive = template['isActive'] == true;
+    if (isActive) {
       return Chip(
-        label: const Text('Past', style: TextStyle(fontSize: 10, color: Colors.white)),
-        backgroundColor: Colors.grey,
-      );
-    } else if (sessionDate.isAfter(now.add(const Duration(days: 7)))) {
-      return Chip(
-        label: const Text('Future', style: TextStyle(fontSize: 10, color: Colors.white)),
-        backgroundColor: Colors.blue,
+        label: const Text('Available', style: TextStyle(fontSize: 10, color: Colors.white)),
+        backgroundColor: Colors.green,
       );
     } else {
       return Chip(
-        label: const Text('Soon', style: TextStyle(fontSize: 10, color: Colors.white)),
-        backgroundColor: Colors.orange,
+        label: const Text('Inactive', style: TextStyle(fontSize: 10, color: Colors.white)),
+        backgroundColor: Colors.grey,
       );
     }
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.event_busy,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No Sessions Found',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade600,
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.event_busy,
+                size: 64,
+                color: Colors.grey.shade400,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Try adjusting your filters or check back later for new sessions.',
-              style: TextStyle(
-                color: Colors.grey.shade500,
+              const SizedBox(height: 16),
+              Text(
+                'No Sessions Found',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade600,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => _refreshData(),
-              child: const Text('Refresh'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                'No active session templates are available for booking.',
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => _refreshData(),
+                    child: const Text('Refresh'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await _createSampleTemplate();
+                      _refreshData();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Create Sample Data'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -449,67 +480,41 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
     );
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final sessionDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
-    
-    if (sessionDate == today) {
-      return 'Today at ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } else if (sessionDate == today.add(const Duration(days: 1))) {
-      return 'Tomorrow at ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } else {
-      return '${dateTime.day}/${dateTime.month} at ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    }
-  }
 
-  String _formatDuration(DateTime start, DateTime end) {
-    final duration = end.difference(start);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes % 60;
-    
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    } else {
-      return '${minutes}m';
-    }
-  }
-
-  void _showSessionDetails(dynamic session) {
+  void _showTemplateDetails(dynamic template) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(session.title ?? 'Session Details'),
+        title: Text(template['title'] ?? 'Session Template Details'),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (session.description != null) ...[
+              if (template['notes'] != null && template['notes'].isNotEmpty) ...[
                 const Text(
                   'Description:',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
-                Text(session.description),
+                Text(template['notes']),
                 const SizedBox(height: 16),
               ],
               const Text(
-                'Schedule:',
+                'Session Details:',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
-              Text('${_formatDateTime(session.startTime)} - ${_formatDateTime(session.endTime)}'),
+              Text('Slot Duration: ${template['slotIntervalMinutes'] ?? 60} minutes'),
               const SizedBox(height: 8),
-              Text('Duration: ${_formatDuration(session.startTime, session.endTime)}'),
-              if (session.location != null) ...[
-                const SizedBox(height: 16),
-                const Text(
-                  'Location:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(session.location),
+              Text('Booking Window: ${template['minHoursAhead'] ?? 2} hours ahead, max ${template['maxDaysAhead'] ?? 7} days'),
+              if (template['bufferBefore'] != null || template['bufferAfter'] != null) ...[
+                const SizedBox(height: 8),
+                Text('Buffer Time: ${template['bufferBefore'] ?? 0}min before, ${template['bufferAfter'] ?? 0}min after'),
+              ],
+              if (template['durationOverride'] != null) ...[
+                const SizedBox(height: 8),
+                Text('Duration Override: ${template['durationOverride']} minutes'),
               ],
             ],
           ),
@@ -522,7 +527,7 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _showBookingDialog(session);
+              _showBookingDialog(template);
             },
             child: const Text('Book Session'),
           ),
@@ -531,12 +536,23 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
     );
   }
 
-  void _showBookingDialog(dynamic session) {
+  void _showBookingDialog(dynamic template) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Book Session'),
-        content: Text('Would you like to book "${session.title ?? 'Session'}"?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Would you like to book "${template['title'] ?? 'Session Template'}"?'),
+            const SizedBox(height: 16),
+            const Text(
+              'This will open the booking calendar where you can select an available time slot.',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -545,21 +561,104 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Implement booking logic
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Booking functionality coming soon!')),
-              );
+              _navigateToBookingCalendar(template);
             },
-            child: const Text('Book'),
+            child: const Text('Select Time'),
           ),
         ],
       ),
     );
   }
 
+  void _navigateToBookingCalendar(dynamic template) {
+    context.go('/client/booking/${template['id']}');
+  }
+
   void _refreshData() {
-    // This will be handled by the parent widget
-    context.read<SchedulableSessionBloc>().add(LoadSchedulableSessions(instructorId: 'temp'));
-    context.read<SessionTypeBloc>().add(LoadSessionTypes());
+    _loadTemplates();
+  }
+
+  Future<void> _createSampleTemplate() async {
+    try {
+      // First, we need to create some basic data if it doesn't exist
+      // Create a sample session type
+      final sessionTypeRef = await FirebaseFirestore.instance
+          .collection('session_types')
+          .add({
+        'title': 'Tennis Lesson',
+        'duration': 60,
+        'durationUnit': 'minutes',
+        'price': 50.0,
+        'minPlayers': 1,
+        'maxPlayers': 4,
+        'showParticipants': true,
+        'createdTime': FieldValue.serverTimestamp(),
+        'idCreatedBy': 'sample_instructor',
+      });
+
+      // Create a sample location
+      final locationRef = await FirebaseFirestore.instance
+          .collection('locations')
+          .add({
+        'name': 'Central Tennis Court',
+        'address': '123 Main St, City',
+        'description': 'Professional tennis court with all amenities',
+        'createdAt': FieldValue.serverTimestamp(),
+        'instructorId': 'sample_instructor',
+      });
+
+      // Create a sample schedule
+      final scheduleRef = await FirebaseFirestore.instance
+          .collection('schedules')
+          .add({
+        'name': 'Weekday Schedule',
+        'timezone': 'America/New_York',
+        'isDefault': true,
+        'weeklyAvailability': {
+          'monday': [
+            {'start': '9:00 AM', 'end': '5:00 PM'}
+          ],
+          'tuesday': [
+            {'start': '9:00 AM', 'end': '5:00 PM'}
+          ],
+          'wednesday': [
+            {'start': '9:00 AM', 'end': '5:00 PM'}
+          ],
+          'thursday': [
+            {'start': '9:00 AM', 'end': '5:00 PM'}
+          ],
+          'friday': [
+            {'start': '9:00 AM', 'end': '5:00 PM'}
+          ],
+        },
+        'specificDates': {},
+        'holidays': [],
+        'createdAt': FieldValue.serverTimestamp(),
+        'instructorId': 'sample_instructor',
+      });
+
+      // Create a sample schedulable session template
+      await FirebaseFirestore.instance
+          .collection('schedulable_sessions')
+          .add({
+        'title': 'Tennis Lesson at Central Court',
+        'sessionTypeId': sessionTypeRef.id,
+        'locationIds': [locationRef.id],
+        'scheduleId': scheduleRef.id,
+        'instructorId': 'sample_instructor',
+        'bufferBefore': 0,
+        'bufferAfter': 0,
+        'maxDaysAhead': 7,
+        'minHoursAhead': 2,
+        'slotIntervalMinutes': 60,
+        'notes': 'Professional tennis lessons for all skill levels',
+        'isActive': true,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Sample template created successfully');
+    } catch (e) {
+      print('❌ Error creating sample template: $e');
+    }
   }
 }

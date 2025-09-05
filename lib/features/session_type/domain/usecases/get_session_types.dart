@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:equatable/equatable.dart';
 import 'package:myapp/core/error/failures.dart';
 import 'package:myapp/core/utils/usecase.dart';
 import 'package:myapp/features/session_type/domain/entities/session_type_entity.dart';

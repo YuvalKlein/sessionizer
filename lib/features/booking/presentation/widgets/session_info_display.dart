@@ -73,13 +73,13 @@ class _SessionInfoDisplayState extends State<SessionInfoDisplay> {
                 return;
               }
               
-              // Find the session type
+              // Find the session type - TODO: Update for new structure
               SessionTypeEntity? sessionType;
-              try {
-                sessionType = sessionTypes.firstWhere((st) => st.id == session!.sessionTypeId);
-              } catch (e) {
-                sessionType = null;
-              }
+              // try {
+              //   sessionType = sessionTypes.firstWhere((st) => st.id == session!.sessionTypeId);
+              // } catch (e) {
+              //   sessionType = null;
+              // }
               
               if (sessionType == null) {
                 setState(() {
@@ -91,7 +91,7 @@ class _SessionInfoDisplayState extends State<SessionInfoDisplay> {
               
               setState(() {
                 // For now, we'll use a placeholder for location since it's not in the current data model
-                _sessionInfo = '${sessionType!.name} at Location TBD';
+                _sessionInfo = '${sessionType!.title} at Location TBD';
                 _isLoading = false;
               });
             },

@@ -2,7 +2,7 @@
 2. in weekly hours- 1. to change one field for nim and max to 2, one for each 2. when click on it, show a list of time, not the watch picker. 3. when open a new slot in the same day, can't pick the hours that already picked.
 3. spesific dates- when change more than one day, it save just the last one
 4. When create or update sessin type, check that the max players isn't < min players, just max >= min.
-5. 
+5. Change the why edit schedule work- when clicking on schedule, you can immediately chagne things on right away it updates on FS
 
 Option 2: Complete the Booking System
 Add: Booking management (view, cancel, reschedule bookings)

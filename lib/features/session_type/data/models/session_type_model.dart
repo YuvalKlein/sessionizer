@@ -3,24 +3,36 @@ import 'package:myapp/features/session_type/domain/entities/session_type_entity.
 
 class SessionTypeModel extends SessionTypeEntity {
   const SessionTypeModel({
-    required super.id,
-    required super.name,
-    required super.description,
-    required super.color,
-    required super.isActive,
-    required super.createdAt,
-    required super.updatedAt,
+    super.id,
+    required super.title,
+    super.notifyCancelation = false,
+    required super.createdTime,
+    required super.duration,
+    super.durationUnit = 'minutes',
+    super.details = '',
+    required super.idCreatedBy,
+    required super.maxPlayers,
+    super.minPlayers = 1,
+    super.showParticipants = true,
+    super.category = '',
+    required super.price,
   });
 
   factory SessionTypeModel.fromMap(Map<String, dynamic> map) {
     return SessionTypeModel(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      description: map['description'] ?? '',
-      color: map['color'] ?? '#000000',
-      isActive: map['isActive'] ?? true,
-      createdAt: _parseDateTime(map['createdAt']),
-      updatedAt: _parseDateTime(map['updatedAt']),
+      id: map['id'],
+      title: map['title'] ?? '',
+      notifyCancelation: map['notifyCancelation'] ?? false,
+      createdTime: map['createdTime'] ?? 0,
+      duration: map['duration'] ?? 0,
+      durationUnit: map['durationUnit'] ?? 'minutes',
+      details: map['details'] ?? '',
+      idCreatedBy: map['idCreatedBy'] ?? '',
+      maxPlayers: map['maxPlayers'] ?? 0,
+      minPlayers: map['minPlayers'] ?? 1,
+      showParticipants: map['showParticipants'] ?? false,
+      category: map['category'] ?? '',
+      price: map['price'] ?? 0,
     );
   }
 
@@ -40,45 +52,68 @@ class SessionTypeModel extends SessionTypeEntity {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'name': name,
-      'description': description,
-      'color': color,
-      'isActive': isActive,
-      'createdAt': createdAt.millisecondsSinceEpoch,
-      'updatedAt': updatedAt.millisecondsSinceEpoch,
+      'title': title,
+      'notifyCancelation': notifyCancelation,
+      'createdTime': createdTime,
+      'duration': duration,
+      'durationUnit': durationUnit,
+      'details': details,
+      'idCreatedBy': idCreatedBy,
+      'maxPlayers': maxPlayers,
+      'minPlayers': minPlayers,
+      'showParticipants': showParticipants,
+      'category': category,
+      'price': price,
     };
   }
 
   factory SessionTypeModel.fromEntity(SessionTypeEntity entity) {
     return SessionTypeModel(
       id: entity.id,
-      name: entity.name,
-      description: entity.description,
-      color: entity.color,
-      isActive: entity.isActive,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
+      title: entity.title,
+      notifyCancelation: entity.notifyCancelation,
+      createdTime: entity.createdTime,
+      duration: entity.duration,
+      durationUnit: entity.durationUnit,
+      details: entity.details,
+      idCreatedBy: entity.idCreatedBy,
+      maxPlayers: entity.maxPlayers,
+      minPlayers: entity.minPlayers,
+      showParticipants: entity.showParticipants,
+      category: entity.category,
+      price: entity.price,
     );
   }
 
   SessionTypeModel copyWith({
     String? id,
-    String? name,
-    String? description,
-    String? color,
-    bool? isActive,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    String? title,
+    bool? notifyCancelation,
+    int? createdTime,
+    int? duration,
+    String? durationUnit,
+    String? details,
+    String? idCreatedBy,
+    int? maxPlayers,
+    int? minPlayers,
+    bool? showParticipants,
+    String? category,
+    int? price,
   }) {
     return SessionTypeModel(
       id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      color: color ?? this.color,
-      isActive: isActive ?? this.isActive,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      title: title ?? this.title,
+      notifyCancelation: notifyCancelation ?? this.notifyCancelation,
+      createdTime: createdTime ?? this.createdTime,
+      duration: duration ?? this.duration,
+      durationUnit: durationUnit ?? this.durationUnit,
+      details: details ?? this.details,
+      idCreatedBy: idCreatedBy ?? this.idCreatedBy,
+      maxPlayers: maxPlayers ?? this.maxPlayers,
+      minPlayers: minPlayers ?? this.minPlayers,
+      showParticipants: showParticipants ?? this.showParticipants,
+      category: category ?? this.category,
+      price: price ?? this.price,
     );
   }
 }

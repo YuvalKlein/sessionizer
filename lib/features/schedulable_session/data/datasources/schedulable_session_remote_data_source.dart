@@ -24,8 +24,7 @@ class SchedulableSessionRemoteDataSourceImpl implements SchedulableSessionRemote
           final sessions = snapshot.docs
               .map((doc) => SchedulableSessionModel.fromMap({...doc.data(), 'id': doc.id}))
               .toList();
-          // Filter active sessions in memory to avoid composite index requirement
-          return sessions.where((session) => session.isActive).toList();
+          return sessions;
         });
   }
 
