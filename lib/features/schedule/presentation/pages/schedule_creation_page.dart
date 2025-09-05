@@ -108,7 +108,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     
     // Populate holidays
     if (schedule.holidays != null) {
-      _holidays.addAll(schedule.holidays!);
+      _holidays.addAll(Map<String, String>.from(schedule.holidays!));
     }
   }
 
