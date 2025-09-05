@@ -51,6 +51,11 @@ class _ScheduleManagementPageState extends State<ScheduleManagementPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Schedule Management'),
+        leading: IconButton(
+          onPressed: () => context.go('/instructor-dashboard'),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to Dashboard',
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -268,8 +273,8 @@ class _ScheduleManagementPageState extends State<ScheduleManagementPage> {
           ],
         ),
         onTap: () {
-          AppLogger.navigation('schedule-management', 'schedule-detail');
-          context.go('/schedule/${schedule.id}');
+          AppLogger.navigation('schedule-management', 'schedule-edit');
+          context.go('/schedule/${schedule.id}/edit');
         },
       ),
     );

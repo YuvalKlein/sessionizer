@@ -35,14 +35,14 @@ class _SchedulableSessionManagementPageState extends State<SchedulableSessionMan
   void _loadData() {
     AppLogger.info('SchedulableSessionManagementPage', 'Loading data');
     
-    // Load session types first
-    context.read<SessionTypeBloc>().add(LoadSessionTypes());
-    
-    // Load schedulable sessions
     final authBloc = context.read<AuthBloc>();
     final authState = authBloc.state;
     
     if (authState is AuthAuthenticated) {
+      // Load session types with instructor filtering
+      context.read<SessionTypeBloc>().add(LoadSessionTypesByInstructor(instructorId: authState.user.id));
+      
+      // Load schedulable sessions
       context.read<SchedulableSessionBloc>().add(LoadSchedulableSessions(instructorId: authState.user.id));
     }
   }
@@ -79,18 +79,23 @@ class _SchedulableSessionManagementPageState extends State<SchedulableSessionMan
           }
         },
         child: Scaffold(
-                  appBar: AppBar(
-          title: const Text('Schedulable Session Templates'),
-          backgroundColor: Colors.blue[600],
-          foregroundColor: Colors.white,
-          actions: [
-            IconButton(
-              onPressed: _loadData,
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Refresh',
+          appBar: AppBar(
+            title: const Text('Bookable Templates'),
+            backgroundColor: Colors.blue[600],
+            foregroundColor: Colors.white,
+            leading: IconButton(
+              onPressed: () => context.go('/instructor-dashboard'),
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to Dashboard',
             ),
-          ],
-        ),
+            actions: [
+              IconButton(
+                onPressed: _loadData,
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Refresh',
+              ),
+            ],
+          ),
           body: BlocBuilder<SchedulableSessionBloc, SchedulableSessionState>(
             builder: (context, state) {
               if (state is SchedulableSessionLoading) {
