@@ -13,10 +13,9 @@ import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
 import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_bloc.dart';
 import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_event.dart';
-import 'package:myapp/features/schedulable_session/domain/entities/schedulable_session_entity.dart';
-import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_state.dart';
 import 'package:myapp/features/session_type/presentation/bloc/session_type_bloc.dart';
 import 'package:myapp/features/session_type/presentation/bloc/session_type_event.dart';
+import 'package:myapp/features/user/domain/repositories/user_repository.dart';
 
 class InstructorDashboardPage extends StatefulWidget {
   const InstructorDashboardPage({super.key});
@@ -270,8 +269,6 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
             const SizedBox(height: 24),
             _buildUpcomingSessions(),
             const SizedBox(height: 24),
-            _buildMySessions(),
-            const SizedBox(height: 24),
             _buildQuickActions(),
           ],
         ),
@@ -479,7 +476,18 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
             color: _getStatusColor(booking.status),
           ),
         ),
-        title: Text('Client Session'),
+        title: FutureBuilder<String>(
+          future: _getClientName(booking.clientId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Loading...');
+            } else if (snapshot.hasError) {
+              return Text('Client ${booking.clientId.substring(0, 8)}...');
+            } else {
+              return Text(snapshot.data ?? 'Unknown Client');
+            }
+          },
+        ),
         subtitle: Text(
           '${_formatDateTime(booking.startTime)} - ${_formatDateTime(booking.endTime)}',
         ),
@@ -494,118 +502,19 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
     );
   }
 
-  Widget _buildMySessions() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'My Session Types',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // TODO: Navigate to manage sessions
-                  },
-                  child: const Text('Manage'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            BlocBuilder<SchedulableSessionBloc, SchedulableSessionState>(
-              builder: (context, state) {
-                if (state is SchedulableSessionLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (state is SchedulableSessionLoaded) {
-                  final sessions = state.sessions.take(3).toList();
-
-                  if (sessions.isEmpty) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Text('No sessions created yet'),
-                      ),
-                    );
-                  }
-
-                  return Column(
-                    children: sessions.map((session) => _buildSessionCard(session)).toList(),
-                  );
-                } else if (state is SchedulableSessionError) {
-                  return Center(
-                    child: Column(
-                      children: [
-                        Text('Error: ${state.message}'),
-                        ElevatedButton(
-                          onPressed: () => _loadData(),
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSessionCard(dynamic session) {
-    // Handle SchedulableSessionEntity (templates)
-    if (session is SchedulableSessionEntity) {
-      return Card(
-        margin: const EdgeInsets.only(bottom: 8),
-        child: ListTile(
-          leading: CircleAvatar(
-            backgroundColor: Colors.blue.withValues(alpha: 0.2),
-            child: const Icon(Icons.event_available, color: Colors.blue),
-          ),
-          title: Text('Template ${session.id?.substring(0, 8) ?? 'Unknown'}'),
-          subtitle: Text(
-            '${session.typeIds.length} types • ${session.locationIds.length} locations • ${session.availabilityIds.length} schedules',
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              // TODO: Navigate to edit template
-            },
-          ),
-        ),
+  Future<String> _getClientName(String clientId) async {
+    try {
+      final userRepository = sl<UserRepository>();
+      final result = await userRepository.getUserById(clientId);
+      return result.fold(
+        (failure) => 'Client ${clientId.substring(0, 8)}...',
+        (user) => user.displayName,
       );
+    } catch (e) {
+      return 'Client ${clientId.substring(0, 8)}...';
     }
-    
-    // Handle other session types (fallback)
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.blue.withValues(alpha: 0.2),
-          child: const Icon(Icons.fitness_center, color: Colors.blue),
-        ),
-        title: Text(session.title?.toString() ?? 'Session'),
-        subtitle: Text(
-          '${session.durationMinutes?.toString() ?? '0'} min • \$${session.price?.toStringAsFixed(2) ?? '0.00'}',
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: () {
-            // TODO: Edit session
-          },
-        ),
-      ),
-    );
   }
+
 
   Widget _buildQuickActions() {
     return Card(
@@ -626,18 +535,6 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
               children: [
                 Expanded(
                   child: _buildActionCard(
-                    title: 'Session Types',
-                    icon: Icons.fitness_center,
-                    color: Colors.green,
-                    onTap: () {
-                      AppLogger.navigation('instructor-dashboard', 'session-type-management');
-                      context.go('/session-types');
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildActionCard(
                     title: 'Locations',
                     icon: Icons.location_on,
                     color: Colors.green,
@@ -650,12 +547,24 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildActionCard(
-                    title: 'Schedulable Templates',
-                    icon: Icons.event_available,
-                    color: Colors.blue,
+                    title: 'Session Types',
+                    icon: Icons.fitness_center,
+                    color: Colors.green,
                     onTap: () {
-                      AppLogger.navigation('instructor-dashboard', 'schedulable-templates');
-                      context.go('/schedulable-sessions');
+                      AppLogger.navigation('instructor-dashboard', 'session-type-management');
+                      context.go('/session-types');
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Schedules',
+                    icon: Icons.schedule,
+                    color: Colors.orange,
+                    onTap: () {
+                      AppLogger.navigation('instructor-dashboard', 'schedule-management');
+                      context.go('/schedule');
                     },
                   ),
                 ),
@@ -666,23 +575,35 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
               children: [
                 Expanded(
                   child: _buildActionCard(
-                    title: 'Schedule',
-                    icon: Icons.schedule,
-                    color: Colors.orange,
+                    title: 'Session Templates',
+                    icon: Icons.event_available,
+                    color: Colors.blue,
                     onTap: () {
-                      AppLogger.navigation('instructor-dashboard', 'schedule-management');
-                      context.go('/schedule');
+                      AppLogger.navigation('instructor-dashboard', 'schedulable-templates');
+                      context.go('/schedulable-sessions');
                     },
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildActionCard(
-                    title: 'Bookings',
-                    icon: Icons.calendar_today,
+                    title: 'View as Client',
+                    icon: Icons.visibility,
                     color: Colors.purple,
                     onTap: () {
-                      AppLogger.navigation('instructor-dashboard', 'booking-management');
+                      AppLogger.navigation('instructor-dashboard', 'client-preview');
+                      context.go('/client-dashboard');
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Manual Booking',
+                    icon: Icons.calendar_today,
+                    color: Colors.indigo,
+                    onTap: () {
+                      AppLogger.navigation('instructor-dashboard', 'manual-booking');
                       context.go('/instructor/bookings');
                     },
                   ),
