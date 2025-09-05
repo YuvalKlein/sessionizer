@@ -9,6 +9,12 @@ import 'package:myapp/features/session_type/domain/entities/session_type_entity.
 import 'package:myapp/features/session_type/presentation/bloc/session_type_bloc.dart';
 import 'package:myapp/features/session_type/presentation/bloc/session_type_event.dart';
 import 'package:myapp/features/session_type/presentation/bloc/session_type_state.dart';
+import 'package:myapp/features/location/presentation/bloc/location_bloc.dart';
+import 'package:myapp/features/location/presentation/bloc/location_event.dart';
+import 'package:myapp/features/location/presentation/bloc/location_state.dart';
+import 'package:myapp/features/schedule/presentation/bloc/schedule_bloc.dart';
+import 'package:myapp/features/schedule/presentation/bloc/schedule_event.dart';
+import 'package:myapp/features/schedule/presentation/bloc/schedule_state.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
 
@@ -51,8 +57,9 @@ class _SchedulableSessionCreationPageState extends State<SchedulableSessionCreat
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       context.read<SessionTypeBloc>().add(LoadSessionTypesByInstructor(instructorId: authState.user.id));
+      context.read<LocationBloc>().add(LoadLocationsByInstructor(instructorId: authState.user.id));
+      context.read<ScheduleBloc>().add(LoadSchedules(instructorId: authState.user.id));
     }
-    // TODO: Load locations and schedules with instructor filtering
   }
 
   void _populateForm() {
@@ -93,7 +100,31 @@ class _SchedulableSessionCreationPageState extends State<SchedulableSessionCreat
           });
         }
       },
-      child: Scaffold(
+      child: BlocListener<LocationBloc, LocationState>(
+        listener: (context, state) {
+          if (state is LocationLoaded) {
+            setState(() {
+              _locations.clear();
+              _locations.addAll(state.locations.map((location) => {
+                'id': location.id,
+                'name': location.name,
+              }));
+            });
+          }
+        },
+        child: BlocListener<ScheduleBloc, ScheduleState>(
+          listener: (context, state) {
+            if (state is ScheduleLoaded) {
+              setState(() {
+                _schedules.clear();
+                _schedules.addAll(state.schedules.map((schedule) => {
+                  'id': schedule.id,
+                  'name': schedule.name,
+                }));
+              });
+            }
+          },
+          child: Scaffold(
         appBar: AppBar(
           title: Text(widget.isEdit ? 'Edit Bookable Slot' : 'Create Bookable Slot'),
           backgroundColor: Colors.blue[600],
@@ -139,6 +170,8 @@ class _SchedulableSessionCreationPageState extends State<SchedulableSessionCreat
           foregroundColor: Colors.white,
         ),
       ),
+    ),
+    ),
     );
   }
 

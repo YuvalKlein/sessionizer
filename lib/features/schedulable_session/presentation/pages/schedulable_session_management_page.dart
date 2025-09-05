@@ -145,7 +145,7 @@ class _SchedulableSessionManagementPageState extends State<SchedulableSessionMan
                   floatingActionButton: FloatingActionButton.extended(
           onPressed: _createNewSession,
           icon: const Icon(Icons.add),
-          label: const Text('Create Template'),
+          label: const Text('Create Bookable Slot'),
           backgroundColor: Colors.blue[600],
           foregroundColor: Colors.white,
         ),
@@ -166,14 +166,14 @@ class _SchedulableSessionManagementPageState extends State<SchedulableSessionMan
           ),
           const SizedBox(height: 16),
           Text(
-            'No Schedulable Session Templates',
+            'No Bookable Slots',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Create your first schedulable session template to get started',
+            'Create your first bookable slot to get started',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Colors.grey[500],
             ),
@@ -183,7 +183,7 @@ class _SchedulableSessionManagementPageState extends State<SchedulableSessionMan
           ElevatedButton.icon(
             onPressed: _createNewSession,
             icon: const Icon(Icons.add),
-            label: const Text('Create Template'),
+            label: const Text('Create Bookable Slot'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue[600],
               foregroundColor: Colors.white,
@@ -222,7 +222,7 @@ class _SchedulableSessionManagementPageState extends State<SchedulableSessionMan
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Template ${session.id?.substring(0, 8) ?? 'Unknown'}',
+                        'Bookable Slot ${session.id?.substring(0, 8) ?? 'Unknown'}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -403,7 +403,7 @@ class _SchedulableSessionManagementPageState extends State<SchedulableSessionMan
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Session'),
-        content: Text('Are you sure you want to delete this template? This action cannot be undone.'),
+        content: Text('Are you sure you want to delete this bookable slot? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
