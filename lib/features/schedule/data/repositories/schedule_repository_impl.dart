@@ -77,7 +77,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   @override
   Future<Either<Failure, void>> updateScheduleEntity(ScheduleEntity schedule) async {
     try {
-      await _remoteDataSource.updateScheduleEntity(schedule);
+      final scheduleModel = ScheduleModel.fromEntity(schedule);
+      await _remoteDataSource.updateScheduleEntity(scheduleModel);
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
