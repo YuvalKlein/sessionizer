@@ -51,4 +51,8 @@ class ScheduleModel extends ScheduleEntity {
       'holidays': holidays,
     };
   }
+
+  Map<String, dynamic> toFirestore() {
+    return toMap();
+  }
 }

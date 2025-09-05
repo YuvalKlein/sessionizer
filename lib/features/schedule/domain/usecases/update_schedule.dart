@@ -11,7 +11,7 @@ class UpdateSchedule implements UseCase<void, UpdateScheduleParams> {
 
   @override
   Future<Either<Failure, void>> call(UpdateScheduleParams params) async {
-    return await repository.updateSchedule(params.schedule);
+    return await repository.updateScheduleEntity(params.schedule);
   }
 }
 
