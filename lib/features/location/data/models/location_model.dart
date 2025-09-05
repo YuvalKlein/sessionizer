@@ -10,7 +10,6 @@ class LocationModel extends LocationEntity {
     super.address,
     super.latitude,
     super.longitude,
-    super.isActive = true,
     required super.createdAt,
     required super.updatedAt,
   });
@@ -24,7 +23,6 @@ class LocationModel extends LocationEntity {
       address: map['address'],
       latitude: map['latitude']?.toDouble(),
       longitude: map['longitude']?.toDouble(),
-      isActive: map['isActive'] ?? true,
       createdAt: _parseDateTime(map['createdAt']),
       updatedAt: _parseDateTime(map['updatedAt']),
     );
@@ -52,7 +50,6 @@ class LocationModel extends LocationEntity {
       'address': address,
       'latitude': latitude,
       'longitude': longitude,
-      'isActive': isActive,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
     };
@@ -67,7 +64,6 @@ class LocationModel extends LocationEntity {
       address: entity.address,
       latitude: entity.latitude,
       longitude: entity.longitude,
-      isActive: entity.isActive,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     );
@@ -81,7 +77,6 @@ class LocationModel extends LocationEntity {
     String? address,
     double? latitude,
     double? longitude,
-    bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -93,7 +88,6 @@ class LocationModel extends LocationEntity {
       address: address ?? this.address,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
-      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

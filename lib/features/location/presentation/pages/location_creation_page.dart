@@ -30,7 +30,6 @@ class _LocationCreationPageState extends State<LocationCreationPage> {
   final _latitudeController = TextEditingController();
   final _longitudeController = TextEditingController();
 
-  bool _isActive = true;
 
   @override
   void initState() {
@@ -46,7 +45,6 @@ class _LocationCreationPageState extends State<LocationCreationPage> {
       _addressController.text = location.address ?? '';
       _latitudeController.text = location.latitude?.toString() ?? '';
       _longitudeController.text = location.longitude?.toString() ?? '';
-      _isActive = location.isActive;
     }
   }
 
@@ -90,8 +88,6 @@ class _LocationCreationPageState extends State<LocationCreationPage> {
               _buildBasicInfoSection(),
               const SizedBox(height: 24),
               _buildLocationDetailsSection(),
-              const SizedBox(height: 24),
-              _buildStatusSection(),
               const SizedBox(height: 100), // Space for floating button
             ],
           ),
@@ -233,35 +229,6 @@ class _LocationCreationPageState extends State<LocationCreationPage> {
     );
   }
 
-  Widget _buildStatusSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Status',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Active'),
-              subtitle: const Text('Inactive locations won\'t be available for booking'),
-              value: _isActive,
-              onChanged: (value) {
-                setState(() {
-                  _isActive = value;
-                });
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _saveLocation() {
     if (!_formKey.currentState!.validate()) {
@@ -284,7 +251,6 @@ class _LocationCreationPageState extends State<LocationCreationPage> {
       address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
       latitude: _latitudeController.text.trim().isEmpty ? null : double.tryParse(_latitudeController.text.trim()),
       longitude: _longitudeController.text.trim().isEmpty ? null : double.tryParse(_longitudeController.text.trim()),
-      isActive: _isActive,
       createdAt: widget.isEdit ? widget.existingLocation!.createdAt : DateTime.now(),
       updatedAt: DateTime.now(),
     );
