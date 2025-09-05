@@ -8,7 +8,6 @@ class LocationEntity extends Equatable {
   final String? address;
   final double? latitude;
   final double? longitude;
-  final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -20,7 +19,6 @@ class LocationEntity extends Equatable {
     this.address,
     this.latitude,
     this.longitude,
-    this.isActive = true,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -34,7 +32,6 @@ class LocationEntity extends Equatable {
         address,
         latitude,
         longitude,
-        isActive,
         createdAt,
         updatedAt,
       ];
