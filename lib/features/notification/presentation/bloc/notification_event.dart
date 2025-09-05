@@ -101,3 +101,4 @@ class RefreshNotifications extends NotificationEvent {
   List<Object> get props => [userId];
 }
 
+

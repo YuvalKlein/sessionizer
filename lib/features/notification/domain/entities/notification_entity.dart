@@ -86,3 +86,4 @@ class NotificationEntity extends Equatable {
   }
 }
 
+
