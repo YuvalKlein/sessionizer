@@ -24,6 +24,7 @@ class SessionTypeBloc extends Bloc<SessionTypeEvent, SessionTypeState> {
         _deleteSessionType = deleteSessionType,
         super(SessionTypeInitial()) {
     on<LoadSessionTypes>(_onLoadSessionTypes);
+    on<LoadSessionTypesByInstructor>(_onLoadSessionTypesByInstructor);
     on<CreateSessionTypeEvent>(_onCreateSessionType);
     on<UpdateSessionTypeEvent>(_onUpdateSessionType);
     on<DeleteSessionTypeEvent>(_onDeleteSessionType);
@@ -40,6 +41,26 @@ class SessionTypeBloc extends Bloc<SessionTypeEvent, SessionTypeState> {
     result.fold(
       (failure) => emit(SessionTypeError(message: failure.message)),
       (sessionTypes) => emit(SessionTypeLoaded(sessionTypes: sessionTypes)),
+    );
+  }
+
+  Future<void> _onLoadSessionTypesByInstructor(
+    LoadSessionTypesByInstructor event,
+    Emitter<SessionTypeState> emit,
+  ) async {
+    emit(SessionTypeLoading());
+
+    final result = await _getSessionTypes(NoParams());
+
+    result.fold(
+      (failure) => emit(SessionTypeError(message: failure.message)),
+      (sessionTypes) {
+        // Filter session types by instructor ID
+        final instructorSessionTypes = sessionTypes
+            .where((sessionType) => sessionType.idCreatedBy == event.instructorId)
+            .toList();
+        emit(SessionTypeLoaded(sessionTypes: instructorSessionTypes));
+      },
     );
   }
 

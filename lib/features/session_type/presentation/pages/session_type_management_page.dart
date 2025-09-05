@@ -6,6 +6,8 @@ import 'package:myapp/features/session_type/presentation/bloc/session_type_event
 import 'package:myapp/features/session_type/presentation/bloc/session_type_state.dart';
 import 'package:myapp/features/session_type/domain/entities/session_type_entity.dart';
 import 'package:myapp/core/utils/logger.dart';
+import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
 
 class SessionTypeManagementPage extends StatefulWidget {
   const SessionTypeManagementPage({super.key});
@@ -33,8 +35,13 @@ class _SessionTypeManagementPageState extends State<SessionTypeManagementPage> {
     if (!mounted) return;
     
     try {
-      context.read<SessionTypeBloc>().add(LoadSessionTypes());
-      AppLogger.blocEvent('SessionTypeBloc', 'LoadSessionTypes');
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        context.read<SessionTypeBloc>().add(LoadSessionTypesByInstructor(instructorId: authState.user.id));
+        AppLogger.blocEvent('SessionTypeBloc', 'LoadSessionTypesByInstructor', data: {'instructorId': authState.user.id});
+      } else {
+        AppLogger.error('User not authenticated');
+      }
     } catch (e) {
       AppLogger.error('Failed to load session types', e);
     }
@@ -67,6 +74,11 @@ class _SessionTypeManagementPageState extends State<SessionTypeManagementPage> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Session Types'),
+          leading: IconButton(
+            onPressed: () => context.go('/instructor-dashboard'),
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Back to Dashboard',
+          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.add),

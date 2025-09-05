@@ -575,7 +575,7 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
               children: [
                 Expanded(
                   child: _buildActionCard(
-                    title: 'Session Templates',
+                    title: 'Bookable',
                     icon: Icons.event_available,
                     color: Colors.blue,
                     onTap: () {
@@ -599,7 +599,7 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildActionCard(
-                    title: 'Manual Booking',
+                    title: 'Booking',
                     icon: Icons.calendar_today,
                     color: Colors.indigo,
                     onTap: () {

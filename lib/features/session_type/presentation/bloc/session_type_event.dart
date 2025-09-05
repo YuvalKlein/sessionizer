@@ -10,6 +10,15 @@ abstract class SessionTypeEvent extends Equatable {
 
 class LoadSessionTypes extends SessionTypeEvent {}
 
+class LoadSessionTypesByInstructor extends SessionTypeEvent {
+  final String instructorId;
+
+  const LoadSessionTypesByInstructor({required this.instructorId});
+
+  @override
+  List<Object> get props => [instructorId];
+}
+
 class CreateSessionTypeEvent extends SessionTypeEvent {
   final SessionTypeEntity sessionType;
 

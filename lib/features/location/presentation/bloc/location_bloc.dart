@@ -25,6 +25,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
         _deleteLocation = deleteLocation,
         super(LocationInitial()) {
     on<LoadLocations>(_onLoadLocations);
+    on<LoadLocationsByInstructor>(_onLoadLocationsByInstructor);
     on<CreateLocationEvent>(_onCreateLocation);
     on<UpdateLocationEvent>(_onUpdateLocation);
     on<DeleteLocationEvent>(_onDeleteLocation);
@@ -41,6 +42,26 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     result.fold(
       (failure) => emit(LocationError(message: failure.message)),
       (locations) => emit(LocationLoaded(locations: locations)),
+    );
+  }
+
+  Future<void> _onLoadLocationsByInstructor(
+    LoadLocationsByInstructor event,
+    Emitter<LocationState> emit,
+  ) async {
+    emit(LocationLoading());
+
+    final result = await _getLocations(NoParams());
+
+    result.fold(
+      (failure) => emit(LocationError(message: failure.message)),
+      (locations) {
+        // Filter locations by instructor ID
+        final instructorLocations = locations
+            .where((location) => location.instructorId == event.instructorId)
+            .toList();
+        emit(LocationLoaded(locations: instructorLocations));
+      },
     );
   }
 
