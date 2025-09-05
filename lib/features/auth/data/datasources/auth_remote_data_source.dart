@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:myapp/core/error/exceptions.dart';
+import 'package:myapp/core/utils/logger.dart';
 import 'package:myapp/features/auth/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
@@ -185,30 +186,30 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> signOut() async {
     try {
-      print('🔄 Starting sign out process...');
+      AppLogger.info('🔄 Starting sign out process...');
       
       // Always sign out from Firebase Auth first
-      print('🔄 Signing out from Firebase Auth...');
+      AppLogger.info('🔄 Signing out from Firebase Auth...');
       await _firebaseAuth.signOut();
-      print('✅ Firebase Auth sign out successful');
+      AppLogger.info('✅ Firebase Auth sign out successful');
       
       // For web platform, only use Firebase Auth sign out
       // Google Sign-In sign out on web can cause issues
       if (!kIsWeb) {
         try {
-          print('🔄 Signing out from Google Sign-In (non-web platform)...');
+          AppLogger.info('🔄 Signing out from Google Sign-In (non-web platform)...');
           await _googleSignIn.signOut();
-          print('✅ Google Sign-In sign out successful');
+          AppLogger.info('✅ Google Sign-In sign out successful');
         } catch (googleError) {
-          print('⚠️ Google Sign-In signOut failed (this is OK): $googleError');
+          AppLogger.warning('⚠️ Google Sign-In signOut failed (this is OK): $googleError');
         }
       } else {
-        print('🌐 Web platform detected - skipping Google Sign-In sign out');
+        AppLogger.info('🌐 Web platform detected - skipping Google Sign-In sign out');
       }
       
-      print('✅ Sign out process completed successfully');
+      AppLogger.info('✅ Sign out process completed successfully');
     } catch (e) {
-      print('❌ Sign out failed with error: $e');
+      AppLogger.error('❌ Sign out failed with error: $e');
       throw ServerException('Sign out failed: $e');
     }
   }

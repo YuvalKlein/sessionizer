@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:myapp/core/error/exceptions.dart';
 import 'package:myapp/core/error/failures.dart';
+import 'package:myapp/core/utils/logger.dart';
 import 'package:myapp/features/auth/domain/entities/user_entity.dart';
 import 'package:myapp/features/auth/domain/repositories/auth_repository.dart';
 import 'package:myapp/features/auth/data/datasources/auth_remote_data_source.dart';
@@ -86,25 +87,25 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> signOut() async {
     try {
-      print('🔄 AuthRepository: Starting sign out process');
+      AppLogger.info('🔄 AuthRepository: Starting sign out process');
       
       // Add timeout to prevent hanging
       await _remoteDataSource.signOut().timeout(
         const Duration(seconds: 2),
         onTimeout: () {
-          print('⏰ AuthRepository: Sign out timed out after 2 seconds');
+          AppLogger.warning('⏰ AuthRepository: Sign out timed out after 2 seconds');
           throw Exception('Sign out timed out');
         },
       );
       
-      print('✅ AuthRepository: Sign out completed successfully');
+      AppLogger.info('✅ AuthRepository: Sign out completed successfully');
       return const Right(null);
     } on ServerException catch (e) {
-      print('❌ AuthRepository: Server error during sign out: ${e.message}');
+      AppLogger.error('❌ AuthRepository: Server error during sign out: ${e.message}');
       // Even on server error, consider it successful to prevent endless loading
       return const Right(null);
     } catch (e) {
-      print('❌ AuthRepository: Unexpected error during sign out: $e');
+      AppLogger.error('❌ AuthRepository: Unexpected error during sign out: $e');
       // Even if there's an error, we should still consider it a successful sign out
       // to prevent endless loading
       return const Right(null);

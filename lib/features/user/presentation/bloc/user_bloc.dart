@@ -51,7 +51,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         AppLogger.blocState('UserBloc', 'UserError', data: {'message': failure.message});
       },
       (user) {
-        AppLogger.debug('UserBloc LoadUser success', null, null, {'userId': user.id, 'displayName': user.displayName});
+        AppLogger.debug('UserBloc LoadUser success', data: {'userId': user.id, 'displayName': user.displayName});
         emit(UserLoaded(user: user));
         AppLogger.blocState('UserBloc', 'UserLoaded', data: {'userId': user.id});
       },

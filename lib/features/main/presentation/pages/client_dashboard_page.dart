@@ -45,7 +45,6 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
                 createSchedulableSession: sl(),
                 updateSchedulableSession: sl(),
                 deleteSchedulableSession: sl(),
-                repository: sl(),
               )..add(LoadSchedulableSessions(instructorId: userState.user.id)),
               child: _buildDashboardContent(userState.user.displayName),
             ),

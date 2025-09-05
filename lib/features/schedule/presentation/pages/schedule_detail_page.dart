@@ -280,7 +280,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ] else
             const Padding(
               padding: EdgeInsets.only(top: 8),

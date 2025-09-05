@@ -20,7 +20,7 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
   List<BookingEntity> _bookings = [];
   List<Map<String, dynamic>> _sessionTypes = [];
   List<Map<String, dynamic>> _locations = [];
-  Map<String, Map<String, dynamic>> _clients = {}; // Store client data
+  final Map<String, Map<String, dynamic>> _clients = {}; // Store client data
   bool _isLoading = true;
   String? _error;
   String _selectedFilter = 'all'; // all, upcoming, past, today
@@ -204,7 +204,7 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed == true && mounted) {
       context.read<BookingBloc>().add(CancelBookingEvent(id: booking.id));
     }
   }
@@ -401,10 +401,10 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: isUpcoming 
-                                          ? Colors.blue.withOpacity(0.1)
+                                          ? Colors.blue.withValues(alpha: 0.1)
                                           : isPast 
-                                              ? Colors.grey.withOpacity(0.1)
-                                              : Colors.orange.withOpacity(0.1),
+                                              ? Colors.grey.withValues(alpha: 0.1)
+                                              : Colors.orange.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
@@ -481,7 +481,7 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
           _selectedFilter = value;
         });
       },
-      selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
       checkmarkColor: Theme.of(context).primaryColor,
     );
   }

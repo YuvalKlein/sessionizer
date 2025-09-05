@@ -115,7 +115,6 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
         createSchedulableSession: sl(),
         updateSchedulableSession: sl(),
         deleteSchedulableSession: sl(),
-        repository: sl(),
       )..add(LoadSchedulableSessions(instructorId: userId));
       AppLogger.blocEvent('SchedulableSessionBloc', 'LoadSchedulableSessions', data: {'instructorId': userId});
     }
@@ -127,7 +126,6 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
         createSessionType: sl(),
         updateSessionType: sl(),
         deleteSessionType: sl(),
-        repository: sl(),
       )..add(LoadSessionTypes());
       AppLogger.blocEvent('SessionTypeBloc', 'LoadSessionTypes');
     }

@@ -4,7 +4,6 @@ import 'package:myapp/core/utils/usecase.dart';
 import 'package:myapp/features/schedulable_session/domain/usecases/get_schedulable_sessions.dart';
 import 'package:myapp/features/schedulable_session/domain/entities/schedulable_session_entity.dart';
 import 'package:myapp/features/session_type/domain/usecases/get_session_types.dart';
-import 'package:myapp/features/session_type/domain/entities/session_type_entity.dart';
 
 class SessionInfoDisplay extends StatefulWidget {
   final String sessionId;
@@ -73,25 +72,9 @@ class _SessionInfoDisplayState extends State<SessionInfoDisplay> {
                 return;
               }
               
-              // Find the session type - TODO: Update for new structure
-              SessionTypeEntity? sessionType;
-              // try {
-              //   sessionType = sessionTypes.firstWhere((st) => st.id == session!.sessionTypeId);
-              // } catch (e) {
-              //   sessionType = null;
-              // }
-              
-              if (sessionType == null) {
-                setState(() {
-                  _sessionInfo = 'Session type not found';
-                  _isLoading = false;
-                });
-                return;
-              }
-              
               setState(() {
-                // For now, we'll use a placeholder for location since it's not in the current data model
-                _sessionInfo = '${sessionType!.title} at Location TBD';
+                // For now, we'll use a placeholder since session type lookup is not implemented
+                _sessionInfo = 'Session at Location TBD';
                 _isLoading = false;
               });
             },

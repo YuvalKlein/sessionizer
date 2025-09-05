@@ -87,24 +87,28 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
             setState(() {
               _isLoading = false;
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.green,
-              ),
-            );
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
             // Redirect to schedules list instead of just popping
             context.go('/schedule');
           } else if (state is ScheduleError) {
             setState(() {
               _isLoading = false;
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
           } else if (state is ScheduleLoading) {
             setState(() {
               _isLoading = true;
@@ -448,7 +452,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       timeString = 'Unavailable';
       timeColor = Colors.red[600]!;
     } else if (isEnabled) {
-      timeString = '${_formatTimeOfDay(startTime!)} - ${_formatTimeOfDay(endTime!)}';
+      timeString = '${_formatTimeOfDay(startTime)} - ${_formatTimeOfDay(endTime)}';
       timeColor = Colors.grey[600]!;
     } else {
       timeString = 'No times set';
@@ -603,7 +607,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     final hour = time.hour == 0 ? 12 : (time.hour > 12 ? time.hour - 12 : time.hour);
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.hour < 12 ? 'am' : 'pm';
-    return '$hour:${minute}$period';
+    return '$hour:$minute$period';
   }
 
   void _addTimeRange(String day) {
@@ -670,7 +674,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       },
     );
     
-    if (startTime != null) {
+    if (startTime != null && mounted) {
       // Show end time picker
       final endTime = await showTimePicker(
         context: context,
@@ -686,12 +690,14 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       if (endTime != null) {
         // Check for overlaps with other time ranges on the same day
         if (_hasTimeOverlap(day, index, startTime, endTime)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Time ranges cannot overlap on the same day'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Time ranges cannot overlap on the same day'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
           return;
         }
         
@@ -710,8 +716,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       if (i == currentIndex) continue; // Skip the current range being edited
       
       final range = dayRanges[i];
-      final existingStart = range['start'] as TimeOfDay?;
-      final existingEnd = range['end'] as TimeOfDay?;
+      final existingStart = range['start'];
+      final existingEnd = range['end'];
       
       if (existingStart != null && existingEnd != null) {
         // Check if the new time range overlaps with this existing range
@@ -999,7 +1005,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       context: context,
       initialTime: timeRange['start'] ?? const TimeOfDay(hour: 9, minute: 0),
     );
-    if (startTime != null) {
+    if (startTime != null && mounted) {
       final endTime = await showTimePicker(
         context: context,
         initialTime: timeRange['end'] ?? const TimeOfDay(hour: 17, minute: 0),
@@ -1094,7 +1100,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         lastDate: DateTime.now().add(const Duration(days: 365)),
       );
       
-      if (startDate != null) {
+      if (startDate != null && mounted) {
         final endDate = await showDatePicker(
           context: context,
           initialDate: startDate,
@@ -1102,7 +1108,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
           lastDate: DateTime.now().add(const Duration(days: 365)),
         );
         
-        if (endDate != null) {
+        if (endDate != null && mounted) {
           final reason = await showDialog<String>(
             context: context,
             builder: (context) {
@@ -1161,7 +1167,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         lastDate: DateTime.now().add(const Duration(days: 365)),
       );
       
-      if (date != null) {
+      if (date != null && mounted) {
         final dateString = _dateToString(date);
         
         final reason = await showDialog<String>(
@@ -1238,12 +1244,14 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     // Get current user ID
     final authState = context.read<AuthBloc>().state;
     if (authState is! AuthAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User not authenticated'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User not authenticated'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 

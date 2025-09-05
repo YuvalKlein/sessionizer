@@ -65,6 +65,14 @@ import 'package:myapp/features/location/domain/usecases/create_location.dart';
 import 'package:myapp/features/location/domain/usecases/update_location.dart';
 import 'package:myapp/features/location/domain/usecases/delete_location.dart';
 import 'package:myapp/features/location/presentation/bloc/location_bloc.dart';
+import 'package:myapp/features/notification/data/datasources/notification_remote_data_source.dart';
+import 'package:myapp/features/notification/data/repositories/notification_repository_impl.dart';
+import 'package:myapp/features/notification/domain/repositories/notification_repository.dart';
+import 'package:myapp/features/notification/domain/usecases/get_notifications.dart';
+import 'package:myapp/features/notification/domain/usecases/mark_notification_as_read.dart';
+import 'package:myapp/features/notification/domain/usecases/send_booking_confirmation.dart';
+import 'package:myapp/features/notification/domain/usecases/send_booking_reminder.dart';
+import 'package:myapp/features/notification/presentation/bloc/notification_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -195,7 +203,6 @@ Future<void> initializeDependencies() async {
       createSchedulableSession: sl(),
       updateSchedulableSession: sl(),
       deleteSchedulableSession: sl(),
-      repository: sl(),
     ),
   );
   sl.registerLazySingleton(
@@ -204,7 +211,6 @@ Future<void> initializeDependencies() async {
       createSessionType: sl(),
       updateSessionType: sl(),
       deleteSessionType: sl(),
-      repository: sl(),
     ),
   );
   sl.registerLazySingleton(
@@ -220,6 +226,33 @@ Future<void> initializeDependencies() async {
       getBookings: sl(),
       createBooking: sl(),
       cancelBooking: sl(),
+      repository: sl(),
+    ),
+  );
+
+  // Notification dependencies
+  sl.registerLazySingleton<NotificationRemoteDataSource>(
+    () => NotificationRemoteDataSourceImpl(
+      firestore: sl(),
+      messaging: sl(),
+    ),
+  );
+
+  sl.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerLazySingleton(() => GetNotifications(sl()));
+  sl.registerLazySingleton(() => MarkNotificationAsRead(sl()));
+  sl.registerLazySingleton(() => SendBookingConfirmation(sl()));
+  sl.registerLazySingleton(() => SendBookingReminder(sl()));
+
+  sl.registerLazySingleton(
+    () => NotificationBloc(
+      getNotifications: sl(),
+      markAsRead: sl(),
+      sendBookingConfirmation: sl(),
+      sendBookingReminder: sl(),
       repository: sl(),
     ),
   );
