@@ -6,6 +6,8 @@ import 'package:myapp/features/location/domain/entities/location_entity.dart';
 import 'package:myapp/features/location/presentation/bloc/location_bloc.dart';
 import 'package:myapp/features/location/presentation/bloc/location_event.dart';
 import 'package:myapp/features/location/presentation/bloc/location_state.dart';
+import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
 
 class LocationManagementPage extends StatefulWidget {
   const LocationManagementPage({super.key});
@@ -27,8 +29,13 @@ class _LocationManagementPageState extends State<LocationManagementPage> {
     if (!mounted) return;
     
     try {
-      context.read<LocationBloc>().add(LoadLocations());
-      AppLogger.blocEvent('LocationBloc', 'LoadLocations');
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        context.read<LocationBloc>().add(LoadLocationsByInstructor(instructorId: authState.user.id));
+        AppLogger.blocEvent('LocationBloc', 'LoadLocationsByInstructor', data: {'instructorId': authState.user.id});
+      } else {
+        AppLogger.error('User not authenticated');
+      }
     } catch (e) {
       AppLogger.error('Failed to load locations', e);
     }
@@ -43,6 +50,11 @@ class _LocationManagementPageState extends State<LocationManagementPage> {
         title: const Text('Location Management'),
         backgroundColor: Colors.green[600],
         foregroundColor: Colors.white,
+        leading: IconButton(
+          onPressed: () => context.go('/instructor-dashboard'),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to Dashboard',
+        ),
         actions: [
           IconButton(
             onPressed: _loadLocations,
@@ -269,26 +281,11 @@ class _LocationManagementPageState extends State<LocationManagementPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: location.isActive ? Colors.green[100] : Colors.red[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    location.isActive ? 'Active' : 'Inactive',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: location.isActive ? Colors.green[800] : Colors.red[800],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                if (location.latitude != null && location.longitude != null)
+            if (location.latitude != null && location.longitude != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -304,8 +301,9 @@ class _LocationManagementPageState extends State<LocationManagementPage> {
                       ),
                     ),
                   ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

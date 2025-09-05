@@ -107,10 +107,10 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEdit ? 'Edit Session Type' : 'Create Session Type'),
-        leading: widget.isEdit ? IconButton(
+        leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ) : null,
+          onPressed: () => context.go('/session-types'),
+        ),
       ),
       body: BlocListener<SessionTypeBloc, SessionTypeState>(
         listener: (context, state) {

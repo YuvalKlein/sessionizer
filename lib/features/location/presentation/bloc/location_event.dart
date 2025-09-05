@@ -10,6 +10,15 @@ abstract class LocationEvent extends Equatable {
 
 class LoadLocations extends LocationEvent {}
 
+class LoadLocationsByInstructor extends LocationEvent {
+  final String instructorId;
+
+  const LoadLocationsByInstructor({required this.instructorId});
+
+  @override
+  List<Object> get props => [instructorId];
+}
+
 class CreateLocationEvent extends LocationEvent {
   final LocationEntity location;
 
