@@ -15,3 +15,4 @@ class GetNotifications implements UseCase<List<NotificationEntity>, String> {
   }
 }
 
+

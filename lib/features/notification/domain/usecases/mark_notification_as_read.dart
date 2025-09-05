@@ -14,3 +14,4 @@ class MarkNotificationAsRead implements UseCase<void, String> {
   }
 }
 
+
