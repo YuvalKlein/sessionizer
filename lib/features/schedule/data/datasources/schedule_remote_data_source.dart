@@ -9,6 +9,7 @@ abstract class ScheduleRemoteDataSource {
   Future<ScheduleModel> updateSchedule(String scheduleId, Map<String, dynamic> data);
   Future<void> deleteSchedule(String scheduleId);
   Future<void> setDefaultSchedule(String instructorId, String scheduleId, bool isDefault);
+  Future<void> unsetAllDefaultSchedules();
 }
 
 class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
@@ -107,6 +108,25 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
       }
     } catch (e) {
       throw ServerException('Failed to set default schedule: $e');
+    }
+  }
+
+  @override
+  Future<void> unsetAllDefaultSchedules() async {
+    try {
+      final batch = _firestore.batch();
+      final schedules = await _firestore
+          .collection('schedules')
+          .where('isDefault', isEqualTo: true)
+          .get();
+      
+      for (final doc in schedules.docs) {
+        batch.update(doc.reference, {'isDefault': false});
+      }
+      
+      await batch.commit();
+    } catch (e) {
+      throw ServerException('Failed to unset all default schedules: $e');
     }
   }
 }

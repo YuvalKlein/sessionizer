@@ -13,6 +13,7 @@ import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
 import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_bloc.dart';
 import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_event.dart';
+import 'package:myapp/features/schedulable_session/domain/entities/schedulable_session_entity.dart';
 import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_state.dart';
 import 'package:myapp/features/session_type/presentation/bloc/session_type_bloc.dart';
 import 'package:myapp/features/session_type/presentation/bloc/session_type_event.dart';
@@ -563,6 +564,30 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
   }
 
   Widget _buildSessionCard(dynamic session) {
+    // Handle SchedulableSessionEntity (templates)
+    if (session is SchedulableSessionEntity) {
+      return Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Colors.blue.withValues(alpha: 0.2),
+            child: const Icon(Icons.event_available, color: Colors.blue),
+          ),
+          title: Text('Template ${session.id?.substring(0, 8) ?? 'Unknown'}'),
+          subtitle: Text(
+            '${session.typeIds.length} types • ${session.locationIds.length} locations • ${session.availabilityIds.length} schedules',
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              // TODO: Navigate to edit template
+            },
+          ),
+        ),
+      );
+    }
+    
+    // Handle other session types (fallback)
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -570,9 +595,9 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
           backgroundColor: Colors.blue.withValues(alpha: 0.2),
           child: const Icon(Icons.fitness_center, color: Colors.blue),
         ),
-        title: Text(session.title ?? 'Session'),
+        title: Text(session.title?.toString() ?? 'Session'),
         subtitle: Text(
-          '${session.durationMinutes} min • \$${session.price.toStringAsFixed(2)}',
+          '${session.durationMinutes?.toString() ?? '0'} min • \$${session.price?.toStringAsFixed(2) ?? '0.00'}',
         ),
         trailing: IconButton(
           icon: const Icon(Icons.edit),
@@ -603,22 +628,36 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
               children: [
                 Expanded(
                   child: _buildActionCard(
-                    title: 'Create Session',
-                    icon: Icons.add,
+                    title: 'Session Types',
+                    icon: Icons.fitness_center,
                     color: Colors.green,
                     onTap: () {
-                      // TODO: Navigate to create session
+                      AppLogger.navigation('instructor-dashboard', 'session-type-management');
+                      context.go('/session-types');
                     },
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildActionCard(
-                    title: 'View Bookings',
-                    icon: Icons.book_online,
+                    title: 'Locations',
+                    icon: Icons.location_on,
+                    color: Colors.green,
+                    onTap: () {
+                      AppLogger.navigation('instructor-dashboard', 'locations');
+                      context.go('/locations');
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Schedulable Templates',
+                    icon: Icons.event_available,
                     color: Colors.blue,
                     onTap: () {
-                      // TODO: Navigate to bookings
+                      AppLogger.navigation('instructor-dashboard', 'schedulable-templates');
+                      context.go('/schedulable-sessions');
                     },
                   ),
                 ),
@@ -633,18 +672,20 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
                     icon: Icons.schedule,
                     color: Colors.orange,
                     onTap: () {
-                      // TODO: Navigate to schedule
+                      AppLogger.navigation('instructor-dashboard', 'schedule-management');
+                      context.go('/schedule');
                     },
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildActionCard(
-                    title: 'Analytics',
-                    icon: Icons.analytics,
+                    title: 'Bookings',
+                    icon: Icons.calendar_today,
                     color: Colors.purple,
                     onTap: () {
-                      // TODO: Navigate to analytics
+                      AppLogger.navigation('instructor-dashboard', 'booking-management');
+                      context.go('/instructor/bookings');
                     },
                   ),
                 ),

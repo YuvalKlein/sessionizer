@@ -33,6 +33,22 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   }
 
   @override
+  Future<Either<Failure, ScheduleEntity>> getScheduleById(String scheduleId) async {
+    try {
+      final schedule = await _remoteDataSource.getSchedule(scheduleId);
+      if (schedule != null) {
+        return Right(schedule);
+      } else {
+        return const Left(ServerFailure('Schedule not found'));
+      }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
+
+  @override
   Future<Either<Failure, ScheduleEntity>> createSchedule(ScheduleEntity schedule) async {
     try {
       final scheduleModel = await _remoteDataSource.createSchedule(
@@ -74,6 +90,18 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   Future<Either<Failure, void>> setDefaultSchedule(String instructorId, String scheduleId, bool isDefault) async {
     try {
       await _remoteDataSource.setDefaultSchedule(instructorId, scheduleId, isDefault);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> unsetAllDefaultSchedules() async {
+    try {
+      await _remoteDataSource.unsetAllDefaultSchedules();
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

@@ -21,6 +21,15 @@ class ScheduleLoaded extends ScheduleState {
   List<Object> get props => [schedules];
 }
 
+class ScheduleDetailLoaded extends ScheduleState {
+  final ScheduleEntity schedule;
+
+  const ScheduleDetailLoaded({required this.schedule});
+
+  @override
+  List<Object> get props => [schedule];
+}
+
 class ScheduleError extends ScheduleState {
   final String message;
 

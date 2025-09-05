@@ -19,6 +19,7 @@ import 'package:myapp/features/schedule/data/datasources/schedule_remote_data_so
 import 'package:myapp/features/schedule/data/repositories/schedule_repository_impl.dart';
 import 'package:myapp/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:myapp/features/schedule/domain/usecases/get_schedules.dart';
+import 'package:myapp/features/schedule/domain/usecases/get_schedule_by_id.dart';
 import 'package:myapp/features/schedule/domain/usecases/create_schedule.dart';
 import 'package:myapp/features/schedule/presentation/bloc/schedule_bloc.dart';
 
@@ -56,6 +57,15 @@ import 'package:myapp/features/booking/domain/usecases/create_booking.dart';
 import 'package:myapp/features/booking/domain/usecases/cancel_booking.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 
+import 'package:myapp/features/location/data/datasources/location_remote_data_source.dart';
+import 'package:myapp/features/location/data/repositories/location_repository_impl.dart';
+import 'package:myapp/features/location/domain/repositories/location_repository.dart';
+import 'package:myapp/features/location/domain/usecases/get_locations.dart';
+import 'package:myapp/features/location/domain/usecases/create_location.dart';
+import 'package:myapp/features/location/domain/usecases/update_location.dart';
+import 'package:myapp/features/location/domain/usecases/delete_location.dart';
+import 'package:myapp/features/location/presentation/bloc/location_bloc.dart';
+
 final sl = GetIt.instance;
 
 Future<void> initializeDependencies() async {
@@ -91,6 +101,9 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton<BookingRemoteDataSource>(
     () => BookingRemoteDataSourceImpl(firestore: sl()),
   );
+  sl.registerLazySingleton<LocationRemoteDataSource>(
+    () => LocationRemoteDataSourceImpl(firestore: sl()),
+  );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
@@ -113,6 +126,9 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton<BookingRepository>(
     () => BookingRepositoryImpl(sl()),
   );
+  sl.registerLazySingleton<LocationRepository>(
+    () => LocationRepositoryImpl(sl()),
+  );
 
   // Use cases
   sl.registerLazySingleton(() => SignInWithEmail(sl()));
@@ -121,6 +137,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => SignOut(sl()));
 
   sl.registerLazySingleton(() => GetSchedules(sl()));
+  sl.registerLazySingleton(() => GetScheduleById(sl()));
   sl.registerLazySingleton(() => CreateSchedule(sl()));
 
   sl.registerLazySingleton(() => GetInstructors(sl()));
@@ -141,6 +158,11 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => CreateBooking(sl()));
   sl.registerLazySingleton(() => CancelBooking(sl()));
 
+  sl.registerLazySingleton(() => GetLocations(sl()));
+  sl.registerLazySingleton(() => CreateLocation(sl()));
+  sl.registerLazySingleton(() => UpdateLocation(sl()));
+  sl.registerLazySingleton(() => DeleteLocation(sl()));
+
   // BLoCs
   sl.registerFactory(
     () => AuthBloc(
@@ -155,6 +177,7 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(
     () => ScheduleBloc(
       getSchedules: sl(),
+      getScheduleById: sl(),
       createSchedule: sl(),
       scheduleRepository: sl(),
     ),
@@ -175,13 +198,21 @@ Future<void> initializeDependencies() async {
       repository: sl(),
     ),
   );
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => SessionTypeBloc(
       getSessionTypes: sl(),
       createSessionType: sl(),
       updateSessionType: sl(),
       deleteSessionType: sl(),
       repository: sl(),
+    ),
+  );
+  sl.registerLazySingleton(
+    () => LocationBloc(
+      getLocations: sl(),
+      createLocation: sl(),
+      updateLocation: sl(),
+      deleteLocation: sl(),
     ),
   );
   sl.registerFactory(

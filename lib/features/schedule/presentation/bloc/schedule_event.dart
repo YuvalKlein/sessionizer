@@ -17,6 +17,15 @@ class LoadSchedules extends ScheduleEvent {
   List<Object> get props => [instructorId];
 }
 
+class LoadScheduleById extends ScheduleEvent {
+  final String scheduleId;
+
+  const LoadScheduleById({required this.scheduleId});
+
+  @override
+  List<Object> get props => [scheduleId];
+}
+
 class CreateScheduleEvent extends ScheduleEvent {
   final ScheduleEntity schedule;
 
@@ -61,4 +70,8 @@ class SetDefaultSchedule extends ScheduleEvent {
 
   @override
   List<Object> get props => [instructorId, scheduleId, isDefault];
+}
+
+class UnsetAllDefaultSchedules extends ScheduleEvent {
+  const UnsetAllDefaultSchedules();
 }

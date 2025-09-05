@@ -16,13 +16,66 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
 
   @override
   Stream<List<SessionTypeModel>> getSessionTypes() {
-    return _firestore
-        .collection('session_types')
-        .where('isActive', isEqualTo: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => SessionTypeModel.fromMap({...doc.data(), 'id': doc.id}))
-            .toList());
+    // Try both collections to handle migration from old format
+    return Stream.fromFuture(_getAllSessionTypes());
+  }
+
+  Future<List<SessionTypeModel>> _getAllSessionTypes() async {
+    final List<SessionTypeModel> allSessionTypes = [];
+    
+    try {
+      // Get from new collection (session_types)
+      final newSnapshot = await _firestore
+          .collection('session_types')
+          .get();
+      
+      for (final doc in newSnapshot.docs) {
+        try {
+          allSessionTypes.add(SessionTypeModel.fromMap({...doc.data(), 'id': doc.id}));
+        } catch (e) {
+          print('Error parsing new session type ${doc.id}: $e');
+        }
+      }
+    } catch (e) {
+      print('Error getting new session types: $e');
+    }
+    
+    try {
+      // Get from old collection (sessionTypes) and convert
+      final oldSnapshot = await _firestore
+          .collection('sessionTypes')
+          .where('isActive', isEqualTo: true)
+          .get();
+      
+      for (final doc in oldSnapshot.docs) {
+        try {
+          final data = doc.data();
+          // Convert old format to new format
+          final convertedData = {
+                      'id': doc.id,
+          'title': data['title'] ?? data['name'] ?? '',
+          'notifyCancelation': data['notifyCancelation'] ?? false,
+            'createdTime': data['createdTime'] ?? DateTime.now().millisecondsSinceEpoch,
+            'duration': data['duration'] ?? data['durationMinutes'] ?? 60,
+            'durationUnit': data['durationUnit'] ?? 'minutes',
+            'details': data['details'] ?? data['description'] ?? '',
+            'idCreatedBy': data['idCreatedBy'] ?? '',
+            'maxPlayers': data['maxPlayers'] ?? data['maxParticipants'] ?? 1,
+            'minPlayers': data['minPlayers'] ?? 1,
+            'showParticipants': data['showParticipants'] ?? true,
+            'category': data['category'] ?? 'tennis',
+            'price': data['price'] ?? 0,
+          };
+          allSessionTypes.add(SessionTypeModel.fromMap(convertedData));
+        } catch (e) {
+          print('Error converting old session type ${doc.id}: $e');
+        }
+      }
+    } catch (e) {
+      print('Error getting old session types: $e');
+    }
+    
+    return allSessionTypes;
   }
 
   @override
@@ -53,6 +106,16 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
 
   @override
   Future<void> deleteSessionType(String id) async {
-    await _firestore.collection('session_types').doc(id).delete();
+    try {
+      // Try new collection first
+      await _firestore.collection('session_types').doc(id).delete();
+    } catch (e) {
+      try {
+        // Try old collection if new one fails
+        await _firestore.collection('sessionTypes').doc(id).delete();
+      } catch (e2) {
+        throw Exception('Session type not found in either collection');
+      }
+    }
   }
 }

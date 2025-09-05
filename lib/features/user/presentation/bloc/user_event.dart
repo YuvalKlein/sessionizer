@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:myapp/features/user/domain/entities/user_profile_entity.dart';
 
 abstract class UserEvent extends Equatable {
   const UserEvent();
