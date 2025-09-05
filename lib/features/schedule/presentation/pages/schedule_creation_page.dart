@@ -74,8 +74,58 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     _timezoneController.text = schedule.timezone;
     _isDefault = schedule.isDefault;
     
-    // TODO: Populate weekly availability, specific dates, and holidays
-    // This would require parsing the schedule's availability data
+    // Populate weekly availability
+    if (schedule.weeklyAvailability != null) {
+      for (final entry in schedule.weeklyAvailability!.entries) {
+        final day = entry.key;
+        final dayRanges = entry.value;
+        
+        if (dayRanges.isNotEmpty) {
+          _weeklyAvailability[day] = dayRanges.map((range) => {
+            'start': _parseTimeOfDay(range['start']),
+            'end': _parseTimeOfDay(range['end']),
+          }).toList();
+        }
+      }
+    }
+    
+    // Populate specific date availability
+    if (schedule.specificDateAvailability != null) {
+      for (final entry in schedule.specificDateAvailability!.entries) {
+        final date = entry.key;
+        final dayData = entry.value;
+        
+        if (dayData['unavailable'] == true) {
+          _specificDateAvailability[date] = {'unavailable': true};
+        } else if (dayData['start'] != null && dayData['end'] != null) {
+          _specificDateAvailability[date] = {
+            'start': _parseTimeOfDay(dayData['start']),
+            'end': _parseTimeOfDay(dayData['end']),
+          };
+        }
+      }
+    }
+    
+    // Populate holidays
+    if (schedule.holidays != null) {
+      _holidays.addAll(schedule.holidays!);
+    }
+  }
+
+  TimeOfDay? _parseTimeOfDay(dynamic timeString) {
+    if (timeString == null || timeString is! String) return null;
+    
+    try {
+      final parts = timeString.split(':');
+      if (parts.length == 2) {
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        return TimeOfDay(hour: hour, minute: minute);
+      }
+    } catch (e) {
+      // Invalid time format
+    }
+    return null;
   }
 
   @override
@@ -604,9 +654,9 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                   Text('Creating Schedule...'),
                 ],
               )
-            : const Text(
-                'Create Schedule',
-                style: TextStyle(fontSize: 16),
+            : Text(
+                widget.isEdit ? 'Update Schedule' : 'Create Schedule',
+                style: const TextStyle(fontSize: 16),
               ),
       ),
     );

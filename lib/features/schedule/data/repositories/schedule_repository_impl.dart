@@ -75,6 +75,18 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   }
 
   @override
+  Future<Either<Failure, void>> updateScheduleEntity(ScheduleEntity schedule) async {
+    try {
+      await _remoteDataSource.updateScheduleEntity(schedule);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure('Unexpected error: $e'));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> deleteSchedule(String scheduleId) async {
     try {
       await _remoteDataSource.deleteSchedule(scheduleId);

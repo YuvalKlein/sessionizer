@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:myapp/features/schedule/domain/usecases/get_schedules.dart';
 import 'package:myapp/features/schedule/domain/usecases/get_schedule_by_id.dart';
 import 'package:myapp/features/schedule/domain/usecases/create_schedule.dart';
+import 'package:myapp/features/schedule/domain/usecases/update_schedule.dart';
 import 'package:myapp/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:myapp/features/schedule/presentation/bloc/schedule_event.dart';
 import 'package:myapp/features/schedule/presentation/bloc/schedule_state.dart';
@@ -10,22 +11,26 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   final GetSchedules _getSchedules;
   final GetScheduleById _getScheduleById;
   final CreateSchedule _createSchedule;
+  final UpdateSchedule _updateSchedule;
   final ScheduleRepository _scheduleRepository;
 
   ScheduleBloc({
     required GetSchedules getSchedules,
     required GetScheduleById getScheduleById,
     required CreateSchedule createSchedule,
+    required UpdateSchedule updateSchedule,
     required ScheduleRepository scheduleRepository,
   }) : _getSchedules = getSchedules,
        _getScheduleById = getScheduleById,
        _createSchedule = createSchedule,
+       _updateSchedule = updateSchedule,
        _scheduleRepository = scheduleRepository,
        super(ScheduleInitial()) {
     
     on<LoadSchedules>(_onLoadSchedules);
     on<LoadScheduleById>(_onLoadScheduleById);
     on<CreateScheduleEvent>(_onCreateSchedule);
+    on<UpdateScheduleEvent>(_onUpdateScheduleEvent);
     on<UpdateSchedule>(_onUpdateSchedule);
     on<DeleteSchedule>(_onDeleteSchedule);
     on<SetDefaultSchedule>(_onSetDefaultSchedule);
@@ -66,6 +71,19 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     result.fold(
       (failure) => emit(ScheduleError(message: failure.message)),
       (schedule) => emit(ScheduleOperationSuccess(message: 'Schedule created successfully')),
+    );
+  }
+
+  Future<void> _onUpdateScheduleEvent(UpdateScheduleEvent event, Emitter<ScheduleState> emit) async {
+    emit(ScheduleLoading());
+    
+    final result = await _updateSchedule(UpdateScheduleParams(
+      schedule: event.schedule,
+    ));
+
+    result.fold(
+      (failure) => emit(ScheduleError(message: failure.message)),
+      (_) => emit(ScheduleOperationSuccess(message: 'Schedule updated successfully')),
     );
   }
 

@@ -8,6 +8,7 @@ abstract class ScheduleRepository {
   Future<Either<Failure, ScheduleEntity>> getScheduleById(String scheduleId);
   Future<Either<Failure, ScheduleEntity>> createSchedule(ScheduleEntity schedule);
   Future<Either<Failure, ScheduleEntity>> updateSchedule(String scheduleId, Map<String, dynamic> data);
+  Future<Either<Failure, void>> updateScheduleEntity(ScheduleEntity schedule);
   Future<Either<Failure, void>> deleteSchedule(String scheduleId);
   Future<Either<Failure, void>> setDefaultSchedule(String instructorId, String scheduleId, bool isDefault);
   Future<Either<Failure, void>> unsetAllDefaultSchedules();

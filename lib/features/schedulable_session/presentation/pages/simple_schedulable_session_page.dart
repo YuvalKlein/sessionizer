@@ -16,7 +16,13 @@ class SimpleSchedulableSessionPage extends StatelessWidget {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.of(context).pushReplacementNamed('/instructor-dashboard');
+            }
+          },
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Back to Dashboard',
         ),

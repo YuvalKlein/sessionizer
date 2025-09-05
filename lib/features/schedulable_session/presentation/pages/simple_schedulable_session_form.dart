@@ -263,7 +263,9 @@ class _SimpleSchedulableSessionFormState extends State<SimpleSchedulableSessionF
                   border: OutlineInputBorder(),
                   labelText: 'Select Session Type',
                 ),
-                items: _sessionTypes.map((type) {
+                items: _sessionTypes
+                    .where((type) => type['id'] != null)
+                    .map((type) {
                   return DropdownMenuItem<String>(
                     value: type['id'] as String,
                     child: Text(type['title'] as String? ?? 'Unknown'),
@@ -282,7 +284,9 @@ class _SimpleSchedulableSessionFormState extends State<SimpleSchedulableSessionF
                   border: OutlineInputBorder(),
                   labelText: 'Select Location',
                 ),
-                items: _locations.map((location) {
+                items: _locations
+                    .where((location) => location['id'] != null)
+                    .map((location) {
                   return DropdownMenuItem<String>(
                     value: location['id'] as String,
                     child: Text(location['name'] as String? ?? 'Unknown'),
@@ -301,7 +305,9 @@ class _SimpleSchedulableSessionFormState extends State<SimpleSchedulableSessionF
                   border: OutlineInputBorder(),
                   labelText: 'Select Schedule',
                 ),
-                items: _schedules.map((schedule) {
+                items: _schedules
+                    .where((schedule) => schedule['id'] != null)
+                    .map((schedule) {
                   return DropdownMenuItem<String>(
                     value: schedule['id'] as String,
                     child: Text(schedule['name'] as String? ?? 'Unknown'),
