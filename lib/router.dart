@@ -19,6 +19,7 @@ import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/schedule/presentation/pages/schedule_management_page.dart';
 import 'package:myapp/features/schedule/presentation/pages/schedule_creation_page.dart';
 import 'package:myapp/features/schedule/presentation/pages/schedule_detail_page.dart';
+import 'package:myapp/features/schedule/presentation/pages/schedule_edit_page.dart';
 import 'package:myapp/features/schedule/presentation/bloc/schedule_bloc.dart';
 import 'package:myapp/features/session_type/presentation/pages/session_type_management_page.dart';
 import 'package:myapp/features/session_type/presentation/pages/session_type_creation_page.dart';
@@ -173,7 +174,7 @@ class AppRouter {
           final scheduleId = state.pathParameters['scheduleId']!;
           return BlocProvider.value(
             value: sl<ScheduleBloc>(),
-            child: MainScreen(child: ScheduleCreationPage()),
+            child: MainScreen(child: ScheduleEditPage(scheduleId: scheduleId)),
           );
         },
       ),

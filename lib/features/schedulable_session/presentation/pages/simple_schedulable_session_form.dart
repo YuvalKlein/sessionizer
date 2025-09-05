@@ -45,25 +45,31 @@ class _SimpleSchedulableSessionFormState extends State<SimpleSchedulableSessionF
 
   Future<void> _loadData() async {
     try {
-      // Load session types
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      // Load session types for current instructor
       final sessionTypesSnapshot = await FirebaseFirestore.instance
           .collection('session_types')
+          .where('idCreatedBy', isEqualTo: user.uid)
           .get();
       _sessionTypes = sessionTypesSnapshot.docs
           .map((doc) => {'id': doc.id, ...doc.data()})
           .toList();
 
-      // Load locations
+      // Load locations for current instructor
       final locationsSnapshot = await FirebaseFirestore.instance
           .collection('locations')
+          .where('instructorId', isEqualTo: user.uid)
           .get();
       _locations = locationsSnapshot.docs
           .map((doc) => {'id': doc.id, ...doc.data()})
           .toList();
 
-      // Load schedules
+      // Load schedules for current instructor
       final schedulesSnapshot = await FirebaseFirestore.instance
           .collection('schedules')
+          .where('instructorId', isEqualTo: user.uid)
           .get();
       _schedules = schedulesSnapshot.docs
           .map((doc) => {'id': doc.id, ...doc.data()})
