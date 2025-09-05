@@ -48,6 +48,11 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
           return Scaffold(
             appBar: AppBar(
               title: Text(state.schedule.name),
+              leading: IconButton(
+                onPressed: () => context.go('/schedule'),
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back to Schedules',
+              ),
               actions: [
                 IconButton(
                   icon: const Icon(Icons.edit),
@@ -67,6 +72,11 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Schedule Details'),
+              leading: IconButton(
+                onPressed: () => context.go('/schedule'),
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back to Schedules',
+              ),
             ),
             body: _buildError(state.message),
           );
@@ -76,6 +86,11 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Schedule Details'),
+            leading: IconButton(
+              onPressed: () => context.go('/schedule'),
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to Schedules',
+            ),
           ),
           body: _buildNotFound(),
         );

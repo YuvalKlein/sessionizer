@@ -48,8 +48,11 @@ class _SchedulableSessionCreationPageState extends State<SchedulableSessionCreat
   }
 
   void _loadData() {
-    context.read<SessionTypeBloc>().add(LoadSessionTypes());
-    // TODO: Load locations and schedules
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      context.read<SessionTypeBloc>().add(LoadSessionTypesByInstructor(instructorId: authState.user.id));
+    }
+    // TODO: Load locations and schedules with instructor filtering
   }
 
   void _populateForm() {
@@ -95,12 +98,11 @@ class _SchedulableSessionCreationPageState extends State<SchedulableSessionCreat
           title: Text(widget.isEdit ? 'Edit Template' : 'Create Template'),
           backgroundColor: Colors.blue[600],
           foregroundColor: Colors.white,
-          leading: widget.isEdit
-              ? IconButton(
-                  onPressed: () => context.pop(),
-                  icon: const Icon(Icons.arrow_back),
-                )
-              : null,
+          leading: IconButton(
+            onPressed: () => context.go('/schedulable-sessions'),
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Back to Templates',
+          ),
         ),
         body: BlocBuilder<SessionTypeBloc, SessionTypeState>(
           builder: (context, state) {
