@@ -11,14 +11,14 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   final GetSchedules _getSchedules;
   final GetScheduleById _getScheduleById;
   final CreateSchedule _createSchedule;
-  final UpdateSchedule _updateSchedule;
+  final UpdateScheduleUseCase _updateSchedule;
   final ScheduleRepository _scheduleRepository;
 
   ScheduleBloc({
     required GetSchedules getSchedules,
     required GetScheduleById getScheduleById,
     required CreateSchedule createSchedule,
-    required UpdateSchedule updateSchedule,
+    required UpdateScheduleUseCase updateSchedule,
     required ScheduleRepository scheduleRepository,
   }) : _getSchedules = getSchedules,
        _getScheduleById = getScheduleById,
