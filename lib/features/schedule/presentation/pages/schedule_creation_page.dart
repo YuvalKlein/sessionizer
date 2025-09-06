@@ -81,7 +81,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         final dayRanges = entry.value;
         
         if (dayRanges.isNotEmpty) {
-          _weeklyAvailability[day] = dayRanges.map((range) => {
+          _weeklyAvailability[day] = dayRanges.map<Map<String, TimeOfDay?>>((range) => {
             'start': _parseTimeOfDay(range['start']),
             'end': _parseTimeOfDay(range['end']),
           }).toList();
@@ -726,7 +726,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       _weeklyAvailability[day]!.removeAt(index);
       // If no time ranges left, add an empty one
       if (_weeklyAvailability[day]!.isEmpty) {
-        _weeklyAvailability[day]!.add({'start': null, 'end': null});
+        _weeklyAvailability[day]!.add(<String, TimeOfDay?>{'start': null, 'end': null});
       }
     });
   }
@@ -876,9 +876,9 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
           _weeklyAvailability[targetDay]!.clear();
           // Copy all time ranges from source day
           for (final range in sourceRanges) {
-            _weeklyAvailability[targetDay]!.add({
-              'start': range['start'],
-              'end': range['end'],
+            _weeklyAvailability[targetDay]!.add(<String, TimeOfDay?>{
+              'start': range['start'] as TimeOfDay?,
+              'end': range['end'] as TimeOfDay?,
             });
           }
         }
@@ -915,7 +915,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       
       // If no weekly hours, add one empty slot
       if (prePopulatedTimes.isEmpty) {
-        prePopulatedTimes.add({'start': null, 'end': null});
+        prePopulatedTimes.add(<String, TimeOfDay?>{'start': null, 'end': null});
       }
       
       // Show dialog with date picker and time slots combined
@@ -1129,7 +1129,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     setDialogState(() {
       times.removeAt(index);
       if (times.isEmpty) {
-        times.add({'start': null, 'end': null});
+        times.add(<String, TimeOfDay?>{'start': null, 'end': null});
       }
     });
   }
