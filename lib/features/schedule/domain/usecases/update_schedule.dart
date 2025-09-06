@@ -4,10 +4,10 @@ import 'package:myapp/features/schedule/domain/entities/schedule_entity.dart';
 import 'package:myapp/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:dartz/dartz.dart';
 
-class UpdateSchedule implements UseCase<void, UpdateScheduleParams> {
+class UpdateScheduleUseCase implements UseCase<void, UpdateScheduleParams> {
   final ScheduleRepository repository;
 
-  UpdateSchedule(this.repository);
+  UpdateScheduleUseCase(this.repository);
 
   @override
   Future<Either<Failure, void>> call(UpdateScheduleParams params) async {

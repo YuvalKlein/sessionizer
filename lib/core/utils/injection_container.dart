@@ -148,7 +148,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => GetSchedules(sl()));
   sl.registerLazySingleton(() => GetScheduleById(sl()));
   sl.registerLazySingleton(() => CreateSchedule(sl()));
-  sl.registerLazySingleton(() => UpdateSchedule(sl()));
+  sl.registerLazySingleton(() => UpdateScheduleUseCase(sl()));
 
   sl.registerLazySingleton(() => GetInstructors(sl()));
   sl.registerLazySingleton(() => GetUser(sl()));
