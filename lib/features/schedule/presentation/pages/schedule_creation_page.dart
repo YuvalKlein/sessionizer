@@ -292,7 +292,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
               ),
             ),
             const SizedBox(height: 16),
-            ..._weeklyAvailability.keys.map((day) => _buildDayAvailability(day)),
+            ..._weeklyAvailability.keys.map((day) => _buildDayAvailability(day)).toList(),
           ],
         ),
       ),
@@ -504,7 +504,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
             else
               ..._specificDateAvailability.entries.map((entry) => 
                 _buildSpecificDateCard(entry.key, entry.value)
-              ),
+              ).toList(),
           ],
         ),
       ),
