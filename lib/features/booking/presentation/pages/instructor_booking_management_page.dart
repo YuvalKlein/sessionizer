@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
@@ -244,6 +245,17 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Manage Bookings'),
+          leading: IconButton(
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                context.go('/instructor-dashboard');
+              }
+            },
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Back to Dashboard',
+          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
