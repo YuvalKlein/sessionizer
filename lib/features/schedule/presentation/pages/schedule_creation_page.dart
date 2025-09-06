@@ -102,7 +102,16 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         
         if (dayData['unavailable'] == true) {
           _specificDateAvailability[date] = {'unavailable': true};
+        } else if (dayData['timeSlots'] != null && dayData['timeSlots'] is List) {
+          // Handle new structure with multiple time slots
+          _specificDateAvailability[date] = {
+            'timeSlots': (dayData['timeSlots'] as List).map((slot) => {
+              'start': _parseTimeOfDay(slot['start']),
+              'end': _parseTimeOfDay(slot['end']),
+            }).toList(),
+          };
         } else if (dayData['start'] != null && dayData['end'] != null) {
+          // Handle old structure with single time slot
           _specificDateAvailability[date] = {
             'start': _parseTimeOfDay(dayData['start']),
             'end': _parseTimeOfDay(dayData['end']),
@@ -131,6 +140,11 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       // Invalid time format
     }
     return null;
+  }
+
+  String _timeOfDayToString(TimeOfDay? timeOfDay) {
+    if (timeOfDay == null) return '';
+    return '${timeOfDay.hour.toString().padLeft(2, '0')}:${timeOfDay.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -518,9 +532,9 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
 
   Widget _buildSpecificDateCard(String date, Map<String, dynamic> dayData) {
     final isUnavailable = dayData['unavailable'] == true;
+    final timeSlots = dayData['timeSlots'] as List<Map<String, TimeOfDay?>>?;
     final startTime = dayData['start'] as TimeOfDay?;
     final endTime = dayData['end'] as TimeOfDay?;
-    final isEnabled = startTime != null && endTime != null;
     
     String timeString;
     Color timeColor;
@@ -528,7 +542,25 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     if (isUnavailable) {
       timeString = 'Unavailable';
       timeColor = Colors.red[600]!;
-    } else if (isEnabled) {
+    } else if (timeSlots != null && timeSlots.isNotEmpty) {
+      // Handle new structure with multiple time slots
+      final validSlots = timeSlots.where((slot) => 
+        slot['start'] != null && slot['end'] != null
+      ).toList();
+      
+      if (validSlots.isNotEmpty) {
+        if (validSlots.length == 1) {
+          timeString = '${_formatTimeOfDay(validSlots.first['start']!)} - ${_formatTimeOfDay(validSlots.first['end']!)}';
+        } else {
+          timeString = '${validSlots.length} time slots';
+        }
+        timeColor = Colors.grey[600]!;
+      } else {
+        timeString = 'No times set';
+        timeColor = Colors.grey[400]!;
+      }
+    } else if (startTime != null && endTime != null) {
+      // Handle old structure with single time slot
       timeString = '${_formatTimeOfDay(startTime)} - ${_formatTimeOfDay(endTime)}';
       timeColor = Colors.grey[600]!;
     } else {
@@ -904,21 +936,36 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       final dateString = _dateToString(date);
       final dayOfWeek = _getDayOfWeek(date.weekday);
       
-      // Get weekly hours for this day of the week
-      final weeklyHours = _weeklyAvailability[dayOfWeek] ?? [];
+      // Check if this date already has specific availability
+      final existingData = _specificDateAvailability[dateString];
       final prePopulatedTimes = <Map<String, TimeOfDay?>>[];
       
-      // Pre-populate with weekly hours if available
-      for (final range in weeklyHours) {
-        if (range['start'] != null && range['end'] != null) {
-          prePopulatedTimes.add({
-            'start': range['start'],
-            'end': range['end'],
-          });
+      if (existingData != null && existingData['timeSlots'] != null) {
+        // Load existing time slots
+        final timeSlots = existingData['timeSlots'] as List<Map<String, TimeOfDay?>>;
+        prePopulatedTimes.addAll(timeSlots);
+      } else if (existingData != null && existingData['start'] != null && existingData['end'] != null) {
+        // Load old format single time slot
+        prePopulatedTimes.add({
+          'start': existingData['start'],
+          'end': existingData['end'],
+        });
+      } else {
+        // Get weekly hours for this day of the week
+        final weeklyHours = _weeklyAvailability[dayOfWeek] ?? [];
+        
+        // Pre-populate with weekly hours if available
+        for (final range in weeklyHours) {
+          if (range['start'] != null && range['end'] != null) {
+            prePopulatedTimes.add({
+              'start': range['start'],
+              'end': range['end'],
+            });
+          }
         }
       }
       
-      // If no weekly hours, add one empty slot
+      // If no time slots, add one empty slot
       if (prePopulatedTimes.isEmpty) {
         prePopulatedTimes.add(<String, TimeOfDay?>{'start': null, 'end': null});
       }
@@ -1062,9 +1109,17 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
               onPressed: () {
                 // Save the times to specific date availability
                 setState(() {
-                  _specificDateAvailability[dateString] = times.isNotEmpty 
-                      ? times.first 
-                      : {'start': null, 'end': null};
+                  if (times.isNotEmpty) {
+                    // Store all time slots for this date
+                    _specificDateAvailability[dateString] = {
+                      'timeSlots': times.map((timeSlot) => {
+                        'start': timeSlot['start'] != null ? _timeOfDayToString(timeSlot['start']) : null,
+                        'end': timeSlot['end'] != null ? _timeOfDayToString(timeSlot['end']) : null,
+                      }).toList(),
+                    };
+                  } else {
+                    _specificDateAvailability[dateString] = {'unavailable': true};
+                  }
                 });
                 Navigator.of(context).pop();
               },

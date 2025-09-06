@@ -42,8 +42,22 @@ class _ScheduleEditPageState extends State<ScheduleEditPage> {
         }
 
         if (state is ScheduleDetailLoaded) {
+          AppLogger.widgetBuild('ScheduleEditPage', data: {'action': 'schedule_loaded', 'scheduleId': widget.scheduleId, 'scheduleName': state.schedule.name});
           return ScheduleCreationPage(
             existingSchedule: state.schedule,
+            isEdit: true,
+          );
+        }
+
+        // Check if schedule is already in the loaded schedules
+        if (state is ScheduleLoaded && state.schedules.isNotEmpty) {
+          final schedule = state.schedules.firstWhere(
+            (s) => s.id == widget.scheduleId,
+            orElse: () => throw StateError('Schedule not found'),
+          );
+          AppLogger.widgetBuild('ScheduleEditPage', data: {'action': 'schedule_found_in_list', 'scheduleId': widget.scheduleId, 'scheduleName': schedule.name});
+          return ScheduleCreationPage(
+            existingSchedule: schedule,
             isEdit: true,
           );
         }
