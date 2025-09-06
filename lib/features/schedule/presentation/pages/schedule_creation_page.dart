@@ -80,10 +80,15 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         final day = entry.key;
         final dayRanges = entry.value;
         
-        if (dayRanges.isNotEmpty) {
-          _weeklyAvailability[day] = dayRanges.map<Map<String, TimeOfDay?>>((range) => {
-            'start': _parseTimeOfDay(range['start']),
-            'end': _parseTimeOfDay(range['end']),
+        if (dayRanges != null && dayRanges is List && dayRanges.isNotEmpty) {
+          _weeklyAvailability[day] = dayRanges.map<Map<String, TimeOfDay?>>((range) {
+            if (range is Map) {
+              return {
+                'start': _parseTimeOfDay(range['start']),
+                'end': _parseTimeOfDay(range['end']),
+              };
+            }
+            return <String, TimeOfDay?>{'start': null, 'end': null};
           }).toList();
         }
       }
