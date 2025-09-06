@@ -942,8 +942,15 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       
       if (existingData != null && existingData['timeSlots'] != null) {
         // Load existing time slots
-        final timeSlots = existingData['timeSlots'] as List<Map<String, TimeOfDay?>>;
-        prePopulatedTimes.addAll(timeSlots);
+        final timeSlots = existingData['timeSlots'] as List;
+        for (final slot in timeSlots) {
+          if (slot is Map) {
+            prePopulatedTimes.add({
+              'start': _parseTimeOfDay(slot['start']),
+              'end': _parseTimeOfDay(slot['end']),
+            });
+          }
+        }
       } else if (existingData != null && existingData['start'] != null && existingData['end'] != null) {
         // Load old format single time slot
         prePopulatedTimes.add({
@@ -1417,11 +1424,28 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       if (dayData['unavailable'] == true) {
         // Mark as unavailable
         specificDateAvailability[date] = {'unavailable': true};
+      } else if (dayData['timeSlots'] != null && dayData['timeSlots'] is List) {
+        // Handle new structure with multiple time slots
+        final timeSlots = dayData['timeSlots'] as List<Map<String, TimeOfDay?>>;
+        final validSlots = <Map<String, String>>[];
+        
+        for (final slot in timeSlots) {
+          if (slot['start'] != null && slot['end'] != null) {
+            validSlots.add({
+              'start': _timeOfDayToString(slot['start']),
+              'end': _timeOfDayToString(slot['end']),
+            });
+          }
+        }
+        
+        if (validSlots.isNotEmpty) {
+          specificDateAvailability[date] = {'timeSlots': validSlots};
+        }
       } else if (dayData['start'] != null && dayData['end'] != null) {
-        // Mark as available with specific times
+        // Handle old structure with single time slot
         specificDateAvailability[date] = {
-          'start': '${dayData['start']!.hour.toString().padLeft(2, '0')}:${dayData['start']!.minute.toString().padLeft(2, '0')}',
-          'end': '${dayData['end']!.hour.toString().padLeft(2, '0')}:${dayData['end']!.minute.toString().padLeft(2, '0')}',
+          'start': _timeOfDayToString(dayData['start']),
+          'end': _timeOfDayToString(dayData['end']),
         };
       }
     }
