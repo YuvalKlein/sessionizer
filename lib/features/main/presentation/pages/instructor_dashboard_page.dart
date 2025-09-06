@@ -414,7 +414,7 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    // TODO: Navigate to all bookings
+                    context.go('/instructor/bookings');
                   },
                   child: const Text('View All'),
                 ),

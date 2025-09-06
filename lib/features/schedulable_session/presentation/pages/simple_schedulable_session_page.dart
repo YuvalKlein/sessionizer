@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:myapp/features/schedulable_session/presentation/pages/simple_schedulable_session_form.dart';
 
 class SimpleSchedulableSessionPage extends StatelessWidget {
@@ -20,7 +21,7 @@ class SimpleSchedulableSessionPage extends StatelessWidget {
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
             } else {
-              Navigator.of(context).pushReplacementNamed('/instructor-dashboard');
+              context.go('/instructor-dashboard');
             }
           },
           icon: const Icon(Icons.arrow_back),

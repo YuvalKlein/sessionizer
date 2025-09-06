@@ -610,7 +610,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                 ),
               )
             else
-              ..._holidays.entries.map((entry) => _buildHolidayCard(entry.key, entry.value)),
+              ..._holidays.entries.map((entry) => _buildHolidayCard(entry.key, entry.value)).toList(),
           ],
         ),
       ),
