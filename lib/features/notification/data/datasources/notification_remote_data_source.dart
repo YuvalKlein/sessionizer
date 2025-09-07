@@ -38,7 +38,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       
       // Save to Firestore
       await _firestore
-          .collection('sessionizer/notifications')
+          .collection('sessionizer')
+          .doc('notifications')
+          .collection('notifications')
           .doc(notification.id)
           .set(notification.toMap());
 
@@ -59,7 +61,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     try {
       // Get booking details
       final bookingDoc = await _firestore
-          .collection('sessionizer/bookings')
+          .collection('sessionizer')
+          .doc('bookings')
+          .collection('bookings')
           .doc(bookingId)
           .get();
 
@@ -76,7 +80,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       // Get client details
       final clientDoc = await _firestore
-          .collection('sessionizer/users')
+          .collection('sessionizer')
+          .doc('users')
+          .collection('users')
           .doc(clientId)
           .get();
 
@@ -115,7 +121,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     try {
       // Get booking details
       final bookingDoc = await _firestore
-          .collection('sessionizer/bookings')
+          .collection('sessionizer')
+          .doc('bookings')
+          .collection('bookings')
           .doc(bookingId)
           .get();
 
@@ -132,7 +140,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       // Get client details
       final clientDoc = await _firestore
-          .collection('sessionizer/users')
+          .collection('sessionizer')
+          .doc('users')
+          .collection('users')
           .doc(clientId)
           .get();
 
@@ -172,7 +182,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     try {
       // Get booking details
       final bookingDoc = await _firestore
-          .collection('sessionizer/bookings')
+          .collection('sessionizer')
+          .doc('bookings')
+          .collection('bookings')
           .doc(bookingId)
           .get();
 
@@ -189,7 +201,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       // Get client details
       final clientDoc = await _firestore
-          .collection('sessionizer/users')
+          .collection('sessionizer')
+          .doc('users')
+          .collection('users')
           .doc(clientId)
           .get();
 
@@ -228,7 +242,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     try {
       // Get schedule details
       final scheduleDoc = await _firestore
-          .collection('sessionizer/schedules')
+          .collection('sessionizer')
+          .doc('schedules')
+          .collection('schedules')
           .doc(scheduleId)
           .get();
 
@@ -245,7 +261,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       // Get all bookings for this schedule
       final bookingsSnapshot = await _firestore
-          .collection('sessionizer/bookings')
+          .collection('sessionizer')
+          .doc('bookings')
+          .collection('bookings')
           .where('instructorId', isEqualTo: instructorId)
           .get();
 
@@ -257,7 +275,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
         if (clientId != null) {
           // Get client details
           final clientDoc = await _firestore
-              .collection('sessionizer/users')
+              .collection('sessionizer')
+          .doc('users')
+          .collection('users')
               .doc(clientId)
               .get();
 
@@ -293,7 +313,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<List<NotificationModel>> getNotifications(String userId) async {
     try {
       final snapshot = await _firestore
-          .collection('sessionizer/notifications')
+          .collection('sessionizer')
+          .doc('notifications')
+          .collection('notifications')
           .where('userId', isEqualTo: userId)
           .orderBy('createdAt', descending: true)
           .get();
@@ -311,7 +333,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<List<NotificationModel>> getUnreadNotifications(String userId) async {
     try {
       final snapshot = await _firestore
-          .collection('sessionizer/notifications')
+          .collection('sessionizer')
+          .doc('notifications')
+          .collection('notifications')
           .where('userId', isEqualTo: userId)
           .where('status', isEqualTo: NotificationStatus.pending.name)
           .orderBy('createdAt', descending: true)
@@ -330,7 +354,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<void> markAsRead(String notificationId) async {
     try {
       await _firestore
-          .collection('sessionizer/notifications')
+          .collection('sessionizer')
+          .doc('notifications')
+          .collection('notifications')
           .doc(notificationId)
           .update({
         'status': NotificationStatus.read.name,
@@ -347,7 +373,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     try {
       final batch = _firestore.batch();
       final snapshot = await _firestore
-          .collection('sessionizer/notifications')
+          .collection('sessionizer')
+          .doc('notifications')
+          .collection('notifications')
           .where('userId', isEqualTo: userId)
           .where('status', isEqualTo: NotificationStatus.pending.name)
           .get();
@@ -370,7 +398,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<void> deleteNotification(String notificationId) async {
     try {
       await _firestore
-          .collection('sessionizer/notifications')
+          .collection('sessionizer')
+          .doc('notifications')
+          .collection('notifications')
           .doc(notificationId)
           .delete();
     } catch (e) {
@@ -384,7 +414,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     try {
       final cutoffDate = DateTime.now().subtract(Duration(days: daysOld));
       final snapshot = await _firestore
-          .collection('sessionizer/notifications')
+          .collection('sessionizer')
+          .doc('notifications')
+          .collection('notifications')
           .where('createdAt', isLessThan: cutoffDate.toIso8601String())
           .get();
 
@@ -421,7 +453,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       );
 
       await _firestore
-          .collection('sessionizer/scheduled_notifications')
+          .collection('sessionizer')
+          .doc('scheduled_notifications')
+          .collection('scheduled_notifications')
           .doc(notification.id)
           .set(notification.toMap());
     } catch (e) {
@@ -434,7 +468,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<void> cancelScheduledNotification(String notificationId) async {
     try {
       await _firestore
-          .collection('sessionizer/scheduled_notifications')
+          .collection('sessionizer')
+          .doc('scheduled_notifications')
+          .collection('scheduled_notifications')
           .doc(notificationId)
           .delete();
     } catch (e) {
@@ -447,7 +483,9 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     try {
       // Get user's FCM token
       final userDoc = await _firestore
-          .collection('sessionizer/users')
+          .collection('sessionizer')
+          .doc('users')
+          .collection('users')
           .doc(notification.userId!)
           .get();
 

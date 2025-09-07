@@ -21,7 +21,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   @override
   Stream<List<BookingModel>> getBookings(String userId) {
     return _firestore
-        .collection('sessionizer/bookings')
+        .collection('sessionizer')
+        .doc('bookings')
+        .collection('bookings')
         .where('clientId', isEqualTo: userId)
         .snapshots()
         .map((snapshot) {
@@ -37,7 +39,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   @override
   Stream<List<BookingModel>> getBookingsByInstructor(String instructorId) {
     return _firestore
-        .collection('sessionizer/bookings')
+        .collection('sessionizer')
+        .doc('bookings')
+        .collection('bookings')
         .where('instructorId', isEqualTo: instructorId)
         .snapshots()
         .map((snapshot) {
@@ -53,7 +57,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   @override
   Stream<List<BookingModel>> getBookingsByClient(String clientId) {
     return _firestore
-        .collection('sessionizer/bookings')
+        .collection('sessionizer')
+        .doc('bookings')
+        .collection('bookings')
         .where('clientId', isEqualTo: clientId)
         .snapshots()
         .map((snapshot) {
@@ -86,7 +92,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   @override
   Future<BookingModel> updateBooking(BookingModel booking) async {
     await _firestore
-        .collection('sessionizer/bookings')
+        .collection('sessionizer')
+        .doc('bookings')
+        .collection('bookings')
         .doc(booking.id)
         .update(booking.toMap());
     return booking;
@@ -111,7 +119,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     );
     
     await _firestore
-        .collection('sessionizer/bookings')
+        .collection('sessionizer')
+        .doc('bookings')
+        .collection('bookings')
         .doc(id)
         .update(cancelledBooking.toMap());
     
@@ -132,7 +142,9 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     );
     
     await _firestore
-        .collection('sessionizer/bookings')
+        .collection('sessionizer')
+        .doc('bookings')
+        .collection('bookings')
         .doc(id)
         .update(confirmedBooking.toMap());
     

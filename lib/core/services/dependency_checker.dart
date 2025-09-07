@@ -27,7 +27,9 @@ class DependencyChecker {
       
       // Query bookable sessions for current instructor only
       final querySnapshot = await _firestore
-          .collection('sessionizer/bookable_sessions')
+          .collection('sessionizer')
+          .doc('bookable_sessions')
+          .collection('bookable_sessions')
           .where('instructorId', isEqualTo: user.uid)
           .get();
       
@@ -94,7 +96,9 @@ class DependencyChecker {
       
       // Query bookable sessions for current instructor only
       final querySnapshot = await _firestore
-          .collection('sessionizer/bookable_sessions')
+          .collection('sessionizer')
+          .doc('bookable_sessions')
+          .collection('bookable_sessions')
           .where('instructorId', isEqualTo: user.uid)
           .get();
       
@@ -155,7 +159,9 @@ class DependencyChecker {
       
       // Query bookable sessions for current instructor only
       final querySnapshot = await _firestore
-          .collection('sessionizer/bookable_sessions')
+          .collection('sessionizer')
+          .doc('bookable_sessions')
+          .collection('bookable_sessions')
           .where('instructorId', isEqualTo: user.uid)
           .get();
       

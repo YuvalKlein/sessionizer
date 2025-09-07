@@ -50,7 +50,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (user == null) return null;
       
       try {
-        final doc = await _firestore.collection('sessionizer/users').doc(user.uid).get();
+        final doc = await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).get();
         if (doc.exists) {
           return UserModel.fromFirestore(doc);
         }
@@ -85,7 +85,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw const AuthException('Sign in failed');
       }
       
-      final userDoc = await _firestore.collection('sessionizer/users').doc(credential.user!.uid).get();
+      final userDoc = await _firestore.collection('sessionizer').doc('users').collection('users').doc(credential.user!.uid).get();
       if (!userDoc.exists) {
         throw const AuthException('User profile not found');
       }
@@ -120,7 +120,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
 
       final user = userCredential.user!;
-      final userDoc = await _firestore.collection('sessionizer/users').doc(user.uid).get();
+      final userDoc = await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).get();
       
       if (userDoc.exists) {
         return UserModel.fromFirestore(userDoc);
@@ -136,7 +136,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           updatedAt: DateTime.now(),
         );
         
-        await _firestore.collection('sessionizer/users').doc(user.uid).set(newUser.toMap());
+        await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).set(newUser.toMap());
         return newUser;
       }
     } on FirebaseAuthException catch (e) {
@@ -174,7 +174,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         updatedAt: DateTime.now(),
       );
       
-      await _firestore.collection('sessionizer/users').doc(user.uid).set(newUser.toMap());
+      await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).set(newUser.toMap());
       return newUser;
     } on FirebaseAuthException catch (e) {
       throw AuthException('Sign up failed: ${e.message}');
@@ -222,7 +222,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw const AuthException('No user to delete');
       }
       
-      await _firestore.collection('sessionizer/users').doc(user.uid).delete();
+      await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).delete();
       await user.delete();
     } catch (e) {
       throw ServerException('Account deletion failed: $e');
