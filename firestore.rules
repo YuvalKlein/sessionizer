@@ -2,40 +2,51 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Users can read and write their own user document
+    // Clients can also read instructor profiles for discovery
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && 
+        resource.data.isInstructor == true; // Allow reading instructor profiles
     }
     
     // Locations: Instructors can only access their own locations
+    // Clients can read locations for booking purposes
     match /locations/{locationId} {
       allow read, write: if request.auth != null && 
         resource.data.instructorId == request.auth.uid;
       allow create: if request.auth != null && 
         request.resource.data.instructorId == request.auth.uid;
+      allow read: if request.auth != null; // Allow clients to read locations for booking
     }
     
     // Bookable Sessions: Instructors can only access their own sessions
+    // Clients can read bookable sessions for booking purposes
     match /bookable_sessions/{sessionId} {
       allow read, write: if request.auth != null && 
         resource.data.instructorId == request.auth.uid;
       allow create: if request.auth != null && 
         request.resource.data.instructorId == request.auth.uid;
+      allow read: if request.auth != null; // Allow clients to read bookable sessions for booking
     }
     
     // Schedules: Instructors can only access their own schedules
+    // Clients can read schedules for booking purposes
     match /schedules/{scheduleId} {
       allow read, write: if request.auth != null && 
         resource.data.instructorId == request.auth.uid;
       allow create: if request.auth != null && 
         request.resource.data.instructorId == request.auth.uid;
+      allow read: if request.auth != null; // Allow clients to read schedules for booking
     }
     
     // Session Types: Instructors can only access their own session types
+    // Clients can read session types for booking purposes
     match /session_types/{typeId} {
       allow read, write: if request.auth != null && 
         resource.data.idCreatedBy == request.auth.uid;
       allow create: if request.auth != null && 
         request.resource.data.idCreatedBy == request.auth.uid;
+      allow read: if request.auth != null; // Allow clients to read session types for booking
     }
     
     // Bookings: Both instructors and clients can access their own bookings
