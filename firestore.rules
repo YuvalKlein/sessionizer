@@ -1,73 +1,92 @@
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users can read and write their own user document
-    match /users/{userId} {
+  match /databases/play/documents {
+    // All collections are now under 'sessionizer' collection
+    match /sessionizer/users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow clients to read instructor profiles
+      allow read: if request.auth != null && resource.data.isInstructor == true;
     }
     
     // Locations: Instructors can only access their own locations
-    match /locations/{locationId} {
+    match /sessionizer/locations/{locationId} {
       allow read, write: if request.auth != null && 
         resource.data.instructorId == request.auth.uid;
       allow create: if request.auth != null && 
         request.resource.data.instructorId == request.auth.uid;
+      // Allow clients to read locations for booking
+      allow read: if request.auth != null;
     }
     
     // Bookable Sessions: Instructors can only access their own sessions
-    match /bookable_sessions/{sessionId} {
+    match /sessionizer/bookable_sessions/{sessionId} {
       allow read, write: if request.auth != null && 
         resource.data.instructorId == request.auth.uid;
       allow create: if request.auth != null && 
         request.resource.data.instructorId == request.auth.uid;
+      // Allow clients to read bookable sessions for booking
+      allow read: if request.auth != null;
     }
     
     // Schedules: Instructors can only access their own schedules
-    match /schedules/{scheduleId} {
+    match /sessionizer/schedules/{scheduleId} {
       allow read, write: if request.auth != null && 
         resource.data.instructorId == request.auth.uid;
       allow create: if request.auth != null && 
         request.resource.data.instructorId == request.auth.uid;
+      // Allow clients to read schedules for booking
+      allow read: if request.auth != null;
     }
     
     // Session Types: Instructors can only access their own session types
-    match /session_types/{typeId} {
+    match /sessionizer/session_types/{typeId} {
       allow read, write: if request.auth != null && 
         resource.data.idCreatedBy == request.auth.uid;
       allow create: if request.auth != null && 
         request.resource.data.idCreatedBy == request.auth.uid;
+      // Allow clients to read session types for booking
+      allow read: if request.auth != null;
     }
     
     // Bookings: Both instructors and clients can access their own bookings
-    match /bookings/{bookingId} {
+    match /sessionizer/bookings/{bookingId} {
       allow read, write: if request.auth != null && 
         (resource.data.instructorId == request.auth.uid || 
          resource.data.clientId == request.auth.uid);
       allow create: if request.auth != null && 
         (request.resource.data.instructorId == request.auth.uid || 
          request.resource.data.clientId == request.auth.uid);
+      // Allow clients to read all bookings for availability checking
+      allow read: if request.auth != null;
     }
     
     // Reviews: Both instructors and clients can access their own reviews
-    match /reviews/{reviewId} {
+    match /sessionizer/reviews/{reviewId} {
       allow read, write: if request.auth != null && 
         (resource.data.instructorId == request.auth.uid || 
          resource.data.clientId == request.auth.uid);
       allow create: if request.auth != null && 
         (request.resource.data.instructorId == request.auth.uid || 
          request.resource.data.clientId == request.auth.uid);
+      // Allow public read for reviews
+      allow read: if request.auth != null;
     }
     
     // Notifications: Users can only access their own notifications
-    match /notifications/{notificationId} {
+    match /sessionizer/notifications/{notificationId} {
       allow read, write: if request.auth != null && 
         resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && 
         request.resource.data.userId == request.auth.uid;
     }
     
+    // Mail collection for email notifications
+    match /sessionizer/mail/{mailId} {
+      allow create: if request.auth != null;
+    }
+    
     // Public data that can be read by anyone (for instructor discovery, etc.)
-    match /instructors/{instructorId} {
+    match /sessionizer/instructors/{instructorId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == instructorId;
     }

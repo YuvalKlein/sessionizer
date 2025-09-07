@@ -22,7 +22,7 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
   @override
   Stream<List<ScheduleModel>> getSchedules(String instructorId) {
     return _firestore
-        .collection('schedules')
+        .collection('sessionizer/schedules')
         .where('instructorId', isEqualTo: instructorId)
         .snapshots()
         .map((snapshot) {
@@ -49,7 +49,7 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
   Future<ScheduleModel> createSchedule(ScheduleModel schedule) async {
     try {
       final docRef = await _firestore
-          .collection('schedules')
+          .collection('sessionizer/schedules')
           .add(schedule.toMap());
       
       final createdDoc = await docRef.get();
@@ -96,7 +96,7 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
         // First, set all other schedules to not default
         final batch = _firestore.batch();
         final schedules = await _firestore
-            .collection('schedules')
+            .collection('sessionizer/schedules')
             .where('instructorId', isEqualTo: instructorId)
             .get();
         
@@ -126,7 +126,7 @@ class ScheduleRemoteDataSourceImpl implements ScheduleRemoteDataSource {
     try {
       final batch = _firestore.batch();
       final schedules = await _firestore
-          .collection('schedules')
+          .collection('sessionizer/schedules')
           .where('isDefault', isEqualTo: true)
           .get();
       

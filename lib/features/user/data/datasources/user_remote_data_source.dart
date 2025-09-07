@@ -20,7 +20,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Stream<List<UserProfileModel>> getInstructors() {
     return _firestore
-        .collection('users')
+        .collection('sessionizer/users')
         .where('isInstructor', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
@@ -33,7 +33,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Stream<UserProfileModel?> getUser(String userId) {
     return _firestore
-        .collection('users')
+        .collection('sessionizer/users')
         .doc(userId)
         .snapshots()
         .map((doc) {
@@ -47,7 +47,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Future<UserProfileModel?> getUserById(String userId) async {
     try {
-      final doc = await _firestore.collection('users').doc(userId).get();
+      final doc = await _firestore.collection('sessionizer/users').doc(userId).get();
       if (doc.exists) {
         return UserProfileModel.fromFirestore(doc);
       }
@@ -60,7 +60,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Future<UserProfileModel> createUser(UserProfileModel user) async {
     try {
-      await _firestore.collection('users').doc(user.id).set(user.toMap());
+      await _firestore.collection('sessionizer/users').doc(user.id).set(user.toMap());
       return user;
     } catch (e) {
       throw ServerException('Failed to create user: $e');
@@ -70,9 +70,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Future<UserProfileModel> updateUser(String userId, Map<String, dynamic> data) async {
     try {
-      await _firestore.collection('users').doc(userId).update(data);
+      await _firestore.collection('sessionizer/users').doc(userId).update(data);
       
-      final updatedDoc = await _firestore.collection('users').doc(userId).get();
+      final updatedDoc = await _firestore.collection('sessionizer/users').doc(userId).get();
       return UserProfileModel.fromFirestore(updatedDoc);
     } catch (e) {
       throw ServerException('Failed to update user: $e');
@@ -82,7 +82,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Future<void> deleteUser(String userId) async {
     try {
-      await _firestore.collection('users').doc(userId).delete();
+      await _firestore.collection('sessionizer/users').doc(userId).delete();
     } catch (e) {
       throw ServerException('Failed to delete user: $e');
     }

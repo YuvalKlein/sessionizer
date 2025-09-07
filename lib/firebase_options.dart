@@ -53,16 +53,16 @@ class DefaultFirebaseOptions {
     apiKey: 'AIzaSyAzPJ-OSSWy56czDDA5AEUyQf3BD423R-0',
     appId: '1:707974722454:web:e02711bc06fb039aa7e3b7',
     messagingSenderId: '707974722454',
-    projectId: 'apiclientapp',
-    authDomain: 'apiclientapp.firebaseapp.com',
-    storageBucket: 'apiclientapp.firebasestorage.app',
+    projectId: 'play-e37a6',
+    authDomain: 'play-e37a6.firebaseapp.com',
+    storageBucket: 'play-e37a6.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCGo_QrNQFYCTIxOc45dTtnjmnBa9nFYxQ',
     appId: '1:707974722454:android:a8aae63809100940a7e3b7',
     messagingSenderId: '707974722454',
-    projectId: 'apiclientapp',
-    storageBucket: 'apiclientapp.firebasestorage.app',
+    projectId: 'play-e37a6',
+    storageBucket: 'play-e37a6.firebasestorage.app',
   );
 }

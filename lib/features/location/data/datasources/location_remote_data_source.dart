@@ -18,7 +18,7 @@ class LocationRemoteDataSourceImpl implements LocationRemoteDataSource {
   @override
   Stream<List<LocationModel>> getLocations() {
     return _firestore
-        .collection('locations')
+        .collection('sessionizer/locations')
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
@@ -30,7 +30,7 @@ class LocationRemoteDataSourceImpl implements LocationRemoteDataSource {
   @override
   Stream<List<LocationModel>> getLocationsByInstructor(String instructorId) {
     return _firestore
-        .collection('locations')
+        .collection('sessionizer/locations')
         .where('instructorId', isEqualTo: instructorId)
         .snapshots()
         .map((snapshot) {
