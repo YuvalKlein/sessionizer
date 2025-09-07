@@ -5,7 +5,7 @@ class AppConstants {
   static const String sessionsCollection = 'sessions';
   static const String bookingsCollection = 'bookings';
   static const String sessionTypesCollection = 'sessionTypes';
-  static const String schedulableSessionsCollection = 'schedulableSessions';
+  static const String bookableSessionsCollection = 'bookableSessions';
   static const String availabilityOverridesCollection = 'availability_overrides';
   
   // Error Messages

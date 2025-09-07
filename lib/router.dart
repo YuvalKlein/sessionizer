@@ -13,8 +13,14 @@ import 'package:myapp/features/main/presentation/pages/instructor_dashboard_page
 import 'package:myapp/features/main/presentation/pages/client_dashboard_page.dart';
 import 'package:myapp/features/main/presentation/pages/client_bookings_page.dart';
 import 'package:myapp/features/main/presentation/pages/client_sessions_page.dart';
+import 'package:myapp/features/main/presentation/pages/client_profile_page.dart';
 import 'package:myapp/features/booking/presentation/pages/instructor_booking_management_page.dart';
-import 'package:myapp/features/booking/presentation/pages/client_booking_calendar_page.dart';
+import 'package:myapp/features/booking/presentation/pages/client_calendar_page.dart';
+import 'package:myapp/features/booking/presentation/pages/client_booking_flow_page.dart';
+import 'package:myapp/features/booking/presentation/pages/public_calendar_page.dart';
+import 'package:myapp/features/main/presentation/pages/public_sessions_page.dart';
+import 'package:myapp/features/main/presentation/pages/instructor_public_links_page.dart';
+import 'package:myapp/features/main/presentation/pages/client_instructor_selection_page.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/schedule/presentation/pages/schedule_management_page.dart';
 import 'package:myapp/features/schedule/presentation/pages/schedule_creation_page.dart';
@@ -24,7 +30,7 @@ import 'package:myapp/features/schedule/presentation/bloc/schedule_bloc.dart';
 import 'package:myapp/features/session_type/presentation/pages/session_type_management_page.dart';
 import 'package:myapp/features/session_type/presentation/pages/session_type_creation_page.dart';
 import 'package:myapp/features/session_type/presentation/bloc/session_type_bloc.dart';
-import 'package:myapp/features/schedulable_session/presentation/pages/simple_schedulable_session_page.dart';
+import 'package:myapp/features/bookable_session/presentation/pages/simple_bookable_session_page.dart';
 import 'package:myapp/features/location/presentation/pages/location_management_page.dart';
 import 'package:myapp/features/location/presentation/pages/location_creation_page.dart';
 import 'package:myapp/features/location/presentation/bloc/location_bloc.dart';
@@ -83,15 +89,65 @@ class AppRouter {
       ),
       GoRoute(
         path: '/client-dashboard',
-        builder: (context, state) => const MainScreen(child: ClientDashboardPage()),
+        builder: (context, state) {
+          final instructorId = state.uri.queryParameters['instructorId'];
+          return MainScreen(
+            child: ClientDashboardPage(instructorId: instructorId),
+          );
+        },
       ),
+        GoRoute(
+          path: '/client/instructor-selection',
+          builder: (context, state) => const MainScreen(
+            child: ClientInstructorSelectionPage(),
+          ),
+        ),
       GoRoute(
         path: '/client/bookings',
         builder: (context, state) => const MainScreen(child: ClientBookingsPage()),
       ),
       GoRoute(
         path: '/client/sessions',
-        builder: (context, state) => const MainScreen(child: ClientSessionsPage()),
+        builder: (context, state) {
+          final instructorId = state.uri.queryParameters['instructorId'];
+          return MainScreen(child: ClientSessionsPage(instructorId: instructorId));
+        },
+      ),
+      GoRoute(
+        path: '/client/profile',
+        builder: (context, state) => BlocProvider.value(
+          value: sl<BookingBloc>(),
+          child: const MainScreen(child: ClientProfilePage()),
+        ),
+      ),
+      GoRoute(
+        path: '/client/book/:sessionId/:instructorId',
+        builder: (context, state) {
+          final sessionId = state.pathParameters['sessionId']!;
+          final instructorId = state.pathParameters['instructorId']!;
+          return BlocProvider.value(
+            value: sl<BookingBloc>(),
+            child: MainScreen(
+              child: ClientBookingFlowPage(
+                sessionId: sessionId,
+                instructorId: instructorId,
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/client/calendar/:sessionId/:instructorId',
+        builder: (context, state) {
+          final sessionId = state.pathParameters['sessionId']!;
+          final instructorId = state.pathParameters['instructorId']!;
+          return MainScreen(
+            child: ClientCalendarPage(
+              sessionId: sessionId,
+              instructorId: instructorId,
+            ),
+          );
+        },
       ),
       // Instructor Booking Management
       GoRoute(
@@ -99,6 +155,13 @@ class AppRouter {
         builder: (context, state) => BlocProvider.value(
           value: sl<BookingBloc>(),
           child: const MainScreen(child: InstructorBookingManagementPage()),
+        ),
+      ),
+      // Instructor Public Links
+      GoRoute(
+        path: '/instructor/public-links',
+        builder: (context, state) => const MainScreen(
+          child: InstructorPublicLinksPage(),
         ),
       ),
       // Client Booking Calendar
@@ -137,7 +200,10 @@ class AppRouter {
                   );
                 }
                 
-                return ClientBookingCalendarPage(template: snapshot.data!);
+                return ClientCalendarPage(
+                  sessionId: templateId,
+                  instructorId: snapshot.data!['instructorId'] ?? '',
+                );
               },
             ),
           );
@@ -206,8 +272,8 @@ class AppRouter {
       ),
       // Schedulable Session Management Routes
       GoRoute(
-        path: '/schedulable-sessions',
-        builder: (context, state) => const MainScreen(child: SimpleSchedulableSessionPage()),
+        path: '/bookable-sessions',
+        builder: (context, state) => const MainScreen(child: SimpleBookableSessionPage()),
       ),
       // Location Management Routes
       GoRoute(
@@ -249,6 +315,25 @@ class AppRouter {
           );
         },
       ),
+      // Public routes (no authentication required)
+      GoRoute(
+        path: '/public/sessions/:instructorId',
+        builder: (context, state) {
+          final instructorId = state.pathParameters['instructorId']!;
+          return PublicSessionsPage(instructorId: instructorId);
+        },
+      ),
+      GoRoute(
+        path: '/public/calendar/:sessionId/:instructorId',
+        builder: (context, state) {
+          final sessionId = state.pathParameters['sessionId']!;
+          final instructorId = state.pathParameters['instructorId']!;
+          return PublicCalendarPage(
+            sessionId: sessionId,
+            instructorId: instructorId,
+          );
+        },
+      ),
     ],
     redirect: (context, state) {
       try {
@@ -263,10 +348,14 @@ class AppRouter {
           return null; // Let the loading state show
         }
         
-        // If authenticated, redirect from login/register to dashboard
+        // If authenticated, redirect from login/register to instructor selection
         if (authState is AuthAuthenticated) {
           if (isLoggingIn || isRegistering) {
-            return '/client-dashboard';
+            return '/client/instructor-selection';
+          }
+          // Also redirect from root path to instructor selection
+          if (state.uri.path == '/') {
+            return '/client/instructor-selection';
           }
           return null; // Allow navigation to other routes
         }
@@ -292,7 +381,7 @@ class AppRouter {
 Future<Map<String, dynamic>?> _loadTemplate(String templateId) async {
   try {
     final doc = await FirebaseFirestore.instance
-        .collection('schedulable_sessions')
+        .collection('bookable_sessions')
         .doc(templateId)
         .get();
     
@@ -304,3 +393,5 @@ Future<Map<String, dynamic>?> _loadTemplate(String templateId) async {
     throw Exception('Failed to load template: $e');
   }
 }
+
+

@@ -19,13 +19,13 @@ class ScheduleCalendar extends StatefulWidget {
 
 class _ScheduleCalendarState extends State<ScheduleCalendar> {
   final Map<String, Map<String, TimeOfDay?>> _weeklyAvailability = {
-    'monday': {'start': null, 'end': null},
-    'tuesday': {'start': null, 'end': null},
-    'wednesday': {'start': null, 'end': null},
-    'thursday': {'start': null, 'end': null},
-    'friday': {'start': null, 'end': null},
-    'saturday': {'start': null, 'end': null},
-    'sunday': {'start': null, 'end': null},
+    'monday': {'startTime': null, 'endTime': null},
+    'tuesday': {'startTime': null, 'endTime': null},
+    'wednesday': {'startTime': null, 'endTime': null},
+    'thursday': {'startTime': null, 'endTime': null},
+    'friday': {'startTime': null, 'endTime': null},
+    'saturday': {'startTime': null, 'endTime': null},
+    'sunday': {'startTime': null, 'endTime': null},
   };
 
   @override
@@ -134,7 +134,7 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
 
   Widget _buildDayRow(String day) {
     final dayData = _weeklyAvailability[day]!;
-    final isEnabled = dayData['start'] != null || dayData['end'] != null;
+    final isEnabled = dayData['startTime'] != null || dayData['endTime'] != null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 4),

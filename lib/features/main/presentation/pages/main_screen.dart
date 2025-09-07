@@ -35,23 +35,28 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, authState) {
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, authState) {
         AppLogger.blocState('AuthBloc', authState.runtimeType.toString());
         
-        if (authState is AuthLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
         if (authState is AuthUnauthenticated) {
           AppLogger.navigation('main-screen', 'login');
           context.go('/login');
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
         }
+      },
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, authState) {
+          if (authState is AuthLoading) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (authState is AuthUnauthenticated) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
 
         if (authState is AuthError) {
           return Scaffold(
@@ -188,6 +193,7 @@ class _MainScreenState extends State<MainScreen> {
           body: Center(child: CircularProgressIndicator()),
         );
       },
+      ),
     );
   }
 
@@ -214,7 +220,7 @@ class _MainScreenState extends State<MainScreen> {
     } else {
       switch (index) {
         case 0:
-          context.go('/client-dashboard');
+          context.go('/client/instructor-selection');
           break;
         case 1:
           context.go('/client/bookings');

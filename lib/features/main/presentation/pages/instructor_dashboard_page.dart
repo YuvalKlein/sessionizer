@@ -11,8 +11,8 @@ import 'package:myapp/features/user/presentation/bloc/user_state.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
-import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_bloc.dart';
-import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_event.dart';
+import 'package:myapp/features/bookable_session/presentation/bloc/bookable_session_bloc.dart';
+import 'package:myapp/features/bookable_session/presentation/bloc/bookable_session_event.dart';
 import 'package:myapp/features/session_type/presentation/bloc/session_type_bloc.dart';
 import 'package:myapp/features/session_type/presentation/bloc/session_type_event.dart';
 import 'package:myapp/features/user/domain/repositories/user_repository.dart';
@@ -26,7 +26,7 @@ class InstructorDashboardPage extends StatefulWidget {
 
 class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
   BookingBloc? _bookingBloc;
-  SchedulableSessionBloc? _schedulableSessionBloc;
+  BookableSessionBloc? _bookableSessionBloc;
   SessionTypeBloc? _sessionTypeBloc;
   String? _currentUserId;
   int _buildCount = 0;
@@ -57,7 +57,7 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
   void dispose() {
     AppLogger.widgetBuild('InstructorDashboardPage', data: {'action': 'dispose'});
     _bookingBloc?.close();
-    _schedulableSessionBloc?.close();
+    _bookableSessionBloc?.close();
     _sessionTypeBloc?.close();
     super.dispose();
   }
@@ -106,16 +106,17 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
       AppLogger.blocEvent('BookingBloc', 'LoadBookingsByInstructor', data: {'instructorId': userId});
     }
 
-    if (_schedulableSessionBloc == null || _currentUserId != userId) {
-      AppLogger.debug('📅 Creating/Updating SchedulableSessionBloc');
-      _schedulableSessionBloc?.close();
-      _schedulableSessionBloc = SchedulableSessionBloc(
-        getSchedulableSessions: sl(),
-        createSchedulableSession: sl(),
-        updateSchedulableSession: sl(),
-        deleteSchedulableSession: sl(),
-      )..add(LoadSchedulableSessions(instructorId: userId));
-      AppLogger.blocEvent('SchedulableSessionBloc', 'LoadSchedulableSessions', data: {'instructorId': userId});
+    if (_bookableSessionBloc == null || _currentUserId != userId) {
+      AppLogger.debug('📅 Creating/Updating BookableSessionBloc');
+      _bookableSessionBloc?.close();
+      _bookableSessionBloc = BookableSessionBloc(
+        getBookableSessions: sl(),
+        getAllBookableSessions: sl(),
+        createBookableSession: sl(),
+        updateBookableSession: sl(),
+        deleteBookableSession: sl(),
+      )..add(LoadBookableSessions(instructorId: userId));
+      AppLogger.blocEvent('BookableSessionBloc', 'LoadBookableSessions', data: {'instructorId': userId});
     }
 
     if (_sessionTypeBloc == null) {
@@ -217,7 +218,7 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
               return MultiBlocProvider(
                 providers: [
                   BlocProvider<BookingBloc>.value(value: _bookingBloc!),
-                  BlocProvider<SchedulableSessionBloc>.value(value: _schedulableSessionBloc!),
+                  BlocProvider<BookableSessionBloc>.value(value: _bookableSessionBloc!),
                   BlocProvider<SessionTypeBloc>.value(value: _sessionTypeBloc!),
                 ],
                 child: _buildDashboardContent(userState.user.displayName),
@@ -579,8 +580,8 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
                     icon: Icons.event_available,
                     color: Colors.blue,
                     onTap: () {
-                      AppLogger.navigation('instructor-dashboard', 'schedulable-templates');
-                      context.go('/schedulable-sessions');
+                      AppLogger.navigation('instructor-dashboard', 'bookable-sessions');
+                      context.go('/bookable-sessions');
                     },
                   ),
                 ),
@@ -608,6 +609,26 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
                     },
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionCard(
+                    title: 'Public Links',
+                    icon: Icons.link,
+                    color: Colors.teal,
+                    onTap: () {
+                      AppLogger.navigation('instructor-dashboard', 'public-links');
+                      context.go('/instructor/public-links');
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(child: SizedBox()), // Empty space
+                const SizedBox(width: 16),
+                const Expanded(child: SizedBox()), // Empty space
               ],
             ),
           ],
@@ -692,3 +713,5 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
     );
   }
 }
+
+
