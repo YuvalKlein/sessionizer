@@ -1,0 +1,616 @@
+{
+  "info": {
+    "name": "Schedule API",
+    "description": "REST API for managing schedules in the Sessionizer application",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-api-domain.com",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Schedules",
+      "item": [
+        {
+          "name": "Get Schedules by Instructor",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules?instructorId={{instructor_id}}&page=1&limit=20&sortBy=name&sortOrder=asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules"],
+              "query": [
+                {
+                  "key": "instructorId",
+                  "value": "{{instructor_id}}",
+                  "description": "Filter by instructor ID"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "name",
+                  "description": "Sort field"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc",
+                  "description": "Sort order"
+                }
+              ]
+            },
+            "description": "Get schedules for a specific instructor"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/schedules?instructorId=instructor_456&page=1&limit=20",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "schedules"],
+                  "query": [
+                    {
+                      "key": "instructorId",
+                      "value": "instructor_456"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"schedule_123\",\n      \"instructorId\": \"instructor_456\",\n      \"name\": \"Morning Yoga Schedule\",\n      \"description\": \"Early morning yoga sessions\",\n      \"isDefault\": true,\n      \"timeSlots\": [\n        {\n          \"dayOfWeek\": 1,\n          \"startTime\": \"06:00\",\n          \"endTime\": \"07:00\",\n          \"isAvailable\": true\n        },\n        {\n          \"dayOfWeek\": 3,\n          \"startTime\": \"06:00\",\n          \"endTime\": \"07:00\",\n          \"isAvailable\": true\n        }\n      ],\n      \"createdAt\": \"2024-01-01T00:00:00Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Schedule by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/{{schedule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "{{schedule_id}}"]
+            },
+            "description": "Get a specific schedule by ID"
+          }
+        },
+        {
+          "name": "Create Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instructorId\": \"instructor_456\",\n  \"name\": \"Evening Yoga Schedule\",\n  \"description\": \"Evening yoga sessions for relaxation\",\n  \"isDefault\": false,\n  \"timeSlots\": [\n    {\n      \"dayOfWeek\": 1,\n      \"startTime\": \"18:00\",\n      \"endTime\": \"19:00\",\n      \"isAvailable\": true\n    },\n    {\n      \"dayOfWeek\": 3,\n      \"startTime\": \"18:00\",\n      \"endTime\": \"19:00\",\n      \"isAvailable\": true\n    },\n    {\n      \"dayOfWeek\": 5,\n      \"startTime\": \"18:00\",\n      \"endTime\": \"19:00\",\n      \"isAvailable\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules"]
+            },
+            "description": "Create a new schedule"
+          }
+        },
+        {
+          "name": "Update Schedule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Morning Yoga Schedule\",\n  \"description\": \"Updated early morning yoga sessions\",\n  \"isDefault\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/{{schedule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "{{schedule_id}}"]
+            },
+            "description": "Update an existing schedule"
+          }
+        },
+        {
+          "name": "Delete Schedule",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/{{schedule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "{{schedule_id}}"]
+            },
+            "description": "Delete a schedule"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schedule Actions",
+      "item": [
+        {
+          "name": "Set Default Schedule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instructorId\": \"{{instructor_id}}\",\n  \"isDefault\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/{{schedule_id}}/default",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "{{schedule_id}}", "default"]
+            },
+            "description": "Set a schedule as default"
+          }
+        },
+        {
+          "name": "Get Default Schedule",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/default/{{instructor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "default", "{{instructor_id}}"]
+            },
+            "description": "Get the default schedule for an instructor"
+          }
+        },
+        {
+          "name": "Unset All Default Schedules",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/unset-defaults",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "unset-defaults"]
+            },
+            "description": "Unset all default schedules"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search & Filter",
+      "item": [
+        {
+          "name": "Search Schedules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/search?q={{search_query}}&instructorId={{instructor_id}}&name={{name}}&isDefault={{is_default}}&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{search_query}}",
+                  "description": "Search query"
+                },
+                {
+                  "key": "instructorId",
+                  "value": "{{instructor_id}}",
+                  "description": "Filter by instructor ID"
+                },
+                {
+                  "key": "name",
+                  "value": "{{name}}",
+                  "description": "Filter by name"
+                },
+                {
+                  "key": "isDefault",
+                  "value": "{{is_default}}",
+                  "description": "Filter by default status"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Search schedules with various filters"
+          }
+        },
+        {
+          "name": "Get Schedules by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/date-range?instructorId={{instructor_id}}&startDate={{start_date}}&endDate={{end_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "date-range"],
+              "query": [
+                {
+                  "key": "instructorId",
+                  "value": "{{instructor_id}}",
+                  "description": "Instructor ID"
+                },
+                {
+                  "key": "startDate",
+                  "value": "{{start_date}}",
+                  "description": "Start date"
+                },
+                {
+                  "key": "endDate",
+                  "value": "{{end_date}}",
+                  "description": "End date"
+                }
+              ]
+            },
+            "description": "Get schedules within a date range"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics & Stats",
+      "item": [
+        {
+          "name": "Get Schedule Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/stats/{{instructor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "stats", "{{instructor_id}}"]
+            },
+            "description": "Get schedule statistics for an instructor"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/schedules/stats/instructor_456",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "schedules", "stats", "instructor_456"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"totalSchedules\": 5,\n    \"activeSchedules\": 4,\n    \"defaultSchedules\": 1,\n    \"totalTimeSlots\": 20,\n    \"averageTimeSlotsPerSchedule\": 4,\n    \"mostPopularDay\": \"Monday\",\n    \"schedulesByType\": {\n      \"Morning\": 2,\n      \"Evening\": 2,\n      \"Weekend\": 1\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Advanced Operations",
+      "item": [
+        {
+          "name": "Duplicate Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Copy of Morning Yoga Schedule\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/{{schedule_id}}/duplicate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "{{schedule_id}}", "duplicate"]
+            },
+            "description": "Duplicate an existing schedule"
+          }
+        },
+        {
+          "name": "Get Schedule Availability",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/{{schedule_id}}/availability?startDate={{start_date}}&endDate={{end_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "{{schedule_id}}", "availability"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "{{start_date}}",
+                  "description": "Start date"
+                },
+                {
+                  "key": "endDate",
+                  "value": "{{end_date}}",
+                  "description": "End date"
+                }
+              ]
+            },
+            "description": "Check schedule availability"
+          }
+        },
+        {
+          "name": "Archive Schedule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"archived\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/{{schedule_id}}/archive",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "{{schedule_id}}", "archive"]
+            },
+            "description": "Archive a schedule"
+          }
+        },
+        {
+          "name": "Restore Schedule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"archived\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/{{schedule_id}}/restore",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "{{schedule_id}}", "restore"]
+            },
+            "description": "Restore an archived schedule"
+          }
+        },
+        {
+          "name": "Get Archived Schedules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/schedules/archived?instructorId={{instructor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "schedules", "archived"],
+              "query": [
+                {
+                  "key": "instructorId",
+                  "value": "{{instructor_id}}",
+                  "description": "Instructor ID"
+                }
+              ]
+            },
+            "description": "Get archived schedules for an instructor"
+          }
+        }
+      ]
+    }
+  ]
+}

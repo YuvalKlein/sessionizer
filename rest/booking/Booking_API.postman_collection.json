@@ -1,0 +1,769 @@
+{
+  "info": {
+    "name": "Booking API",
+    "description": "REST API for managing bookings in the Sessionizer application",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-api-domain.com",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Get All Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings?page=1&limit=20&sortBy=startTime&sortOrder=asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "startTime",
+                  "description": "Sort field"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc",
+                  "description": "Sort order"
+                }
+              ]
+            },
+            "description": "Get all bookings with pagination and sorting"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/bookings?page=1&limit=20",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "bookings"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"booking_123\",\n      \"clientId\": \"client_456\",\n      \"instructorId\": \"instructor_789\",\n      \"bookableSessionId\": \"session_123\",\n      \"startTime\": \"2024-01-01T10:00:00Z\",\n      \"endTime\": \"2024-01-01T11:00:00Z\",\n      \"status\": \"confirmed\",\n      \"notes\": \"First session\",\n      \"createdAt\": \"2024-01-01T00:00:00Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Bookings by Instructor",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings?instructorId={{instructor_id}}&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings"],
+              "query": [
+                {
+                  "key": "instructorId",
+                  "value": "{{instructor_id}}",
+                  "description": "Filter by instructor ID"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Get bookings for a specific instructor"
+          }
+        },
+        {
+          "name": "Get Bookings by Client",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings?clientId={{client_id}}&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings"],
+              "query": [
+                {
+                  "key": "clientId",
+                  "value": "{{client_id}}",
+                  "description": "Filter by client ID"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Get bookings for a specific client"
+          }
+        },
+        {
+          "name": "Get Booking by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "{{booking_id}}"]
+            },
+            "description": "Get a specific booking by ID"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/bookings/booking_123",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "bookings", "booking_123"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"booking_123\",\n    \"clientId\": \"client_456\",\n    \"instructorId\": \"instructor_789\",\n    \"bookableSessionId\": \"session_123\",\n    \"startTime\": \"2024-01-01T10:00:00Z\",\n    \"endTime\": \"2024-01-01T11:00:00Z\",\n    \"status\": \"confirmed\",\n    \"notes\": \"First session\",\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": \"2024-01-01T00:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": \"client_456\",\n  \"instructorId\": \"instructor_789\",\n  \"bookableSessionId\": \"session_123\",\n  \"startTime\": \"2024-01-01T10:00:00Z\",\n  \"endTime\": \"2024-01-01T11:00:00Z\",\n  \"notes\": \"First session\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings"]
+            },
+            "description": "Create a new booking"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientId\": \"client_456\",\n  \"instructorId\": \"instructor_789\",\n  \"bookableSessionId\": \"session_123\",\n  \"startTime\": \"2024-01-01T10:00:00Z\",\n  \"endTime\": \"2024-01-01T11:00:00Z\",\n  \"notes\": \"First session\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/bookings",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "bookings"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"booking_123\",\n    \"clientId\": \"client_456\",\n    \"instructorId\": \"instructor_789\",\n    \"bookableSessionId\": \"session_123\",\n    \"startTime\": \"2024-01-01T10:00:00Z\",\n    \"endTime\": \"2024-01-01T11:00:00Z\",\n    \"status\": \"pending\",\n    \"notes\": \"First session\",\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": \"2024-01-01T00:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"booking_123\",\n  \"clientId\": \"client_456\",\n  \"instructorId\": \"instructor_789\",\n  \"bookableSessionId\": \"session_123\",\n  \"startTime\": \"2024-01-01T10:00:00Z\",\n  \"endTime\": \"2024-01-01T11:00:00Z\",\n  \"status\": \"confirmed\",\n  \"notes\": \"Updated session notes\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "{{booking_id}}"]
+            },
+            "description": "Update an existing booking"
+          }
+        },
+        {
+          "name": "Delete Booking",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "{{booking_id}}"]
+            },
+            "description": "Delete a booking"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/bookings/booking_123",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "bookings", "booking_123"]
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Booking Actions",
+      "item": [
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"cancelled\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/{{booking_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "{{booking_id}}", "cancel"]
+            },
+            "description": "Cancel a booking"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"cancelled\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/bookings/booking_123/cancel",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "bookings", "booking_123", "cancel"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"booking_123\",\n    \"clientId\": \"client_456\",\n    \"instructorId\": \"instructor_789\",\n    \"bookableSessionId\": \"session_123\",\n    \"startTime\": \"2024-01-01T10:00:00Z\",\n    \"endTime\": \"2024-01-01T11:00:00Z\",\n    \"status\": \"cancelled\",\n    \"notes\": \"First session\",\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": \"2024-01-01T12:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Confirm Booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/{{booking_id}}/confirm",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "{{booking_id}}", "confirm"]
+            },
+            "description": "Confirm a booking"
+          }
+        },
+        {
+          "name": "Reschedule Booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStartTime\": \"2024-01-02T10:00:00Z\",\n  \"newEndTime\": \"2024-01-02T11:00:00Z\",\n  \"reason\": \"Schedule conflict\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/{{booking_id}}/reschedule",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "{{booking_id}}", "reschedule"]
+            },
+            "description": "Reschedule a booking"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search & Filter",
+      "item": [
+        {
+          "name": "Search Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/search?q={{search_query}}&instructorId={{instructor_id}}&clientId={{client_id}}&status={{status}}&startDate={{start_date}}&endDate={{end_date}}&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{search_query}}",
+                  "description": "Search query"
+                },
+                {
+                  "key": "instructorId",
+                  "value": "{{instructor_id}}",
+                  "description": "Filter by instructor ID"
+                },
+                {
+                  "key": "clientId",
+                  "value": "{{client_id}}",
+                  "description": "Filter by client ID"
+                },
+                {
+                  "key": "status",
+                  "value": "{{status}}",
+                  "description": "Filter by status"
+                },
+                {
+                  "key": "startDate",
+                  "value": "{{start_date}}",
+                  "description": "Filter by start date"
+                },
+                {
+                  "key": "endDate",
+                  "value": "{{end_date}}",
+                  "description": "Filter by end date"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Search bookings with various filters"
+          }
+        },
+        {
+          "name": "Get Bookings by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/date-range?startDate={{start_date}}&endDate={{end_date}}&instructorId={{instructor_id}}&clientId={{client_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "date-range"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "{{start_date}}",
+                  "description": "Start date"
+                },
+                {
+                  "key": "endDate",
+                  "value": "{{end_date}}",
+                  "description": "End date"
+                },
+                {
+                  "key": "instructorId",
+                  "value": "{{instructor_id}}",
+                  "description": "Filter by instructor ID"
+                },
+                {
+                  "key": "clientId",
+                  "value": "{{client_id}}",
+                  "description": "Filter by client ID"
+                }
+              ]
+            },
+            "description": "Get bookings within a date range"
+          }
+        },
+        {
+          "name": "Get Booking Availability",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/availability?instructorId={{instructor_id}}&startDate={{start_date}}&endDate={{end_date}}&sessionTypeId={{session_type_id}}&locationId={{location_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "availability"],
+              "query": [
+                {
+                  "key": "instructorId",
+                  "value": "{{instructor_id}}",
+                  "description": "Instructor ID"
+                },
+                {
+                  "key": "startDate",
+                  "value": "{{start_date}}",
+                  "description": "Start date"
+                },
+                {
+                  "key": "endDate",
+                  "value": "{{end_date}}",
+                  "description": "End date"
+                },
+                {
+                  "key": "sessionTypeId",
+                  "value": "{{session_type_id}}",
+                  "description": "Session type ID"
+                },
+                {
+                  "key": "locationId",
+                  "value": "{{location_id}}",
+                  "description": "Location ID"
+                }
+              ]
+            },
+            "description": "Check booking availability"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics & Stats",
+      "item": [
+        {
+          "name": "Get Booking Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/stats/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "stats", "{{user_id}}"]
+            },
+            "description": "Get booking statistics for a user"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/bookings/stats/user_123",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "v1", "bookings", "stats", "user_123"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"totalBookings\": 25,\n    \"confirmedBookings\": 20,\n    \"pendingBookings\": 3,\n    \"cancelledBookings\": 2,\n    \"thisMonth\": 8,\n    \"lastMonth\": 12,\n    \"thisYear\": 25\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Booking History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Sessionizer-Mobile/1.0"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/bookings/history/{{user_id}}?status={{status}}&startDate={{start_date}}&endDate={{end_date}}&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "bookings", "history", "{{user_id}}"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "{{status}}",
+                  "description": "Filter by status"
+                },
+                {
+                  "key": "startDate",
+                  "value": "{{start_date}}",
+                  "description": "Start date"
+                },
+                {
+                  "key": "endDate",
+                  "value": "{{end_date}}",
+                  "description": "End date"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Get booking history for a user"
+          }
+        }
+      ]
+    }
+  ]
+}
