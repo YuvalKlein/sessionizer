@@ -32,14 +32,15 @@ import 'package:myapp/features/user/domain/usecases/get_user.dart';
 import 'package:myapp/features/user/domain/usecases/get_instructor_by_id.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 
-import 'package:myapp/features/schedulable_session/data/datasources/schedulable_session_remote_data_source.dart';
-import 'package:myapp/features/schedulable_session/data/repositories/schedulable_session_repository_impl.dart';
-import 'package:myapp/features/schedulable_session/domain/repositories/schedulable_session_repository.dart';
-import 'package:myapp/features/schedulable_session/domain/usecases/get_schedulable_sessions.dart';
-import 'package:myapp/features/schedulable_session/domain/usecases/create_schedulable_session.dart';
-import 'package:myapp/features/schedulable_session/domain/usecases/update_schedulable_session.dart';
-import 'package:myapp/features/schedulable_session/domain/usecases/delete_schedulable_session.dart';
-import 'package:myapp/features/schedulable_session/presentation/bloc/schedulable_session_bloc.dart';
+import 'package:myapp/features/bookable_session/data/datasources/bookable_session_remote_data_source.dart';
+import 'package:myapp/features/bookable_session/data/repositories/bookable_session_repository_impl.dart';
+import 'package:myapp/features/bookable_session/domain/repositories/bookable_session_repository.dart';
+import 'package:myapp/features/bookable_session/domain/usecases/get_bookable_sessions.dart';
+import 'package:myapp/features/bookable_session/domain/usecases/get_all_bookable_sessions.dart';
+import 'package:myapp/features/bookable_session/domain/usecases/create_bookable_session.dart';
+import 'package:myapp/features/bookable_session/domain/usecases/update_bookable_session.dart';
+import 'package:myapp/features/bookable_session/domain/usecases/delete_bookable_session.dart';
+import 'package:myapp/features/bookable_session/presentation/bloc/bookable_session_bloc.dart';
 
 import 'package:myapp/features/session_type/data/datasources/session_type_remote_data_source.dart';
 import 'package:myapp/features/session_type/data/repositories/session_type_repository_impl.dart';
@@ -57,6 +58,13 @@ import 'package:myapp/features/booking/domain/usecases/get_bookings.dart';
 import 'package:myapp/features/booking/domain/usecases/create_booking.dart';
 import 'package:myapp/features/booking/domain/usecases/cancel_booking.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
+
+import 'package:myapp/features/review/data/repositories/review_repository_impl.dart';
+import 'package:myapp/features/review/domain/repositories/review_repository.dart';
+import 'package:myapp/features/review/domain/usecases/create_review.dart';
+import 'package:myapp/features/review/domain/usecases/get_reviews_by_booking.dart';
+import 'package:myapp/features/review/domain/usecases/get_review_by_booking_and_client.dart';
+import 'package:myapp/features/review/presentation/bloc/review_bloc.dart';
 
 import 'package:myapp/features/location/data/datasources/location_remote_data_source.dart';
 import 'package:myapp/features/location/data/repositories/location_repository_impl.dart';
@@ -101,8 +109,8 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton<UserRemoteDataSource>(
     () => UserRemoteDataSourceImpl(firestore: sl()),
   );
-  sl.registerLazySingleton<SchedulableSessionRemoteDataSource>(
-    () => SchedulableSessionRemoteDataSourceImpl(firestore: sl()),
+  sl.registerLazySingleton<BookableSessionRemoteDataSource>(
+    () => BookableSessionRemoteDataSourceImpl(firestore: sl()),
   );
   sl.registerLazySingleton<SessionTypeRemoteDataSource>(
     () => SessionTypeRemoteDataSourceImpl(firestore: sl()),
@@ -126,8 +134,8 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton<UserRepository>(
     () => UserRepositoryImpl(sl()),
   );
-  sl.registerLazySingleton<SchedulableSessionRepository>(
-    () => SchedulableSessionRepositoryImpl(sl()),
+  sl.registerLazySingleton<BookableSessionRepository>(
+    () => BookableSessionRepositoryImpl(sl()),
   );
   sl.registerLazySingleton<SessionTypeRepository>(
     () => SessionTypeRepositoryImpl(sl()),
@@ -154,10 +162,11 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => GetUser(sl()));
   sl.registerLazySingleton(() => GetInstructorById(sl()));
 
-  sl.registerLazySingleton(() => GetSchedulableSessions(sl()));
-  sl.registerLazySingleton(() => CreateSchedulableSession(sl()));
-  sl.registerLazySingleton(() => UpdateSchedulableSession(sl()));
-  sl.registerLazySingleton(() => DeleteSchedulableSession(sl()));
+  sl.registerLazySingleton(() => GetBookableSessions(sl()));
+  sl.registerLazySingleton(() => GetAllBookableSessions(sl()));
+  sl.registerLazySingleton(() => CreateBookableSession(sl()));
+  sl.registerLazySingleton(() => UpdateBookableSession(sl()));
+  sl.registerLazySingleton(() => DeleteBookableSession(sl()));
 
   sl.registerLazySingleton(() => GetSessionTypes(sl()));
   sl.registerLazySingleton(() => CreateSessionType(sl()));
@@ -201,11 +210,12 @@ Future<void> initializeDependencies() async {
     ),
   );
   sl.registerFactory(
-    () => SchedulableSessionBloc(
-      getSchedulableSessions: sl(),
-      createSchedulableSession: sl(),
-      updateSchedulableSession: sl(),
-      deleteSchedulableSession: sl(),
+    () => BookableSessionBloc(
+      getBookableSessions: sl(),
+      getAllBookableSessions: sl(),
+      createBookableSession: sl(),
+      updateBookableSession: sl(),
+      deleteBookableSession: sl(),
     ),
   );
   sl.registerLazySingleton(
@@ -230,6 +240,21 @@ Future<void> initializeDependencies() async {
       createBooking: sl(),
       cancelBooking: sl(),
       repository: sl(),
+    ),
+  );
+
+  // Review dependencies
+  sl.registerLazySingleton<ReviewRepository>(
+    () => ReviewRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton(() => CreateReview(sl()));
+  sl.registerLazySingleton(() => GetReviewsByBooking(sl()));
+  sl.registerLazySingleton(() => GetReviewByBookingAndClient(sl()));
+  sl.registerFactory(
+    () => ReviewBloc(
+      createReview: sl(),
+      getReviewsByBooking: sl(),
+      getReviewByBookingAndClient: sl(),
     ),
   );
 

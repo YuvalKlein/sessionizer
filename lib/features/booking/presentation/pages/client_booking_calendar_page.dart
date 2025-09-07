@@ -278,7 +278,7 @@ class _ClientBookingCalendarPageState extends State<ClientBookingCalendarPage> {
         'clientName': user.displayName ?? 'Unknown',
         'clientEmail': user.email ?? '',
         'scheduleId': widget.template['scheduleId'],
-        'schedulableSessionId': widget.template['id'],
+        'bookableSessionId': widget.template['id'],
         'sessionTypeId': widget.template['sessionTypeId'],
         'locationId': (widget.template['locationIds'] as List).first,
         'startTime': slot['start'],

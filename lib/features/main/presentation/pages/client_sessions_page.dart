@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:myapp/core/utils/logger.dart';
+import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/features/bookable_session/presentation/bloc/bookable_session_bloc.dart';
+import 'package:myapp/features/bookable_session/presentation/bloc/bookable_session_event.dart';
+import 'package:myapp/features/bookable_session/presentation/bloc/bookable_session_state.dart';
+import 'package:myapp/features/booking/presentation/widgets/instructor_avatar.dart';
 
 class ClientSessionsPage extends StatefulWidget {
-  const ClientSessionsPage({super.key});
+  final String? instructorId;
+  
+  const ClientSessionsPage({super.key, this.instructorId});
 
   @override
   State<ClientSessionsPage> createState() => _ClientSessionsPageState();
@@ -13,154 +20,127 @@ class ClientSessionsPage extends StatefulWidget {
 class _ClientSessionsPageState extends State<ClientSessionsPage> {
   String _selectedFilter = 'all';
   String _searchQuery = '';
-  List<Map<String, dynamic>> _templates = [];
-  bool _isLoading = true;
-  String? _error;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadTemplates();
   }
 
-  Future<void> _loadTemplates() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      // First, let's try to get all schedulable sessions to see what's available
-      final snapshot = await FirebaseFirestore.instance
-          .collection('schedulable_sessions')
-          .get();
-
-      AppLogger.info('📊 Found ${snapshot.docs.length} schedulable sessions total');
-
-      // Filter for active sessions
-      var templates = snapshot.docs
-          .map((doc) => {'id': doc.id, ...doc.data()})
-          .where((template) => template['isActive'] == true)
-          .toList();
-
-      AppLogger.info('📊 Found ${templates.length} active schedulable sessions');
-
-      // If no active templates found, show all templates for debugging
-      if (templates.isEmpty && snapshot.docs.isNotEmpty) {
-        AppLogger.warning('⚠️ No active templates found, showing all templates for debugging');
-        templates = snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
-            .toList();
-      }
-
-      // If still no templates, create a sample one for testing
-      if (templates.isEmpty) {
-        AppLogger.info('⚠️ No templates found at all, creating sample data');
-        await _createSampleTemplate();
-        // Reload after creating sample
-        final newSnapshot = await FirebaseFirestore.instance
-            .collection('schedulable_sessions')
-            .get();
-        templates = newSnapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
-            .toList();
-      }
-
-      setState(() {
-        _templates = templates;
-        _isLoading = false;
-      });
-    } catch (e) {
-      AppLogger.error('❌ Error loading templates: $e');
-      setState(() {
-        _error = 'Failed to load session templates: $e';
-        _isLoading = false;
-      });
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    AppLogger.debug('🔍 ClientSessionsPage build called - templates: ${_templates.length}, loading: $_isLoading, error: $_error');
-    return _buildSessionsContent();
-  }
-
-  Widget _buildSessionsContent() {
-    return Scaffold(
-      body: Column(
-        children: [
-          _buildHeader(),
-          _buildFilters(),
-          _buildSearchBar(),
-          Expanded(
-            child: _buildSessionsList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade300),
-        ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () {
-              AppLogger.debug('🔙 Back button pressed');
-              if (Navigator.of(context).canPop()) {
-                context.pop();
-              } else {
-                context.go('/client-dashboard');
-              }
-            },
+    return BlocProvider(
+      create: (context) {
+        final bloc = sl<BookableSessionBloc>();
+        if (widget.instructorId != null && widget.instructorId!.isNotEmpty) {
+          bloc.add(LoadBookableSessions(instructorId: widget.instructorId!));
+        } else {
+          bloc.add(const LoadAllBookableSessions());
+        }
+        return bloc;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Available Sessions'),
+          backgroundColor: Colors.blue.shade600,
+          foregroundColor: Colors.white,
+          leading: IconButton(
+            onPressed: () => context.go('/client-dashboard'),
             icon: const Icon(Icons.arrow_back),
           ),
-          const SizedBox(width: 8),
-          const Text(
-            'Available Sessions',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          actions: [
+            IconButton(
+              onPressed: () => _showFilterDialog(),
+              icon: const Icon(Icons.filter_list),
             ),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: () => _refreshData(),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilters() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
+          ],
+        ),
+        body: Column(
           children: [
-            _buildFilterChip('all', 'All Sessions'),
-            const SizedBox(width: 8),
-            _buildFilterChip('today', 'Today'),
-            const SizedBox(width: 8),
-            _buildFilterChip('this_week', 'This Week'),
-            const SizedBox(width: 8),
-            _buildFilterChip('this_month', 'This Month'),
+            _buildSearchBar(),
+            _buildFilterChips(),
+            Expanded(
+              child: BlocBuilder<BookableSessionBloc, BookableSessionState>(
+                builder: (context, state) {
+                  if (state is BookableSessionLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is BookableSessionLoaded) {
+                    final sessions = _filterSessions(state.sessions);
+                    return _buildSessionsList(sessions);
+                  } else if (state is BookableSessionError) {
+                    return _buildErrorState(state.message);
+                  }
+                  return const Center(child: Text('No sessions available'));
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFilterChip(String value, String label) {
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search sessions...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                    });
+                  },
+                  icon: const Icon(Icons.clear),
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade100,
+        ),
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value.toLowerCase();
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterChips() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildFilterChip('All', 'all'),
+            const SizedBox(width: 8),
+            _buildFilterChip('Today', 'today'),
+            const SizedBox(width: 8),
+            _buildFilterChip('This Week', 'week'),
+            const SizedBox(width: 8),
+            _buildFilterChip('This Month', 'month'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String value) {
     final isSelected = _selectedFilter == value;
     return FilterChip(
       label: Text(label),
@@ -175,190 +155,151 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: 'Search sessions...',
-          prefixIcon: const Icon(Icons.search),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          filled: true,
-          fillColor: Colors.grey.shade50,
-        ),
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value.toLowerCase();
-          });
-        },
-      ),
-    );
+  List<dynamic> _filterSessions(List<dynamic> sessions) {
+    var filtered = sessions.where((session) {
+      // Search filter - search by instructor ID or session type IDs
+      if (_searchQuery.isNotEmpty) {
+        final instructorId = (session.instructorId ?? '').toLowerCase();
+        final typeIds = (session.sessionTypeIds ?? <String>[]).join(' ').toLowerCase();
+        if (!instructorId.contains(_searchQuery) && !typeIds.contains(_searchQuery)) {
+          return false;
+        }
+      }
+
+      // For now, show all sessions since these are templates
+      // In a real app, you'd filter by actual available time slots
+      return true;
+    }).toList();
+
+    // Sort by creation date
+    filtered.sort((a, b) {
+      final aTime = a.createdAt ?? DateTime(0);
+      final bTime = b.createdAt ?? DateTime(0);
+      return bTime.compareTo(aTime); // Most recent first
+    });
+
+    return filtered;
   }
 
-  Widget _buildSessionsList() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null) {
-      return _buildErrorState(_error!);
-    }
-
-    final filteredTemplates = _filterSessions(_templates);
-    
-    if (filteredTemplates.isEmpty) {
+  Widget _buildSessionsList(List<dynamic> sessions) {
+    if (sessions.isEmpty) {
       return _buildEmptyState();
     }
-    
+
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: filteredTemplates.length,
+      padding: const EdgeInsets.all(16.0),
+      itemCount: sessions.length,
       itemBuilder: (context, index) {
-        final template = filteredTemplates[index];
-        return _buildSessionTemplateCard(template);
+        final session = sessions[index];
+        return _buildSessionCard(session);
       },
     );
   }
 
-  List<dynamic> _filterSessions(List<dynamic> templates) {
-    var filteredTemplates = templates.where((template) {
-      // Apply search filter
-      if (_searchQuery.isNotEmpty) {
-        final title = (template['title'] ?? '').toLowerCase();
-        final notes = (template['notes'] ?? '').toLowerCase();
-        if (!title.contains(_searchQuery) && !notes.contains(_searchQuery)) {
-          return false;
-        }
-      }
-      
-      // Only show active templates
-      if (template['isActive'] != true) {
-        return false;
-      }
-      
-      // For templates, we don't filter by date since they're available for booking
-      // The date filtering would be applied when showing available time slots
-      return true;
-    }).toList();
-    
-    // Sort by title
-    filteredTemplates.sort((a, b) => (a['title'] ?? '').compareTo(b['title'] ?? ''));
-    
-    return filteredTemplates;
-  }
-
-  Widget _buildSessionTemplateCard(dynamic template) {
+  Widget _buildSessionCard(dynamic session) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 8),
       elevation: 2,
-      child: InkWell(
-        onTap: () => _showTemplateDetails(template),
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        leading: InstructorAvatar(
+          instructorId: session.instructorId,
+          radius: 20,
+          backgroundColor: Colors.blue.withValues(alpha: 0.2),
+          iconColor: Colors.blue,
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FutureBuilder<String>(
+              future: _getSessionDisplayName(session),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Text(
+                    snapshot.data!,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  );
+                }
+                return const Text(
+                  'Loading...',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 2),
+            InstructorName(
+              instructorId: session.instructorId,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Icon(Icons.schedule, size: 12, color: Colors.grey.shade600),
+            const SizedBox(width: 4),
+            Text(
+              '${session.durationOverride ?? 60} min',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+            ),
+            const SizedBox(width: 12),
+            Icon(Icons.calendar_today, size: 12, color: Colors.grey.shade600),
+            const SizedBox(width: 4),
+            Text(
+              '${session.futureBookingLimitInDays} days',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+            ),
+          ],
+        ),
+        trailing: SizedBox(
+          width: 80,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.blue.shade100,
-                    child: Icon(
-                      Icons.event_available,
-                      color: Colors.blue.shade700,
+              SizedBox(
+                width: 80,
+                height: 20,
+                child: ElevatedButton(
+                  onPressed: () => _showBookingDialog(session),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
                     ),
+                    padding: EdgeInsets.zero,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          template['title'] ?? 'Session Template',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (template['notes'] != null && template['notes'].isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            template['notes'],
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  _buildTemplateStatusChip(template),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.schedule, size: 16, color: Colors.grey.shade600),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Duration: ${template['slotIntervalMinutes'] ?? 60} min slots',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.timer, size: 16, color: Colors.grey.shade600),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Booking: ${template['minHoursAhead'] ?? 2}h ahead, ${template['maxDaysAhead'] ?? 7} days max',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              if (template['bufferBefore'] != null || template['bufferAfter'] != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.pause, size: 16, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Buffer: ${template['bufferBefore'] ?? 0}min before, ${template['bufferAfter'] ?? 0}min after',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                  child: const Text('Details', style: TextStyle(fontSize: 8)),
                 ),
-              ],
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _showBookingDialog(template),
-                      child: const Text('Book Session'),
+              ),
+              const SizedBox(height: 1),
+              SizedBox(
+                width: 80,
+                height: 20,
+                child: ElevatedButton(
+                  onPressed: () => _showCalendarView(session),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade600,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
                     ),
+                    padding: EdgeInsets.zero,
                   ),
-                  const SizedBox(width: 8),
-                  TextButton(
-                    onPressed: () => _showTemplateDetails(template),
-                    child: const Text('Details'),
-                  ),
-                ],
+                  child: const Text('Calendar', style: TextStyle(fontSize: 8)),
+                ),
               ),
             ],
           ),
@@ -367,158 +308,111 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
     );
   }
 
-  Widget _buildTemplateStatusChip(dynamic template) {
-    final isActive = template['isActive'] == true;
-    if (isActive) {
-      return Chip(
-        label: const Text('Available', style: TextStyle(fontSize: 10, color: Colors.white)),
-        backgroundColor: Colors.green,
-      );
-    } else {
-      return Chip(
-        label: const Text('Inactive', style: TextStyle(fontSize: 10, color: Colors.white)),
-        backgroundColor: Colors.grey,
-      );
-    }
-  }
-
   Widget _buildEmptyState() {
-    return SingleChildScrollView(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.event_busy,
-                size: 64,
-                color: Colors.grey.shade400,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'No Sessions Found',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'No active session templates are available for booking.',
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => _refreshData(),
-                    child: const Text('Refresh'),
-                  ),
-                  const SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: () async {
-                      await _createSampleTemplate();
-                      _refreshData();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Create Sample Data'),
-                  ),
-                ],
-              ),
-            ],
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.event_available,
+            size: 64,
+            color: Colors.grey.shade400,
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            'No sessions available',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Check back later for new sessions',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade500,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              context.read<BookableSessionBloc>().add(const LoadAllBookableSessions());
+            },
+            child: const Text('Refresh'),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildErrorState(String message) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red.shade400,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Error loading sessions',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.red.shade600,
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Error Loading Sessions',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.red.shade600,
-              ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
             ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => _refreshData(),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              context.read<BookableSessionBloc>().add(const LoadAllBookableSessions());
+            },
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }
 
 
-  void _showTemplateDetails(dynamic template) {
+  void _showBookingDialog(dynamic session) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(template['title'] ?? 'Session Template Details'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (template['notes'] != null && template['notes'].isNotEmpty) ...[
-                const Text(
-                  'Description:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(template['notes']),
-                const SizedBox(height: 16),
-              ],
-              const Text(
-                'Session Details:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text('Slot Duration: ${template['slotIntervalMinutes'] ?? 60} minutes'),
-              const SizedBox(height: 8),
-              Text('Booking Window: ${template['minHoursAhead'] ?? 2} hours ahead, max ${template['maxDaysAhead'] ?? 7} days'),
-              if (template['bufferBefore'] != null || template['bufferAfter'] != null) ...[
-                const SizedBox(height: 8),
-                Text('Buffer Time: ${template['bufferBefore'] ?? 0}min before, ${template['bufferAfter'] ?? 0}min after'),
-              ],
-              if (template['durationOverride'] != null) ...[
-                const SizedBox(height: 8),
-                Text('Duration Override: ${template['durationOverride']} minutes'),
-              ],
-            ],
-          ),
+        title: const Text('Session Details'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FutureBuilder<String>(
+              future: _getSessionDisplayName(session),
+              builder: (context, snapshot) {
+                return Text(snapshot.data ?? 'Loading...');
+              },
+            ),
+            const SizedBox(height: 8),
+            Text('Instructor ID: ${session.instructorId}'),
+            Text('Duration: ${session.durationOverride ?? 60} minutes'),
+            Text('Locations: ${session.locationIds.length} available'),
+            Text('Session Types: ${session.sessionTypeIds.length} available'),
+            Text('Booking Window: ${session.futureBookingLimitInDays} days'),
+            Text('Lead Time: ${session.bookingLeadTimeInMinutes} minutes'),
+            if (session.breakTimeInMinutes > 0)
+              Text('Break Time: ${session.breakTimeInMinutes} minutes'),
+          ],
         ),
         actions: [
           TextButton(
@@ -528,7 +422,7 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _showBookingDialog(template);
+              _bookSession(session);
             },
             child: const Text('Book Session'),
           ),
@@ -537,129 +431,121 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
     );
   }
 
-  void _showBookingDialog(dynamic template) {
+  void _bookSession(dynamic session) {
+    context.go('/client/book/${session.id}/${session.instructorId}');
+  }
+
+  void _showCalendarView(dynamic session) {
+    context.go('/client/calendar/${session.id}/${session.instructorId}');
+  }
+
+  void _showFilterDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Book Session'),
+        title: const Text('Filter Sessions'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Would you like to book "${template['title'] ?? 'Session Template'}"?'),
-            const SizedBox(height: 16),
-            const Text(
-              'This will open the booking calendar where you can select an available time slot.',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ListTile(
+              title: const Text('All Sessions'),
+              leading: Radio<String>(
+                value: 'all',
+                groupValue: _selectedFilter,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedFilter = value!;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            ListTile(
+              title: const Text('Today'),
+              leading: Radio<String>(
+                value: 'today',
+                groupValue: _selectedFilter,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedFilter = value!;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            ListTile(
+              title: const Text('This Week'),
+              leading: Radio<String>(
+                value: 'week',
+                groupValue: _selectedFilter,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedFilter = value!;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            ListTile(
+              title: const Text('This Month'),
+              leading: Radio<String>(
+                value: 'month',
+                groupValue: _selectedFilter,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedFilter = value!;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _navigateToBookingCalendar(template);
-            },
-            child: const Text('Select Time'),
+            child: const Text('Close'),
           ),
         ],
       ),
     );
   }
 
-  void _navigateToBookingCalendar(dynamic template) {
-    context.go('/client/booking/${template['id']}');
-  }
-
-  void _refreshData() {
-    _loadTemplates();
-  }
-
-  Future<void> _createSampleTemplate() async {
+  Future<String> _getSessionDisplayName(dynamic session) async {
     try {
-      // First, we need to create some basic data if it doesn't exist
-      // Create a sample session type
-      final sessionTypeRef = await FirebaseFirestore.instance
-          .collection('session_types')
-          .add({
-        'title': 'Tennis Lesson',
-        'duration': 60,
-        'durationUnit': 'minutes',
-        'price': 50.0,
-        'minPlayers': 1,
-        'maxPlayers': 4,
-        'showParticipants': true,
-        'createdTime': FieldValue.serverTimestamp(),
-        'idCreatedBy': 'sample_instructor',
-      });
+      // Get session type (should be exactly one)
+      String sessionTypeName = 'Session';
+      if (session.sessionTypeIds.isNotEmpty) {
+        final typeDoc = await FirebaseFirestore.instance
+            .collection('session_types')
+            .doc(session.sessionTypeIds.first)
+            .get();
+        if (typeDoc.exists) {
+          final typeData = typeDoc.data()!;
+          sessionTypeName = typeData['title'] ?? 'Session';
+        }
+      }
 
-      // Create a sample location
-      final locationRef = await FirebaseFirestore.instance
-          .collection('locations')
-          .add({
-        'name': 'Central Tennis Court',
-        'address': '123 Main St, City',
-        'description': 'Professional tennis court with all amenities',
-        'createdAt': FieldValue.serverTimestamp(),
-        'instructorId': 'sample_instructor',
-      });
+      // Get location (should be exactly one)
+      String locationName = 'Unknown Location';
+      if (session.locationIds.isNotEmpty) {
+        final locationDoc = await FirebaseFirestore.instance
+            .collection('locations')
+            .doc(session.locationIds.first)
+            .get();
+        if (locationDoc.exists) {
+          final locationData = locationDoc.data()!;
+          locationName = locationData['name'] ?? 'Unknown Location';
+        }
+      }
 
-      // Create a sample schedule
-      final scheduleRef = await FirebaseFirestore.instance
-          .collection('schedules')
-          .add({
-        'name': 'Weekday Schedule',
-        'timezone': 'America/New_York',
-        'isDefault': true,
-        'weeklyAvailability': {
-          'monday': [
-            {'start': '9:00 AM', 'end': '5:00 PM'}
-          ],
-          'tuesday': [
-            {'start': '9:00 AM', 'end': '5:00 PM'}
-          ],
-          'wednesday': [
-            {'start': '9:00 AM', 'end': '5:00 PM'}
-          ],
-          'thursday': [
-            {'start': '9:00 AM', 'end': '5:00 PM'}
-          ],
-          'friday': [
-            {'start': '9:00 AM', 'end': '5:00 PM'}
-          ],
-        },
-        'specificDates': {},
-        'holidays': [],
-        'createdAt': FieldValue.serverTimestamp(),
-        'instructorId': 'sample_instructor',
-      });
-
-      // Create a sample schedulable session template
-      await FirebaseFirestore.instance
-          .collection('schedulable_sessions')
-          .add({
-        'title': 'Tennis Lesson at Central Court',
-        'sessionTypeId': sessionTypeRef.id,
-        'locationIds': [locationRef.id],
-        'scheduleId': scheduleRef.id,
-        'instructorId': 'sample_instructor',
-        'bufferBefore': 0,
-        'bufferAfter': 0,
-        'maxDaysAhead': 7,
-        'minHoursAhead': 2,
-        'slotIntervalMinutes': 60,
-        'notes': 'Professional tennis lessons for all skill levels',
-        'isActive': true,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      AppLogger.info('✅ Sample template created successfully');
+      // Create display name: "Session Type at Location"
+      final result = '$sessionTypeName at $locationName';
+      return result;
     } catch (e) {
-      AppLogger.error('❌ Error creating sample template: $e');
+      return 'Session ${session.id != null && session.id!.length > 8 ? session.id!.substring(0, 8) + '...' : session.id ?? 'Unknown'}';
     }
   }
 }
+
+

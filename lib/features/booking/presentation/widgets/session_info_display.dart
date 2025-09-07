@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/core/utils/injection_container.dart';
 import 'package:myapp/core/utils/usecase.dart';
-import 'package:myapp/features/schedulable_session/domain/usecases/get_schedulable_sessions.dart';
-import 'package:myapp/features/schedulable_session/domain/entities/schedulable_session_entity.dart';
+import 'package:myapp/features/bookable_session/domain/usecases/get_bookable_sessions.dart';
+import 'package:myapp/features/bookable_session/domain/entities/bookable_session_entity.dart';
 import 'package:myapp/features/session_type/domain/usecases/get_session_types.dart';
 
 class SessionInfoDisplay extends StatefulWidget {
@@ -33,31 +33,35 @@ class _SessionInfoDisplayState extends State<SessionInfoDisplay> {
 
   Future<void> _loadSessionInfo() async {
     try {
-      final getSchedulableSessions = sl<GetSchedulableSessions>();
+      final getBookableSessions = sl<GetBookableSessions>();
       final getSessionTypes = sl<GetSessionTypes>();
       
-      // Get schedulable sessions for the instructor
-      final sessionsResult = await getSchedulableSessions(GetSchedulableSessionsParams(instructorId: widget.instructorId));
+      // Get bookable sessions for the instructor
+      final sessionsResult = await getBookableSessions(GetBookableSessionsParams(instructorId: widget.instructorId));
       final sessionTypesResult = await getSessionTypes(NoParams());
       
       sessionsResult.fold(
         (failure) {
-          setState(() {
-            _sessionInfo = 'Session not found';
-            _isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _sessionInfo = 'Session not found';
+              _isLoading = false;
+            });
+          }
         },
         (sessions) {
           sessionTypesResult.fold(
             (failure) {
-              setState(() {
-                _sessionInfo = 'Session not found';
-                _isLoading = false;
-              });
+              if (mounted) {
+                setState(() {
+                  _sessionInfo = 'Session not found';
+                  _isLoading = false;
+                });
+              }
             },
             (sessionTypes) {
               // Find the session by ID
-              SchedulableSessionEntity? session;
+              BookableSessionEntity? session;
               try {
                 session = sessions.firstWhere((s) => s.id == widget.sessionId);
               } catch (e) {
@@ -65,27 +69,33 @@ class _SessionInfoDisplayState extends State<SessionInfoDisplay> {
               }
               
               if (session == null) {
-                setState(() {
-                  _sessionInfo = 'Session not found';
-                  _isLoading = false;
-                });
+                if (mounted) {
+                  setState(() {
+                    _sessionInfo = 'Session not found';
+                    _isLoading = false;
+                  });
+                }
                 return;
               }
               
-              setState(() {
-                // For now, we'll use a placeholder since session type lookup is not implemented
-                _sessionInfo = 'Session at Location TBD';
-                _isLoading = false;
-              });
+              if (mounted) {
+                setState(() {
+                  // For now, we'll use a placeholder since session type lookup is not implemented
+                  _sessionInfo = 'Session at Location TBD';
+                  _isLoading = false;
+                });
+              }
             },
           );
         },
       );
     } catch (e) {
-      setState(() {
-        _sessionInfo = 'Session not found';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _sessionInfo = 'Session not found';
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -104,3 +114,5 @@ class _SessionInfoDisplayState extends State<SessionInfoDisplay> {
     );
   }
 }
+
+

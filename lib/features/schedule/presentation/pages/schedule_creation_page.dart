@@ -32,13 +32,13 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
 
   // Weekly availability - 7 days, each with multiple time ranges
   final Map<String, List<Map<String, TimeOfDay?>>> _weeklyAvailability = {
-    'monday': [{'start': null, 'end': null}],
-    'tuesday': [{'start': null, 'end': null}],
-    'wednesday': [{'start': null, 'end': null}],
-    'thursday': [{'start': null, 'end': null}],
-    'friday': [{'start': null, 'end': null}],
-    'saturday': [{'start': null, 'end': null}],
-    'sunday': [{'start': null, 'end': null}],
+    'monday': [{'startTime': null, 'endTime': null}],
+    'tuesday': [{'startTime': null, 'endTime': null}],
+    'wednesday': [{'startTime': null, 'endTime': null}],
+    'thursday': [{'startTime': null, 'endTime': null}],
+    'friday': [{'startTime': null, 'endTime': null}],
+    'saturday': [{'startTime': null, 'endTime': null}],
+    'sunday': [{'startTime': null, 'endTime': null}],
   };
 
   // Specific date availability - overrides for specific dates
@@ -61,8 +61,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     // Set default times for Monday to Friday (9 AM - 5 PM)
     final weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
     for (final day in weekdays) {
-      _weeklyAvailability[day]![0]['start'] = const TimeOfDay(hour: 9, minute: 0);
-      _weeklyAvailability[day]![0]['end'] = const TimeOfDay(hour: 17, minute: 0);
+      _weeklyAvailability[day]![0]['startTime'] = const TimeOfDay(hour: 9, minute: 0);
+      _weeklyAvailability[day]![0]['endTime'] = const TimeOfDay(hour: 17, minute: 0);
     }
   }
 
@@ -84,11 +84,11 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
           _weeklyAvailability[day] = dayRanges.map<Map<String, TimeOfDay?>>((range) {
             if (range is Map) {
               return {
-                'start': _parseTimeOfDay(range['start']),
-                'end': _parseTimeOfDay(range['end']),
+                'startTime': _parseTimeOfDay(range['startTime']),
+                'endTime': _parseTimeOfDay(range['endTime']),
               };
             }
-            return <String, TimeOfDay?>{'start': null, 'end': null};
+            return <String, TimeOfDay?>{'startTime': null, 'endTime': null};
           }).toList();
         }
       }
@@ -106,15 +106,15 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
           // Handle new structure with multiple time slots
           _specificDateAvailability[date] = {
             'timeSlots': (dayData['timeSlots'] as List).map((slot) => {
-              'start': _parseTimeOfDay(slot['start']),
-              'end': _parseTimeOfDay(slot['end']),
+              'startTime': _parseTimeOfDay(slot['startTime']),
+              'endTime': _parseTimeOfDay(slot['endTime']),
             }).toList(),
           };
-        } else if (dayData['start'] != null && dayData['end'] != null) {
+        } else if (dayData['startTime'] != null && dayData['endTime'] != null) {
           // Handle old structure with single time slot
           _specificDateAvailability[date] = {
-            'start': _parseTimeOfDay(dayData['start']),
-            'end': _parseTimeOfDay(dayData['end']),
+            'startTime': _parseTimeOfDay(dayData['startTime']),
+            'endTime': _parseTimeOfDay(dayData['endTime']),
           };
         }
       }
@@ -367,7 +367,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                   children: dayRanges.asMap().entries.map((entry) {
                     final index = entry.key;
                     final range = entry.value;
-                    final isEnabled = range['start'] != null && range['end'] != null;
+                    final isEnabled = range['startTime'] != null && range['endTime'] != null;
                     final isFirstSlot = index == 0;
                     
                     return Container(
@@ -387,7 +387,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                                 ),
                                 child: isEnabled
                                     ? Text(
-                                        '${_formatTimeOfDay(range['start']!)} - ${_formatTimeOfDay(range['end']!)}',
+                                        '${_formatTimeOfDay(range['startTime']!)} - ${_formatTimeOfDay(range['endTime']!)}',
                                         style: const TextStyle(fontSize: 14),
                                       )
                                     : const Text(
@@ -533,8 +533,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
   Widget _buildSpecificDateCard(String date, Map<String, dynamic> dayData) {
     final isUnavailable = dayData['unavailable'] == true;
     final timeSlots = dayData['timeSlots'] as List<Map<String, TimeOfDay?>>?;
-    final startTime = dayData['start'] as TimeOfDay?;
-    final endTime = dayData['end'] as TimeOfDay?;
+    final startTime = dayData['startTime'] as TimeOfDay?;
+    final endTime = dayData['endTime'] as TimeOfDay?;
     
     String timeString;
     Color timeColor;
@@ -545,12 +545,12 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     } else if (timeSlots != null && timeSlots.isNotEmpty) {
       // Handle new structure with multiple time slots
       final validSlots = timeSlots.where((slot) => 
-        slot['start'] != null && slot['end'] != null
+        slot['startTime'] != null && slot['endTime'] != null
       ).toList();
       
       if (validSlots.isNotEmpty) {
         if (validSlots.length == 1) {
-          timeString = '${_formatTimeOfDay(validSlots.first['start']!)} - ${_formatTimeOfDay(validSlots.first['end']!)}';
+          timeString = '${_formatTimeOfDay(validSlots.first['startTime']!)} - ${_formatTimeOfDay(validSlots.first['endTime']!)}';
         } else {
           timeString = '${validSlots.length} time slots';
         }
@@ -726,8 +726,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       // Find the latest end time from existing ranges
       TimeOfDay? latestEndTime;
       for (final range in dayRanges) {
-        if (range['end'] != null) {
-          final endTime = range['end'] as TimeOfDay;
+        if (range['endTime'] != null) {
+          final endTime = range['endTime'] as TimeOfDay;
           if (latestEndTime == null || endTime.hour > latestEndTime.hour || 
               (endTime.hour == latestEndTime.hour && endTime.minute > latestEndTime.minute)) {
             latestEndTime = endTime;
@@ -752,8 +752,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       
       // Add the new time range with calculated times
       dayRanges.add({
-        'start': newStartTime,
-        'end': newEndTime,
+        'startTime': newStartTime,
+        'endTime': newEndTime,
       });
     });
   }
@@ -763,7 +763,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       _weeklyAvailability[day]!.removeAt(index);
       // If no time ranges left, add an empty one
       if (_weeklyAvailability[day]!.isEmpty) {
-        _weeklyAvailability[day]!.add(<String, TimeOfDay?>{'start': null, 'end': null});
+        _weeklyAvailability[day]!.add(<String, TimeOfDay?>{'startTime': null, 'endTime': null});
       }
     });
   }
@@ -774,7 +774,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     // Show start time picker
     final startTime = await showTimePicker(
       context: context,
-      initialTime: range['start'] ?? const TimeOfDay(hour: 9, minute: 0),
+      initialTime: range['startTime'] ?? const TimeOfDay(hour: 9, minute: 0),
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
@@ -787,7 +787,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       // Show end time picker
       final endTime = await showTimePicker(
         context: context,
-        initialTime: range['end'] ?? const TimeOfDay(hour: 17, minute: 0),
+        initialTime: range['endTime'] ?? const TimeOfDay(hour: 17, minute: 0),
         builder: (context, child) {
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
@@ -811,8 +811,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         }
         
         setState(() {
-          range['start'] = startTime;
-          range['end'] = endTime;
+          range['startTime'] = startTime;
+          range['endTime'] = endTime;
         });
       }
     }
@@ -825,8 +825,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       if (i == currentIndex) continue; // Skip the current range being edited
       
       final range = dayRanges[i];
-      final existingStart = range['start'];
-      final existingEnd = range['end'];
+      final existingStart = range['startTime'];
+      final existingEnd = range['endTime'];
       
       if (existingStart != null && existingEnd != null) {
         // Check if the new time range overlaps with this existing range
@@ -914,8 +914,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
           // Copy all time ranges from source day
           for (final range in sourceRanges) {
             _weeklyAvailability[targetDay]!.add(<String, TimeOfDay?>{
-              'start': range['start'] as TimeOfDay?,
-              'end': range['end'] as TimeOfDay?,
+              'startTime': range['startTime'] as TimeOfDay?,
+              'endTime': range['endTime'] as TimeOfDay?,
             });
           }
         }
@@ -946,16 +946,16 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         for (final slot in timeSlots) {
           if (slot is Map) {
             prePopulatedTimes.add({
-              'start': _parseTimeOfDay(slot['start']),
-              'end': _parseTimeOfDay(slot['end']),
+              'startTime': _parseTimeOfDay(slot['startTime']),
+              'endTime': _parseTimeOfDay(slot['endTime']),
             });
           }
         }
-      } else if (existingData != null && existingData['start'] != null && existingData['end'] != null) {
+      } else if (existingData != null && existingData['startTime'] != null && existingData['endTime'] != null) {
         // Load old format single time slot
         prePopulatedTimes.add({
-          'start': existingData['start'],
-          'end': existingData['end'],
+          'startTime': existingData['startTime'],
+          'endTime': existingData['endTime'],
         });
       } else {
         // Get weekly hours for this day of the week
@@ -963,10 +963,10 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         
         // Pre-populate with weekly hours if available
         for (final range in weeklyHours) {
-          if (range['start'] != null && range['end'] != null) {
+          if (range['startTime'] != null && range['endTime'] != null) {
             prePopulatedTimes.add({
-              'start': range['start'],
-              'end': range['end'],
+              'startTime': range['startTime'],
+              'endTime': range['endTime'],
             });
           }
         }
@@ -974,7 +974,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       
       // If no time slots, add one empty slot
       if (prePopulatedTimes.isEmpty) {
-        prePopulatedTimes.add(<String, TimeOfDay?>{'start': null, 'end': null});
+        prePopulatedTimes.add(<String, TimeOfDay?>{'startTime': null, 'endTime': null});
       }
       
       // Show dialog with date picker and time slots combined
@@ -986,8 +986,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     setState(() {
       // Instead of removing, mark as unavailable
       _specificDateAvailability[date] = {
-        'start': null,
-        'end': null,
+        'startTime': null,
+        'endTime': null,
         'unavailable': true,
       };
     });
@@ -1049,7 +1049,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                       children: times.asMap().entries.map((entry) {
                         final index = entry.key;
                         final timeRange = entry.value;
-                        final isEnabled = timeRange['start'] != null && timeRange['end'] != null;
+                        final isEnabled = timeRange['startTime'] != null && timeRange['endTime'] != null;
                         
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
@@ -1068,7 +1068,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                                     ),
                                     child: isEnabled
                                         ? Text(
-                                            '${_formatTimeOfDay(timeRange['start']!)} - ${_formatTimeOfDay(timeRange['end']!)}',
+                                            '${_formatTimeOfDay(timeRange['startTime']!)} - ${_formatTimeOfDay(timeRange['endTime']!)}',
                                             style: const TextStyle(fontSize: 14),
                                           )
                                         : const Text(
@@ -1120,8 +1120,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                     // Store all time slots for this date
                     _specificDateAvailability[dateString] = {
                       'timeSlots': times.map((timeSlot) => {
-                        'start': timeSlot['start'] != null ? _timeOfDayToString(timeSlot['start']) : null,
-                        'end': timeSlot['end'] != null ? _timeOfDayToString(timeSlot['end']) : null,
+                        'startTime': timeSlot['startTime'] != null ? _timeOfDayToString(timeSlot['startTime']) : null,
+                        'endTime': timeSlot['endTime'] != null ? _timeOfDayToString(timeSlot['endTime']) : null,
                       }).toList(),
                     };
                   } else {
@@ -1142,17 +1142,17 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     final timeRange = times[index];
     final startTime = await showTimePicker(
       context: context,
-      initialTime: timeRange['start'] ?? const TimeOfDay(hour: 9, minute: 0),
+      initialTime: timeRange['startTime'] ?? const TimeOfDay(hour: 9, minute: 0),
     );
     if (startTime != null && mounted) {
       final endTime = await showTimePicker(
         context: context,
-        initialTime: timeRange['end'] ?? const TimeOfDay(hour: 17, minute: 0),
+        initialTime: timeRange['endTime'] ?? const TimeOfDay(hour: 17, minute: 0),
       );
       if (endTime != null) {
         setDialogState(() {
-          timeRange['start'] = startTime;
-          timeRange['end'] = endTime;
+          timeRange['startTime'] = startTime;
+          timeRange['endTime'] = endTime;
         });
       }
     }
@@ -1163,8 +1163,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       // Find the latest end time to add one hour later
       TimeOfDay? latestEndTime;
       for (final range in times) {
-        if (range['end'] != null) {
-          final endTime = range['end'] as TimeOfDay;
+        if (range['endTime'] != null) {
+          final endTime = range['endTime'] as TimeOfDay;
           if (latestEndTime == null || endTime.hour > latestEndTime.hour || 
               (endTime.hour == latestEndTime.hour && endTime.minute > latestEndTime.minute)) {
             latestEndTime = endTime;
@@ -1186,8 +1186,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       );
       
       times.add({
-        'start': newStartTime,
-        'end': newEndTime,
+        'startTime': newStartTime,
+        'endTime': newEndTime,
       });
     });
   }
@@ -1196,7 +1196,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     setDialogState(() {
       times.removeAt(index);
       if (times.isEmpty) {
-        times.add(<String, TimeOfDay?>{'start': null, 'end': null});
+        times.add(<String, TimeOfDay?>{'startTime': null, 'endTime': null});
       }
     });
   }
@@ -1402,10 +1402,10 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       
       final validRanges = <Map<String, String>>[];
       for (final range in dayRanges) {
-        if (range['start'] != null && range['end'] != null) {
+        if (range['startTime'] != null && range['endTime'] != null) {
           validRanges.add({
-            'start': '${range['start']!.hour.toString().padLeft(2, '0')}:${range['start']!.minute.toString().padLeft(2, '0')}',
-            'end': '${range['end']!.hour.toString().padLeft(2, '0')}:${range['end']!.minute.toString().padLeft(2, '0')}',
+            'startTime': '${range['startTime']!.hour.toString().padLeft(2, '0')}:${range['startTime']!.minute.toString().padLeft(2, '0')}',
+            'endTime': '${range['endTime']!.hour.toString().padLeft(2, '0')}:${range['endTime']!.minute.toString().padLeft(2, '0')}',
           });
         }
       }
@@ -1430,10 +1430,10 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         final validSlots = <Map<String, String>>[];
         
         for (final slot in timeSlots) {
-          if (slot['start'] != null && slot['end'] != null) {
+          if (slot['startTime'] != null && slot['endTime'] != null) {
             validSlots.add({
-              'start': _timeOfDayToString(slot['start']),
-              'end': _timeOfDayToString(slot['end']),
+              'startTime': _timeOfDayToString(slot['startTime']),
+              'endTime': _timeOfDayToString(slot['endTime']),
             });
           }
         }
@@ -1441,11 +1441,11 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         if (validSlots.isNotEmpty) {
           specificDateAvailability[date] = {'timeSlots': validSlots};
         }
-      } else if (dayData['start'] != null && dayData['end'] != null) {
+      } else if (dayData['startTime'] != null && dayData['endTime'] != null) {
         // Handle old structure with single time slot
         specificDateAvailability[date] = {
-          'start': _timeOfDayToString(dayData['start']),
-          'end': _timeOfDayToString(dayData['end']),
+          'startTime': _timeOfDayToString(dayData['startTime']),
+          'endTime': _timeOfDayToString(dayData['endTime']),
         };
       }
     }

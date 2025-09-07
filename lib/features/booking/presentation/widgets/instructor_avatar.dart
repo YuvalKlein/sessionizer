@@ -38,21 +38,27 @@ class _InstructorAvatarState extends State<InstructorAvatar> {
       
       result.fold(
         (failure) {
-          setState(() {
-            _isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
         },
         (instructor) {
-          setState(() {
-            _instructor = instructor;
-            _isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _instructor = instructor;
+              _isLoading = false;
+            });
+          }
         },
       );
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -135,21 +141,27 @@ class _InstructorNameState extends State<InstructorName> {
       
       result.fold(
         (failure) {
-          setState(() {
-            _isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
         },
         (instructor) {
-          setState(() {
-            _instructor = instructor;
-            _isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _instructor = instructor;
+              _isLoading = false;
+            });
+          }
         },
       );
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
