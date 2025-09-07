@@ -70,6 +70,7 @@ import 'package:myapp/features/location/data/datasources/location_remote_data_so
 import 'package:myapp/features/location/data/repositories/location_repository_impl.dart';
 import 'package:myapp/features/location/domain/repositories/location_repository.dart';
 import 'package:myapp/features/location/domain/usecases/get_locations.dart';
+import 'package:myapp/features/location/domain/usecases/get_locations_by_instructor.dart';
 import 'package:myapp/features/location/domain/usecases/create_location.dart';
 import 'package:myapp/features/location/domain/usecases/update_location.dart';
 import 'package:myapp/features/location/domain/usecases/delete_location.dart';
@@ -82,6 +83,7 @@ import 'package:myapp/features/notification/domain/usecases/mark_notification_as
 import 'package:myapp/features/notification/domain/usecases/send_booking_confirmation.dart';
 import 'package:myapp/features/notification/domain/usecases/send_booking_reminder.dart';
 import 'package:myapp/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:myapp/core/services/dependency_checker.dart';
 
 final sl = GetIt.instance;
 
@@ -92,6 +94,9 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => GoogleSignIn(
     clientId: kIsWeb ? AppConfig.googleClientId : null,
   ));
+  
+  // Services
+  sl.registerLazySingleton(() => DependencyChecker(firestore: sl()));
 
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
@@ -178,6 +183,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => CancelBooking(sl()));
 
   sl.registerLazySingleton(() => GetLocations(sl()));
+  sl.registerLazySingleton(() => GetLocationsByInstructor(sl()));
   sl.registerLazySingleton(() => CreateLocation(sl()));
   sl.registerLazySingleton(() => UpdateLocation(sl()));
   sl.registerLazySingleton(() => DeleteLocation(sl()));
@@ -229,6 +235,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(
     () => LocationBloc(
       getLocations: sl(),
+      getLocationsByInstructor: sl(),
       createLocation: sl(),
       updateLocation: sl(),
       deleteLocation: sl(),

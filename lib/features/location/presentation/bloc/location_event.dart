@@ -39,9 +39,10 @@ class UpdateLocationEvent extends LocationEvent {
 
 class DeleteLocationEvent extends LocationEvent {
   final String id;
+  final String instructorId;
 
-  const DeleteLocationEvent({required this.id});
+  const DeleteLocationEvent({required this.id, required this.instructorId});
 
   @override
-  List<Object> get props => [id];
+  List<Object> get props => [id, instructorId];
 }

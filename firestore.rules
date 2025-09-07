@@ -1,9 +1,75 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // Users can read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Locations: Instructors can only access their own locations
+    match /locations/{locationId} {
+      allow read, write: if request.auth != null && 
+        resource.data.instructorId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.instructorId == request.auth.uid;
+    }
+    
+    // Bookable Sessions: Instructors can only access their own sessions
+    match /bookable_sessions/{sessionId} {
+      allow read, write: if request.auth != null && 
+        resource.data.instructorId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.instructorId == request.auth.uid;
+    }
+    
+    // Schedules: Instructors can only access their own schedules
+    match /schedules/{scheduleId} {
+      allow read, write: if request.auth != null && 
+        resource.data.instructorId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.instructorId == request.auth.uid;
+    }
+    
+    // Session Types: Instructors can only access their own session types
+    match /session_types/{typeId} {
+      allow read, write: if request.auth != null && 
+        resource.data.idCreatedBy == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.idCreatedBy == request.auth.uid;
+    }
+    
+    // Bookings: Both instructors and clients can access their own bookings
+    match /bookings/{bookingId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.instructorId == request.auth.uid || 
+         resource.data.clientId == request.auth.uid);
+      allow create: if request.auth != null && 
+        (request.resource.data.instructorId == request.auth.uid || 
+         request.resource.data.clientId == request.auth.uid);
+    }
+    
+    // Reviews: Both instructors and clients can access their own reviews
+    match /reviews/{reviewId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.instructorId == request.auth.uid || 
+         resource.data.clientId == request.auth.uid);
+      allow create: if request.auth != null && 
+        (request.resource.data.instructorId == request.auth.uid || 
+         request.resource.data.clientId == request.auth.uid);
+    }
+    
+    // Notifications: Users can only access their own notifications
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Public data that can be read by anyone (for instructor discovery, etc.)
+    match /instructors/{instructorId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == instructorId;
     }
   }
 }

@@ -8,6 +8,8 @@ import 'package:myapp/features/location/presentation/bloc/location_event.dart';
 import 'package:myapp/features/location/presentation/bloc/location_state.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
+import 'package:myapp/core/services/dependency_checker.dart';
+import 'package:myapp/core/utils/injection_container.dart';
 
 class LocationManagementPage extends StatefulWidget {
   const LocationManagementPage({super.key});
@@ -18,10 +20,12 @@ class LocationManagementPage extends StatefulWidget {
 
 class _LocationManagementPageState extends State<LocationManagementPage> {
   bool _isDeleting = false;
+  late final DependencyChecker _dependencyChecker;
 
   @override
   void initState() {
     super.initState();
+    _dependencyChecker = sl<DependencyChecker>();
     _loadLocations();
   }
 
@@ -331,7 +335,55 @@ class _LocationManagementPageState extends State<LocationManagementPage> {
     context.go('/locations/edit', extra: {'location': location});
   }
 
-  void _deleteLocation(LocationEntity location) {
+  void _deleteLocation(LocationEntity location) async {
+    // Check dependencies first
+    final dependencyResult = await _dependencyChecker.checkLocationDependencies(location.id ?? '');
+    
+    if (dependencyResult.hasDependencies) {
+      _showDependencyWarningDialog(location, dependencyResult);
+    } else {
+      _showDeleteConfirmationDialog(location);
+    }
+  }
+
+  void _showDependencyWarningDialog(LocationEntity location, DependencyCheckResult dependencyResult) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cannot Delete Location'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(dependencyResult.message ?? 'This location is being used by bookable sessions.'),
+            const SizedBox(height: 16),
+            const Text(
+              'Dependent Sessions:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ...dependencyResult.dependentSessions.map((session) => Padding(
+              padding: const EdgeInsets.only(left: 8, bottom: 4),
+              child: Text('• ${session.title}'),
+            )),
+            const SizedBox(height: 16),
+            const Text(
+              'Please update or delete these sessions first, then try deleting the location again.',
+              style: TextStyle(fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(LocationEntity location) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -365,8 +417,25 @@ class _LocationManagementPageState extends State<LocationManagementPage> {
     });
     
     try {
-      context.read<LocationBloc>().add(DeleteLocationEvent(id: location.id ?? ''));
-      AppLogger.blocEvent('LocationBloc', 'DeleteLocationEvent', data: {'locationId': location.id});
+      final authState = context.read<AuthBloc>().state;
+      if (authState is AuthAuthenticated) {
+        context.read<LocationBloc>().add(DeleteLocationEvent(
+          id: location.id ?? '',
+          instructorId: authState.user.id,
+        ));
+        AppLogger.blocEvent('LocationBloc', 'DeleteLocationEvent', data: {'locationId': location.id});
+      } else {
+        AppLogger.error('User not authenticated');
+        setState(() {
+          _isDeleting = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User not authenticated'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       AppLogger.error('Failed to delete location', e);
       setState(() {

@@ -8,6 +8,8 @@ import 'package:myapp/features/schedule/domain/entities/schedule_entity.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
 import 'package:myapp/core/utils/logger.dart';
+import 'package:myapp/core/services/dependency_checker.dart';
+import 'package:myapp/core/utils/injection_container.dart';
 
 class ScheduleManagementPage extends StatefulWidget {
   const ScheduleManagementPage({super.key});
@@ -18,10 +20,12 @@ class ScheduleManagementPage extends StatefulWidget {
 
 class _ScheduleManagementPageState extends State<ScheduleManagementPage> {
   String? _currentUserId;
+  late final DependencyChecker _dependencyChecker;
 
   @override
   void initState() {
     super.initState();
+    _dependencyChecker = sl<DependencyChecker>();
     AppLogger.widgetBuild('ScheduleManagementPage', data: {'action': 'initState'});
     
     // Load schedules when the page initializes
@@ -339,7 +343,7 @@ class _ScheduleManagementPageState extends State<ScheduleManagementPage> {
     );
   }
 
-  void _deleteSchedule(ScheduleEntity schedule) {
+  void _deleteSchedule(ScheduleEntity schedule) async {
     if (schedule.isDefault) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -350,6 +354,54 @@ class _ScheduleManagementPageState extends State<ScheduleManagementPage> {
       return;
     }
 
+    // Check dependencies first
+    final dependencyResult = await _dependencyChecker.checkScheduleDependencies(schedule.id);
+    
+    if (dependencyResult.hasDependencies) {
+      _showDependencyWarningDialog(schedule, dependencyResult);
+    } else {
+      _showDeleteConfirmationDialog(schedule);
+    }
+  }
+
+  void _showDependencyWarningDialog(ScheduleEntity schedule, DependencyCheckResult dependencyResult) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cannot Delete Schedule'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(dependencyResult.message ?? 'This schedule is being used by bookable sessions.'),
+            const SizedBox(height: 16),
+            const Text(
+              'Dependent Sessions:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ...dependencyResult.dependentSessions.map((session) => Padding(
+              padding: const EdgeInsets.only(left: 8, bottom: 4),
+              child: Text('• ${session.title}'),
+            )),
+            const SizedBox(height: 16),
+            const Text(
+              'Please update or delete these sessions first, then try deleting the schedule again.',
+              style: TextStyle(fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(ScheduleEntity schedule) {
     // Capture the BLoC reference before showing the dialog
     final scheduleBloc = context.read<ScheduleBloc>();
 
