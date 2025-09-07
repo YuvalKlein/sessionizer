@@ -50,6 +50,7 @@ service cloud.firestore {
     }
     
     // Bookings: Both instructors and clients can access their own bookings
+    // Clients can also read all bookings to check availability
     match /bookings/{bookingId} {
       allow read, write: if request.auth != null && 
         (resource.data.instructorId == request.auth.uid || 
@@ -57,6 +58,7 @@ service cloud.firestore {
       allow create: if request.auth != null && 
         (request.resource.data.instructorId == request.auth.uid || 
          request.resource.data.clientId == request.auth.uid);
+      allow read: if request.auth != null; // Allow clients to read all bookings for availability checking
     }
     
     // Reviews: Both instructors and clients can access their own reviews
