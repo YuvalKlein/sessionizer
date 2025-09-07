@@ -98,7 +98,7 @@ class BookingsPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SessionInfoDisplay(
-                          sessionId: booking.sessionId,
+                          sessionId: booking.bookableSessionId,
                           instructorId: booking.instructorId,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),

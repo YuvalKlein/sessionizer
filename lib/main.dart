@@ -8,6 +8,7 @@ import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_event.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
+import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/router.dart';
 import 'firebase_options.dart';
 
@@ -34,6 +35,9 @@ class MyAppClean extends StatelessWidget {
         ),
         BlocProvider(
           create: (context) => sl<UserBloc>(),
+        ),
+        BlocProvider(
+          create: (context) => sl<BookingBloc>(),
         ),
       ],
       child: BlocBuilder<AuthBloc, AuthState>(

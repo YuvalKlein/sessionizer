@@ -6,7 +6,7 @@ class BookingModel extends BookingEntity {
     required super.id,
     required super.clientId,
     required super.instructorId,
-    required super.sessionId,
+    required super.bookableSessionId,
     required super.startTime,
     required super.endTime,
     required super.status,
@@ -20,7 +20,7 @@ class BookingModel extends BookingEntity {
       id: map['id'] ?? '',
       clientId: map['clientId'] ?? '',
       instructorId: map['instructorId'] ?? '',
-      sessionId: map['sessionId'] ?? '',
+      bookableSessionId: map['bookableSessionId'] ?? map['sessionId'] ?? '', // Support both field names
       startTime: _parseDateTime(map['startTime']),
       endTime: _parseDateTime(map['endTime']),
       status: map['status'] ?? 'pending',
@@ -46,16 +46,15 @@ class BookingModel extends BookingEntity {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'clientId': clientId,
       'instructorId': instructorId,
-      'sessionId': sessionId,
-      'startTime': startTime.millisecondsSinceEpoch,
-      'endTime': endTime.millisecondsSinceEpoch,
+      'bookableSessionId': bookableSessionId, // Renamed from sessionId to bookableSessionId
+      'startTime': Timestamp.fromDate(startTime),
+      'endTime': Timestamp.fromDate(endTime),
       'status': status,
       'notes': notes,
-      'createdAt': createdAt.millisecondsSinceEpoch,
-      'updatedAt': updatedAt?.millisecondsSinceEpoch,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
     };
   }
 
@@ -64,7 +63,7 @@ class BookingModel extends BookingEntity {
       id: entity.id,
       clientId: entity.clientId,
       instructorId: entity.instructorId,
-      sessionId: entity.sessionId,
+      bookableSessionId: entity.bookableSessionId,
       startTime: entity.startTime,
       endTime: entity.endTime,
       status: entity.status,
@@ -78,7 +77,7 @@ class BookingModel extends BookingEntity {
     String? id,
     String? clientId,
     String? instructorId,
-    String? sessionId,
+    String? bookableSessionId,
     DateTime? startTime,
     DateTime? endTime,
     String? status,
@@ -90,7 +89,7 @@ class BookingModel extends BookingEntity {
       id: id ?? this.id,
       clientId: clientId ?? this.clientId,
       instructorId: instructorId ?? this.instructorId,
-      sessionId: sessionId ?? this.sessionId,
+      bookableSessionId: bookableSessionId ?? this.bookableSessionId,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       status: status ?? this.status,

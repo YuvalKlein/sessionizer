@@ -414,7 +414,7 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Session ${booking.sessionId.length > 8 ? booking.sessionId.substring(0, 8) + '...' : booking.sessionId}',
+                  'Session ${booking.bookableSessionId.length > 8 ? booking.bookableSessionId.substring(0, 8) + '...' : booking.bookableSessionId}',
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 4),
