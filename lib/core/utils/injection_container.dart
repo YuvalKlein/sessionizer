@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:myapp/core/config/app_config.dart';
@@ -91,6 +92,7 @@ Future<void> initializeDependencies() async {
   // External dependencies
   sl.registerLazySingleton(() => FirebaseAuth.instance);
   sl.registerLazySingleton(() => FirebaseFirestore.instance);
+  sl.registerLazySingleton(() => FirebaseMessaging.instance);
   sl.registerLazySingleton(() => GoogleSignIn(
     clientId: kIsWeb ? AppConfig.googleClientId : null,
   ));
