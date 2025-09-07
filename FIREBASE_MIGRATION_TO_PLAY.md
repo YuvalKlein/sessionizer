@@ -14,8 +14,9 @@ This document outlines the migration from the original Firebase project to the n
 ### 2. Firestore Rules Updated
 **File**: `firestore.rules`
 - **Database**: Now specifically targets the `play` database
-- **Collection Structure**: All collections are now under the `sessionizer` parent collection
-- **New Paths**:
+- **Collection Structure**: Sessionizer app collections are under the `sessionizer` parent collection
+- **Existing Collections**: Preserved with catch-all rule for other apps in the project
+- **New Sessionizer Paths**:
   - `sessionizer/users/{userId}`
   - `sessionizer/locations/{locationId}`
   - `sessionizer/bookable_sessions/{sessionId}`
@@ -26,6 +27,7 @@ This document outlines the migration from the original Firebase project to the n
   - `sessionizer/notifications/{notificationId}`
   - `sessionizer/mail/{mailId}`
   - `sessionizer/instructors/{instructorId}`
+- **Existing Collections**: Protected with `match /{document=**}` rule for other apps
 
 ### 3. Data Sources Updated
 
@@ -118,10 +120,26 @@ All data sources have been successfully updated to use the new collection struct
 ## Security Rules Benefits
 
 The new structure under the 'sessionizer' collection provides:
-- **Better Organization**: All app data is contained under one parent collection
-- **Easier Management**: Clearer separation from other potential apps in the same project
-- **Simplified Rules**: More straightforward rule management
+- **Better Organization**: All Sessionizer app data is contained under one parent collection
+- **Easier Management**: Clearer separation from other apps in the same project
+- **Simplified Rules**: More straightforward rule management for Sessionizer
 - **Namespace Protection**: Prevents conflicts with other collections
+- **Coexistence**: Existing collections and apps continue to work unchanged
+
+## Coexistence Strategy
+
+The updated Firestore rules support both structures:
+
+### **Sessionizer App Collections** (New Structure)
+- All under `sessionizer/` parent collection
+- Specific security rules for each collection type
+- Isolated from other apps in the project
+
+### **Existing Collections** (Preserved)
+- Any collections NOT under `sessionizer/` remain unchanged
+- Protected by catch-all rule: `match /{document=**}`
+- Maintains existing functionality for other apps
+- Requires authentication but allows read/write access
 
 ## Database Structure
 
