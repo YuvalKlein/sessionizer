@@ -4,7 +4,7 @@ class BookingEntity extends Equatable {
   final String id;
   final String clientId;
   final String instructorId;
-  final String sessionId;
+  final String bookableSessionId;
   final DateTime startTime;
   final DateTime endTime;
   final String status;
@@ -16,7 +16,7 @@ class BookingEntity extends Equatable {
     required this.id,
     required this.clientId,
     required this.instructorId,
-    required this.sessionId,
+    required this.bookableSessionId,
     required this.startTime,
     required this.endTime,
     required this.status,
@@ -30,7 +30,7 @@ class BookingEntity extends Equatable {
         id,
         clientId,
         instructorId,
-        sessionId,
+        bookableSessionId,
         startTime,
         endTime,
         status,

@@ -141,10 +141,14 @@ class AppRouter {
         builder: (context, state) {
           final sessionId = state.pathParameters['sessionId']!;
           final instructorId = state.pathParameters['instructorId']!;
+          final rescheduleBookingId = state.uri.queryParameters['reschedule'];
+          final clientId = state.uri.queryParameters['clientId'];
           return MainScreen(
             child: ClientCalendarPage(
               sessionId: sessionId,
               instructorId: instructorId,
+              rescheduleBookingId: rescheduleBookingId,
+              clientId: clientId,
             ),
           );
         },

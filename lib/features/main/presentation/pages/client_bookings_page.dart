@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/core/utils/injection_container.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
@@ -56,11 +57,11 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
     return BlocBuilder<UserBloc, UserState>(
       builder: (context, userState) {
         if (userState is UserLoaded) {
-          return BlocProvider(
-            create: (context) => sl<BookingBloc>()
-              ..add(LoadBookingsByClient(clientId: userState.user.id)),
-            child: _buildContent(),
-          );
+          // Load bookings when the page is built
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<BookingBloc>().add(LoadBookingsByClient(clientId: userState.user.id));
+          });
+          return _buildContent();
         }
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),
@@ -70,7 +71,24 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
   }
 
   Widget _buildContent() {
-    return Scaffold(
+    return BlocListener<BookingBloc, BookingState>(
+      listener: (context, state) {
+        if (state is BookingCancelled) {
+          // Reload bookings after cancellation
+          final userState = context.read<UserBloc>().state;
+          if (userState is UserLoaded) {
+            context.read<BookingBloc>().add(LoadBookingsByClient(clientId: userState.user.id));
+          }
+        } else if (state is BookingError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${state.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('My Bookings'),
         backgroundColor: Colors.blue.shade600,
@@ -116,6 +134,7 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -176,7 +195,7 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
       // Search filter
       if (_searchQuery.isNotEmpty) {
         final notes = (booking.notes ?? '').toLowerCase();
-        final sessionId = (booking.sessionId ?? '').toLowerCase();
+        final sessionId = (booking.bookableSessionId ?? '').toLowerCase();
         if (!notes.contains(_searchQuery) && 
             !sessionId.contains(_searchQuery)) {
           return false;
@@ -241,12 +260,26 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Session ${booking.sessionId.length > 8 ? booking.sessionId.substring(0, 8) + '...' : booking.sessionId}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+            FutureBuilder<String>(
+              future: _getSessionName(booking.bookableSessionId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Text(
+                    'Loading...',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  );
+                }
+                return Text(
+                  snapshot.data ?? 'Session',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 4),
             InstructorName(
@@ -308,7 +341,7 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
                 _buildDetailRow('Start Time', _formatDateTime(booking.startTime)),
                 _buildDetailRow('End Time', _formatDateTime(booking.endTime)),
                 _buildDetailRow('Duration', _calculateDuration(booking.startTime, booking.endTime)),
-                _buildDetailRow('Session ID', booking.sessionId),
+                _buildDetailRow('Session ID', booking.bookableSessionId),
                 _buildDetailRow('Status', booking.status.toUpperCase()),
                 if (booking.notes != null && booking.notes.isNotEmpty)
                   _buildDetailRow('Notes', booking.notes),
@@ -539,6 +572,56 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
     }
   }
 
+  Future<String> _getSessionName(String sessionId) async {
+    try {
+      // First try to get from bookable_sessions
+      final bookableSessionDoc = await FirebaseFirestore.instance
+          .collection('bookable_sessions')
+          .doc(sessionId)
+          .get();
+      
+      if (bookableSessionDoc.exists) {
+        final sessionData = bookableSessionDoc.data()!;
+        final title = sessionData['title'] as String?;
+        if (title != null && title.isNotEmpty) {
+          return title;
+        }
+      }
+      
+      // If not found in bookable_sessions, try to get session type name
+      final bookingDoc = await FirebaseFirestore.instance
+          .collection('bookings')
+          .where('bookableSessionId', isEqualTo: sessionId)
+          .limit(1)
+          .get();
+      
+      if (bookingDoc.docs.isNotEmpty) {
+        final bookingData = bookingDoc.docs.first.data();
+        final sessionTypeId = bookingData['sessionTypeId'] as String?;
+        
+        if (sessionTypeId != null) {
+          final sessionTypeDoc = await FirebaseFirestore.instance
+              .collection('session_types')
+              .doc(sessionTypeId)
+              .get();
+          
+          if (sessionTypeDoc.exists) {
+            final sessionTypeData = sessionTypeDoc.data()!;
+            final title = sessionTypeData['title'] as String?;
+            if (title != null && title.isNotEmpty) {
+              return title;
+            }
+          }
+        }
+      }
+      
+      return 'Session';
+    } catch (e) {
+      print('Error getting session name: $e');
+      return 'Session';
+    }
+  }
+
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -649,11 +732,37 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Reschedule Booking'),
-        content: const Text('Rescheduling functionality is coming soon!'),
+        content: const Text('Select a new time for your booking?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigate to calendar page for reschedule
+              try {
+                if (booking.bookableSessionId.isEmpty || booking.instructorId.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Unable to reschedule: Session information not available'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                context.go('/client/calendar/${booking.bookableSessionId}/${booking.instructorId}?reschedule=${booking.id}');
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Unable to reschedule: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Choose New Time'),
           ),
         ],
       ),
@@ -663,21 +772,33 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
   void _showCancelDialog(dynamic booking) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cancel Booking'),
         content: const Text('Are you sure you want to cancel this booking?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('No'),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
-              context.read<BookingBloc>().add(CancelBookingEvent(id: booking.id));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Booking cancelled')),
-              );
+              Navigator.pop(dialogContext);
+              try {
+                // Use the correct context that has access to BookingBloc
+                final bookingBloc = context.read<BookingBloc>();
+                bookingBloc.add(CancelBookingEvent(id: booking.id));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Booking cancelled')),
+                );
+              } catch (e) {
+                print('Error cancelling booking: $e');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error cancelling booking: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
@@ -702,7 +823,7 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
           bookingId: booking.id,
           clientId: userState.user.id,
           instructorId: booking.instructorId,
-          sessionId: booking.sessionId,
+          sessionId: booking.bookableSessionId,
         ),
       ),
     ).then((success) {
@@ -727,7 +848,7 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Session: ${booking.sessionId.length > 8 ? booking.sessionId.substring(0, 8) + '...' : booking.sessionId}'),
+              Text('Session: ${booking.bookableSessionId.length > 8 ? booking.bookableSessionId.substring(0, 8) + '...' : booking.bookableSessionId}'),
               const SizedBox(height: 8),
               Text('Start: ${_formatDateTime(booking.startTime)}'),
               Text('End: ${_formatDateTime(booking.endTime)}'),

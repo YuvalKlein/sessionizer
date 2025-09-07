@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import 'package:myapp/features/booking/presentation/widgets/booking_confirmation_modal.dart';
 
 class ClientCalendarPage extends StatefulWidget {
   final String sessionId;
   final String instructorId;
+  final String? rescheduleBookingId; // For reschedule mode
+  final String? clientId; // Optional client ID for instructor bookings
 
   const ClientCalendarPage({
     Key? key,
     required this.sessionId,
     required this.instructorId,
+    this.rescheduleBookingId,
+    this.clientId,
   }) : super(key: key);
 
   @override
@@ -28,12 +33,18 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
   // Available dates and their time slots
   final Map<DateTime, List<TimeOfDay>> _availableSlots = {};
   final Map<DateTime, List<Map<String, dynamic>>> _scheduleData = {};
+  
+  // Session details for booking confirmation
+  Map<String, dynamic>? _sessionData;
+  Map<String, dynamic>? _locationData;
+  Map<String, dynamic>? _sessionTypeData;
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
     _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
+    _loadSessionDetails();
     _loadAvailableSlots();
   }
 
@@ -43,6 +54,53 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
     super.dispose();
   }
 
+  Future<void> _loadSessionDetails() async {
+    try {
+      // Load session details
+      final sessionDoc = await FirebaseFirestore.instance
+          .collection('bookable_sessions')
+          .doc(widget.sessionId)
+          .get();
+      
+      if (sessionDoc.exists) {
+        _sessionData = sessionDoc.data()!;
+        
+        // Load location (first one)
+        final locationIds = List<String>.from(_sessionData!['locationIds'] ?? []);
+        if (locationIds.isNotEmpty) {
+          final locationDoc = await FirebaseFirestore.instance
+              .collection('locations')
+              .doc(locationIds.first)
+              .get();
+          if (locationDoc.exists) {
+            _locationData = {
+              'id': locationIds.first,
+              'name': locationDoc.data()!['name'],
+            };
+          }
+        }
+        
+        // Load session type (first one)
+        final typeIds = List<String>.from(_sessionData!['sessionTypeIds'] ?? []);
+        if (typeIds.isNotEmpty) {
+          final typeDoc = await FirebaseFirestore.instance
+              .collection('session_types')
+              .doc(typeIds.first)
+              .get();
+          if (typeDoc.exists) {
+            _sessionTypeData = {
+              'id': typeIds.first,
+              'title': typeDoc.data()!['title'],
+              'duration': typeDoc.data()!['duration'],
+            };
+          }
+        }
+      }
+    } catch (e) {
+      print('Error loading session details: $e');
+    }
+  }
+
   Future<void> _loadAvailableSlots() async {
     setState(() {
       _isLoading = true;
@@ -50,7 +108,7 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
     });
 
     try {
-      print('=== CALENDAR DEBUG START ===');
+      // Debug logging reduced for performance
       print('Loading schedules for instructor: ${widget.instructorId}');
       
       // First, get all bookable sessions for this instructor to find which schedules are used
@@ -80,6 +138,63 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
         });
         return;
       }
+
+      // Load existing bookings for this instructor to avoid double booking
+      final existingBookings = await FirebaseFirestore.instance
+          .collection('bookings')
+          .where('instructorId', isEqualTo: widget.instructorId)
+          .where('status', whereIn: ['confirmed', 'pending'])
+          .get();
+      
+      print('Found ${existingBookings.docs.length} existing bookings');
+      
+      // Create a map of booked times for quick lookup
+      final bookedTimes = <String, Set<String>>{};
+      for (final bookingDoc in existingBookings.docs) {
+        final bookingData = bookingDoc.data();
+        final startTime = (bookingData['startTime'] as Timestamp).toDate();
+        final endTime = (bookingData['endTime'] as Timestamp).toDate();
+        
+        // Create date key
+        final dateKey = '${startTime.year}-${startTime.month}-${startTime.day}';
+        
+        // Debug: Log each booking
+        print('DEBUG: Processing booking - Date: $dateKey, Start: $startTime, End: $endTime');
+        
+        // Create time range key
+        final startTimeKey = '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
+        final endTimeKey = '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}';
+        
+        if (!bookedTimes.containsKey(dateKey)) {
+          bookedTimes[dateKey] = <String>{};
+        }
+        
+        // Get the slot interval from the bookable session data
+        final sessionId = bookingData['sessionId'] as String? ?? bookingData['bookableSessionId'] as String?;
+        int slotIntervalMinutes = 60; // Default to 60 minutes
+        
+        if (sessionId != null) {
+          // Find the bookable session to get its slot interval
+          for (final scheduleId in bookableSessionsData.keys) {
+            final sessionData = bookableSessionsData[scheduleId];
+            if (sessionData != null && sessionData['id'] == sessionId) {
+              slotIntervalMinutes = sessionData['slotIntervalMinutes'] as int? ?? 60;
+              break;
+            }
+          }
+        }
+        
+        // Add all time slots in the booking range
+        var currentTime = startTime;
+        while (currentTime.isBefore(endTime)) {
+          final timeKey = '${currentTime.hour.toString().padLeft(2, '0')}:${currentTime.minute.toString().padLeft(2, '0')}';
+          bookedTimes[dateKey]!.add(timeKey);
+          currentTime = currentTime.add(Duration(minutes: slotIntervalMinutes));
+        }
+      }
+      
+      // Debug: Log final booked times map
+      print('DEBUG: Final booked times map: $bookedTimes');
       
       // Load only the schedules that are actually used by bookable sessions
       final schedulesQuery = await FirebaseFirestore.instance
@@ -89,12 +204,6 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
           .get();
       
       print('Found ${schedulesQuery.docs.length} schedules');
-      
-      // Debug: Print schedule details
-      for (final doc in schedulesQuery.docs) {
-        final data = doc.data();
-        print('Schedule ${doc.id}: isActive=${data['isActive']}, name=${data['name']}');
-      }
 
       _availableSlots.clear();
       _scheduleData.clear();
@@ -110,10 +219,9 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
         for (final scheduleDoc in schedulesQuery.docs) {
           final scheduleData = scheduleDoc.data();
           
-          // Debug: Print schedule data structure
+          // Debug: Print schedule data structure (reduced)
           if (i == 0) { // Only print for first day to avoid spam
-            print('Schedule data: $scheduleData');
-            print('Weekly availability: ${scheduleData['weeklyAvailability']}');
+            print('Schedule data: ${scheduleData['name']} - ${scheduleData['weeklyAvailability']?.keys.length ?? 0} days available');
           }
           
           if (_isDateInSchedule(date, scheduleData)) {
@@ -123,11 +231,9 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
             final slotIntervalMinutes = bookableSessionData?['slotIntervalMinutes'] as int? ?? 30;
             
             final slots = _getTimeSlotsForDate(date, scheduleData, slotIntervalMinutes: slotIntervalMinutes);
-            if (i < 10) { // Debug: Print for first 10 days
+            // Reduced debug logging
+            if (i < 3) { // Debug: Print for first 3 days only
               print('Date: $date, Day: ${_getDayName(date.weekday)}, Slots found: ${slots.length}, Interval: ${slotIntervalMinutes}min');
-              if (slots.isNotEmpty) {
-                print('First slot: ${slots.first}');
-              }
             }
             timeSlots.addAll(slots);
             
@@ -144,9 +250,25 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
         }
 
         if (timeSlots.isNotEmpty) {
-          // Normalize the date to midnight for consistent key matching
-          final normalizedDate = DateTime(date.year, date.month, date.day);
-          _availableSlots[normalizedDate] = timeSlots;
+          // Filter out booked times
+          final dateKey = '${date.year}-${date.month}-${date.day}';
+          final bookedTimesForDate = bookedTimes[dateKey] ?? <String>{};
+          
+          
+          final availableTimeSlots = timeSlots.where((slot) {
+            final timeKey = '${slot.hour.toString().padLeft(2, '0')}:${slot.minute.toString().padLeft(2, '0')}';
+            final isAvailable = !bookedTimesForDate.contains(timeKey);
+            
+            
+            return isAvailable;
+          }).toList();
+          
+          
+          if (availableTimeSlots.isNotEmpty) {
+            // Normalize the date to midnight for consistent key matching
+            final normalizedDate = DateTime(date.year, date.month, date.day);
+            _availableSlots[normalizedDate] = availableTimeSlots;
+          }
         }
       }
 
@@ -155,17 +277,20 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
         print('First available date: ${_availableSlots.keys.first}');
         print('Slots for first date: ${_availableSlots.values.first.length}');
       }
-      print('=== CALENDAR DEBUG END ===');
 
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('CALENDAR ERROR: $e');
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Failed to load available slots: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to load available slots: $e';
+        });
+      }
     }
   }
 
@@ -188,11 +313,8 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
     final dayAvailability = weeklyAvailability?[dayName];
     
     if (dayAvailability == null) {
-      print('DEBUG: No availability for $dayName');
       return [];
     }
-    
-    print('DEBUG: Found availability for $dayName: $dayAvailability');
     
     final slots = <TimeOfDay>[];
     
@@ -218,9 +340,7 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
           final endTimeStr = range['endTime'] as String? ?? range['end'] as String?;
           
           if (startTimeStr != null && endTimeStr != null) {
-            print('DEBUG: Parsing time range: $startTimeStr - $endTimeStr');
             final timeSlots = _generateTimeSlots(startTimeStr, endTimeStr, intervalMinutes: slotIntervalMinutes);
-            print('DEBUG: Generated ${timeSlots.length} slots');
             slots.addAll(timeSlots);
           }
         }
@@ -315,12 +435,60 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
     final normalizedDay = DateTime(day.year, day.month, day.day);
     final hasSlots = _availableSlots.containsKey(normalizedDay) && _availableSlots[normalizedDay]!.isNotEmpty;
     
+    
     // Debug logging for first few days
     if (day.day <= 10) {
       print('DEBUG: Day ${day.day}/${day.month}/${day.year} - Available: $hasSlots, Slots: ${_availableSlots[normalizedDay]?.length ?? 0}');
     }
     
     return hasSlots;
+  }
+
+  void _showBookingConfirmation(TimeOfDay time) {
+    if (_sessionData == null || _locationData == null || _sessionTypeData == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Session details not loaded yet. Please try again.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => BookingConfirmationModal(
+        sessionId: widget.sessionId,
+        instructorId: widget.instructorId,
+        selectedDate: _selectedDay!,
+        selectedTime: time,
+        sessionData: _sessionData!,
+        locationData: _locationData!,
+        sessionTypeData: _sessionTypeData!,
+        rescheduleBookingId: widget.rescheduleBookingId, // Pass reschedule ID
+        clientId: widget.clientId, // Pass client ID for instructor bookings
+        onBookingSuccess: () async {
+          // Only refresh calendar for new bookings, not reschedules
+          if (widget.rescheduleBookingId == null) {
+            print('DEBUG: Booking successful, refreshing calendar...');
+            if (mounted) {
+              await _loadAvailableSlots();
+              // Also refresh the selected day events
+              if (mounted) {
+                try {
+                  _selectedEvents.value = _getEventsForDay(_selectedDay!);
+                } catch (e) {
+                  print('DEBUG: Could not update selected events: $e');
+                }
+              }
+              print('DEBUG: Calendar refresh completed');
+            }
+          } else {
+            print('DEBUG: Reschedule successful, no calendar refresh needed');
+          }
+        },
+      ),
+    );
   }
 
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
@@ -492,16 +660,29 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
                                       color: Colors.grey[600],
                                     ),
                                   ),
-                                  trailing: ElevatedButton(
-                                    onPressed: () {
-                                      // Navigate to booking flow with pre-selected time
-                                      context.go('/client/book/${widget.sessionId}/${widget.instructorId}?time=${time.hour}:${time.minute}&date=${_selectedDay?.year}-${_selectedDay?.month}-${_selectedDay?.day}');
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue[600],
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: const Text('Book'),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TextButton(
+                                        onPressed: () {
+                                          // Navigate to detailed booking form
+                                          context.go('/client/book/${widget.sessionId}/${widget.instructorId}?time=${time.hour}:${time.minute}&date=${_selectedDay?.year}-${_selectedDay?.month}-${_selectedDay?.day}');
+                                        },
+                                        child: const Text('Details'),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          // Show booking confirmation modal
+                                          _showBookingConfirmation(time);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue[600],
+                                          foregroundColor: Colors.white,
+                                        ),
+                                        child: const Text('Book'),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );

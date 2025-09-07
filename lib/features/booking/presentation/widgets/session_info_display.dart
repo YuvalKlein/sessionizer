@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/core/utils/injection_container.dart';
-import 'package:myapp/core/utils/usecase.dart';
-import 'package:myapp/features/bookable_session/domain/usecases/get_bookable_sessions.dart';
-import 'package:myapp/features/bookable_session/domain/entities/bookable_session_entity.dart';
-import 'package:myapp/features/session_type/domain/usecases/get_session_types.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SessionInfoDisplay extends StatefulWidget {
   final String sessionId;
@@ -33,63 +29,89 @@ class _SessionInfoDisplayState extends State<SessionInfoDisplay> {
 
   Future<void> _loadSessionInfo() async {
     try {
-      final getBookableSessions = sl<GetBookableSessions>();
-      final getSessionTypes = sl<GetSessionTypes>();
+      // Check if sessionId is empty or null
+      if (widget.sessionId.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _sessionInfo = 'Session not found';
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // First try to get from bookable_sessions
+      final bookableSessionDoc = await FirebaseFirestore.instance
+          .collection('bookable_sessions')
+          .doc(widget.sessionId)
+          .get();
       
-      // Get bookable sessions for the instructor
-      final sessionsResult = await getBookableSessions(GetBookableSessionsParams(instructorId: widget.instructorId));
-      final sessionTypesResult = await getSessionTypes(NoParams());
-      
-      sessionsResult.fold(
-        (failure) {
+      if (bookableSessionDoc.exists) {
+        final sessionData = bookableSessionDoc.data()!;
+        final title = sessionData['title'] as String?;
+        if (title != null && title.isNotEmpty) {
           if (mounted) {
             setState(() {
-              _sessionInfo = 'Session not found';
+              _sessionInfo = title;
               _isLoading = false;
             });
           }
-        },
-        (sessions) {
-          sessionTypesResult.fold(
-            (failure) {
+          return;
+        }
+      }
+      
+      // If not found in bookable_sessions, try to get session type name from booking
+      // Try both sessionId and bookableSessionId fields for compatibility
+      QuerySnapshot bookingQuery;
+      try {
+        bookingQuery = await FirebaseFirestore.instance
+            .collection('bookings')
+            .where('sessionId', isEqualTo: widget.sessionId)
+            .limit(1)
+            .get();
+      } catch (e) {
+        // If sessionId field doesn't exist, try bookableSessionId
+        bookingQuery = await FirebaseFirestore.instance
+            .collection('bookings')
+            .where('bookableSessionId', isEqualTo: widget.sessionId)
+            .limit(1)
+            .get();
+      }
+      
+      if (bookingQuery.docs.isNotEmpty) {
+        final bookingData = bookingQuery.docs.first.data() as Map<String, dynamic>?;
+        final sessionTypeId = bookingData?['sessionTypeId'] as String?;
+        
+        if (sessionTypeId != null && sessionTypeId.isNotEmpty) {
+          final sessionTypeDoc = await FirebaseFirestore.instance
+              .collection('session_types')
+              .doc(sessionTypeId)
+              .get();
+          
+          if (sessionTypeDoc.exists) {
+            final sessionTypeData = sessionTypeDoc.data()!;
+            final title = sessionTypeData['title'] as String?;
+            if (title != null && title.isNotEmpty) {
               if (mounted) {
                 setState(() {
-                  _sessionInfo = 'Session not found';
+                  _sessionInfo = title;
                   _isLoading = false;
                 });
               }
-            },
-            (sessionTypes) {
-              // Find the session by ID
-              BookableSessionEntity? session;
-              try {
-                session = sessions.firstWhere((s) => s.id == widget.sessionId);
-              } catch (e) {
-                session = null;
-              }
-              
-              if (session == null) {
-                if (mounted) {
-                  setState(() {
-                    _sessionInfo = 'Session not found';
-                    _isLoading = false;
-                  });
-                }
-                return;
-              }
-              
-              if (mounted) {
-                setState(() {
-                  // For now, we'll use a placeholder since session type lookup is not implemented
-                  _sessionInfo = 'Session at Location TBD';
-                  _isLoading = false;
-                });
-              }
-            },
-          );
-        },
-      );
+              return;
+            }
+          }
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _sessionInfo = 'Session not found';
+          _isLoading = false;
+        });
+      }
     } catch (e) {
+      print('Error getting session info: $e');
       if (mounted) {
         setState(() {
           _sessionInfo = 'Session not found';
