@@ -4,22 +4,26 @@ import 'package:myapp/core/utils/usecase.dart';
 import 'package:myapp/features/location/domain/usecases/create_location.dart';
 import 'package:myapp/features/location/domain/usecases/delete_location.dart';
 import 'package:myapp/features/location/domain/usecases/get_locations.dart';
+import 'package:myapp/features/location/domain/usecases/get_locations_by_instructor.dart';
 import 'package:myapp/features/location/domain/usecases/update_location.dart';
 import 'package:myapp/features/location/presentation/bloc/location_event.dart';
 import 'package:myapp/features/location/presentation/bloc/location_state.dart';
 
 class LocationBloc extends Bloc<LocationEvent, LocationState> {
   final GetLocations _getLocations;
+  final GetLocationsByInstructor _getLocationsByInstructor;
   final CreateLocation _createLocation;
   final UpdateLocation _updateLocation;
   final DeleteLocation _deleteLocation;
 
   LocationBloc({
     required GetLocations getLocations,
+    required GetLocationsByInstructor getLocationsByInstructor,
     required CreateLocation createLocation,
     required UpdateLocation updateLocation,
     required DeleteLocation deleteLocation,
   })  : _getLocations = getLocations,
+        _getLocationsByInstructor = getLocationsByInstructor,
         _createLocation = createLocation,
         _updateLocation = updateLocation,
         _deleteLocation = deleteLocation,
@@ -51,17 +55,11 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
   ) async {
     emit(LocationLoading());
 
-    final result = await _getLocations(NoParams());
+    final result = await _getLocationsByInstructor(GetLocationsByInstructorParams(instructorId: event.instructorId));
 
     result.fold(
       (failure) => emit(LocationError(message: failure.message)),
-      (locations) {
-        // Filter locations by instructor ID
-        final instructorLocations = locations
-            .where((location) => location.instructorId == event.instructorId)
-            .toList();
-        emit(LocationLoaded(locations: instructorLocations));
-      },
+      (locations) => emit(LocationLoaded(locations: locations)),
     );
   }
 
@@ -111,7 +109,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
       (failure) => emit(LocationError(message: failure.message)),
       (_) {
         AppLogger.blocEvent('LocationBloc', 'DeleteLocationEvent', data: {'locationId': event.id});
-        add(LoadLocations()); // Reload locations
+        add(LoadLocationsByInstructor(instructorId: event.instructorId)); // Reload instructor's locations
       },
     );
   }

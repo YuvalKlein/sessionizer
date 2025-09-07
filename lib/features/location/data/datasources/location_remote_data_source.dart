@@ -3,6 +3,7 @@ import 'package:myapp/features/location/data/models/location_model.dart';
 
 abstract class LocationRemoteDataSource {
   Stream<List<LocationModel>> getLocations();
+  Stream<List<LocationModel>> getLocationsByInstructor(String instructorId);
   Future<LocationModel> getLocation(String id);
   Future<LocationModel> createLocation(LocationModel location);
   Future<LocationModel> updateLocation(LocationModel location);
@@ -18,6 +19,19 @@ class LocationRemoteDataSourceImpl implements LocationRemoteDataSource {
   Stream<List<LocationModel>> getLocations() {
     return _firestore
         .collection('locations')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => LocationModel.fromMap({...doc.data(), 'id': doc.id}))
+              .toList();
+        });
+  }
+
+  @override
+  Stream<List<LocationModel>> getLocationsByInstructor(String instructorId) {
+    return _firestore
+        .collection('locations')
+        .where('instructorId', isEqualTo: instructorId)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs

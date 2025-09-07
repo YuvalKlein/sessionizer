@@ -8,6 +8,8 @@ import 'package:myapp/features/session_type/domain/entities/session_type_entity.
 import 'package:myapp/core/utils/logger.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
+import 'package:myapp/core/services/dependency_checker.dart';
+import 'package:myapp/core/utils/injection_container.dart';
 
 class SessionTypeManagementPage extends StatefulWidget {
   const SessionTypeManagementPage({super.key});
@@ -18,10 +20,12 @@ class SessionTypeManagementPage extends StatefulWidget {
 
 class _SessionTypeManagementPageState extends State<SessionTypeManagementPage> {
   bool _isDeleting = false;
+  late final DependencyChecker _dependencyChecker;
 
   @override
   void initState() {
     super.initState();
+    _dependencyChecker = sl<DependencyChecker>();
     AppLogger.widgetBuild('SessionTypeManagementPage', data: {'action': 'initState'});
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -327,7 +331,55 @@ class _SessionTypeManagementPageState extends State<SessionTypeManagementPage> {
     });
   }
 
-  void _deleteSessionType(SessionTypeEntity sessionType) {
+  void _deleteSessionType(SessionTypeEntity sessionType) async {
+    // Check dependencies first
+    final dependencyResult = await _dependencyChecker.checkSessionTypeDependencies(sessionType.id ?? '');
+    
+    if (dependencyResult.hasDependencies) {
+      _showDependencyWarningDialog(sessionType, dependencyResult);
+    } else {
+      _showDeleteConfirmationDialog(sessionType);
+    }
+  }
+
+  void _showDependencyWarningDialog(SessionTypeEntity sessionType, DependencyCheckResult dependencyResult) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cannot Delete Session Type'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(dependencyResult.message ?? 'This session type is being used by bookable sessions.'),
+            const SizedBox(height: 16),
+            const Text(
+              'Dependent Sessions:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ...dependencyResult.dependentSessions.map((session) => Padding(
+              padding: const EdgeInsets.only(left: 8, bottom: 4),
+              child: Text('• ${session.title}'),
+            )),
+            const SizedBox(height: 16),
+            const Text(
+              'Please update or delete these sessions first, then try deleting the session type again.',
+              style: TextStyle(fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(SessionTypeEntity sessionType) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(

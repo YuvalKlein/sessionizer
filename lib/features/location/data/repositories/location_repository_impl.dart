@@ -17,6 +17,11 @@ class LocationRepositoryImpl implements LocationRepository {
   }
 
   @override
+  Stream<List<LocationEntity>> getLocationsByInstructor(String instructorId) {
+    return _remoteDataSource.getLocationsByInstructor(instructorId);
+  }
+
+  @override
   Future<Either<Failure, LocationEntity>> getLocation(String id) async {
     try {
       final location = await _remoteDataSource.getLocation(id);
