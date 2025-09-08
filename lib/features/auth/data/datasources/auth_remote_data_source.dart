@@ -157,6 +157,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       print('🔐 Starting signup process for: $email');
       print('📊 Firestore instance: ${_firestore.app.name}');
       print('📊 Database ID: ${_firestore.databaseId}');
+      print('📊 Firestore app options: ${_firestore.app.options.projectId}');
       
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,

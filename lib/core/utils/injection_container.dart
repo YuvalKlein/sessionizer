@@ -91,7 +91,12 @@ final sl = GetIt.instance;
 Future<void> initializeDependencies() async {
   // External dependencies
   sl.registerLazySingleton(() => FirebaseAuth.instance);
-  sl.registerLazySingleton(() => FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'play'));
+  sl.registerLazySingleton(() {
+    final firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'play');
+    print('🔧 Firestore instance created with databaseId: ${firestore.databaseId}');
+    print('🔧 Firestore app name: ${firestore.app.name}');
+    return firestore;
+  });
   sl.registerLazySingleton(() => GoogleSignIn(
     clientId: kIsWeb ? AppConfig.googleClientId : null,
   ));
