@@ -44,8 +44,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (user) {
         AppLogger.blocEvent('AuthBloc', 'AuthStateChanged', data: {'userId': user?.id ?? 'null'});
         if (user != null) {
-          AppLogger.debug('👤 User authenticated - triggering auth check');
-          add(AuthCheckRequested());
+          print('✅ AuthBloc: User found - emitting AuthAuthenticated');
+          AppLogger.debug('👤 User authenticated - emitting AuthAuthenticated');
+          emit(AuthAuthenticated(user));
         } else {
           AppLogger.debug('🚪 User signed out - checking current state before emitting');
           // Only emit AuthUnauthenticated if we're not already in that state
@@ -132,8 +133,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (user) {
         print('✅ AuthBloc: Signup successful - emitting AuthAuthenticated');
         emit(AuthAuthenticated(user));
-        // Force a refresh of the auth state to trigger router redirect
-        add(AuthCheckRequested());
       },
     );
   }
