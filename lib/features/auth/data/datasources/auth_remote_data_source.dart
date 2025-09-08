@@ -184,6 +184,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       print('💾 Creating user document in Firestore...');
       print('📁 Collection path: users/${user.uid}');
       
+      // Test write to see if we have permissions
+      try {
+        await _firestore.collection('test').doc('test').set({'test': 'value'});
+        print('✅ Test write successful - permissions are working');
+        await _firestore.collection('test').doc('test').delete();
+        print('✅ Test cleanup successful');
+      } catch (e) {
+        print('❌ Test write failed: $e');
+      }
+      
       await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
       print('✅ User document created successfully!');
       
