@@ -93,7 +93,7 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => FirebaseAuth.instance);
   sl.registerLazySingleton(() {
     // Try to get the 'play' database instance
-    final firestore = FirebaseFirestore.instanceFor(databaseId: 'play');
+    final firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'play');
     print('🔧 Firestore instance created with databaseId: ${firestore.databaseId}');
     print('🔧 Firestore app name: ${firestore.app.name}');
     print('🔧 Firestore app project: ${firestore.app.options.projectId}');
