@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/core/config/firestore_collections.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
