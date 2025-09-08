@@ -136,13 +136,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         return UserModel.fromFirestore(userDoc);
       } else {
         // Create new user profile
+        final displayName = user.displayName ?? '';
+        final nameParts = displayName.split(' ');
+        final firstName = nameParts.isNotEmpty ? nameParts.first : 'User';
+        final lastName = nameParts.length > 1 ? nameParts.skip(1).join(' ') : '';
+        
         final newUser = UserModel(
           id: user.uid,
           email: user.email ?? '',
-          firstName: user.displayName?.split(' ').first ?? 'User',
-          lastName: user.displayName?.split(' ').length > 1 
-              ? user.displayName!.split(' ').skip(1).join(' ')
-              : '',
+          firstName: firstName,
+          lastName: lastName,
           phoneNumber: '000-000-0000', // Default value
           role: isInstructor ? 'instructor' : 'client',
           isInstructor: isInstructor,
