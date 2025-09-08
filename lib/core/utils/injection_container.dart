@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -90,7 +91,10 @@ final sl = GetIt.instance;
 Future<void> initializeDependencies() async {
   // External dependencies
   sl.registerLazySingleton(() => FirebaseAuth.instance);
-  sl.registerLazySingleton(() => FirebaseFirestore.instanceFor(databaseId: 'play'));
+  sl.registerLazySingleton(() => FirebaseFirestore.instanceFor(
+    app: Firebase.app(),
+    databaseId: 'play',
+  ));
   sl.registerLazySingleton(() => GoogleSignIn(
     clientId: kIsWeb ? AppConfig.googleClientId : null,
   ));
