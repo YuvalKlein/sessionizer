@@ -205,6 +205,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).set(newUser.toMap());
       print('✅ User document created successfully!');
       
+      // Wait a moment for the auth state changes to pick up the new user
+      await Future.delayed(const Duration(milliseconds: 100));
+      
       return newUser;
     } on FirebaseAuthException catch (e) {
       print('❌ Firebase Auth error: ${e.message}');

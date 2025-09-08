@@ -132,6 +132,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (user) {
         print('✅ AuthBloc: Signup successful - emitting AuthAuthenticated');
         emit(AuthAuthenticated(user));
+        // Force a refresh of the auth state to trigger router redirect
+        add(AuthCheckRequested());
       },
     );
   }
