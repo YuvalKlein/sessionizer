@@ -23,6 +23,10 @@ google-services.json
 GoogleService-Info.plist
 firebase_options.dart
 
+# Keep template files but ignore actual config files
+!google-services.json.template
+!firebase_options.dart.template
+
 # IntelliJ related
 *.iml
 *.ipr
