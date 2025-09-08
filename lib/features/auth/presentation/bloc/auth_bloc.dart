@@ -114,6 +114,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     SignUpWithEmailRequested event,
     Emitter<AuthState> emit,
   ) async {
+    print('🔄 AuthBloc: Starting signup process');
     emit(AuthLoading());
     
     final result = await _signUpWithEmail(SignUpWithEmailParams(
@@ -124,8 +125,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     ));
 
     result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (user) => emit(AuthAuthenticated(user)),
+      (failure) {
+        print('❌ AuthBloc: Signup failed - ${failure.message}');
+        emit(AuthError(failure.message));
+      },
+      (user) {
+        print('✅ AuthBloc: Signup successful - emitting AuthAuthenticated');
+        emit(AuthAuthenticated(user));
+      },
     );
   }
 

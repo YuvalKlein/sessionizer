@@ -347,31 +347,42 @@ class AppRouter {
         final isLoggingIn = state.uri.path == '/login';
         final isRegistering = state.uri.path == '/register';
         
+        print('🔄 Router redirect: path=${state.uri.path}, authState=${authState.runtimeType}');
+        
         // Only redirect if auth state is not loading
         if (authState is AuthLoading) {
+          print('⏳ Router: Auth loading - no redirect');
           return null; // Let the loading state show
         }
         
         // If authenticated, redirect from login/register to instructor selection
         if (authState is AuthAuthenticated) {
+          print('✅ Router: User authenticated');
           if (isLoggingIn || isRegistering) {
+            print('🔄 Router: Redirecting from ${state.uri.path} to /client/instructor-selection');
             return '/client/instructor-selection';
           }
           // Also redirect from root path to instructor selection
           if (state.uri.path == '/') {
+            print('🔄 Router: Redirecting from root to /client/instructor-selection');
             return '/client/instructor-selection';
           }
+          print('✅ Router: No redirect needed - user can access current route');
           return null; // Allow navigation to other routes
         }
         
         // If not authenticated, redirect to login (except for login/register pages)
         if (authState is AuthUnauthenticated) {
+          print('❌ Router: User not authenticated');
           if (!isLoggingIn && !isRegistering) {
+            print('🔄 Router: Redirecting to /login');
             return '/login';
           }
+          print('✅ Router: Allowing access to ${state.uri.path}');
           return null; // Allow login/register
         }
         
+        print('❓ Router: Unknown auth state - no redirect');
         return null;
       } catch (e) {
         // If there's an error reading the auth state, don't redirect

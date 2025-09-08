@@ -47,15 +47,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Stream<UserModel?> get authStateChanges {
     return _firebaseAuth.authStateChanges().asyncMap((user) async {
-      if (user == null) return null;
+      print('🔄 Auth state changed: ${user?.uid}');
+      if (user == null) {
+        print('❌ No user - returning null');
+        return null;
+      }
       
       try {
+        print('🔍 Looking for user document: ${user.uid}');
         final doc = await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).get();
         if (doc.exists) {
+          print('✅ User document found - creating UserModel');
           return UserModel.fromFirestore(doc);
         }
+        print('❌ User document not found');
         return null;
       } catch (e) {
+        print('❌ Error fetching user data: $e');
         throw ServerException('Failed to fetch user data: $e');
       }
     });
