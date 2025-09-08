@@ -139,9 +139,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         final newUser = UserModel(
           id: user.uid,
           email: user.email ?? '',
+          firstName: user.displayName?.split(' ').first ?? 'User',
+          lastName: user.displayName?.split(' ').length > 1 
+              ? user.displayName!.split(' ').skip(1).join(' ')
+              : '',
+          phoneNumber: '000-000-0000', // Default value
+          role: isInstructor ? 'instructor' : 'client',
+          isInstructor: isInstructor,
           displayName: user.displayName,
           photoUrl: user.photoURL,
-          isInstructor: isInstructor,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
