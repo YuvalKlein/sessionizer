@@ -32,6 +32,8 @@ class _ClientInstructorSelectionPageState extends State<ClientInstructorSelectio
   Future<void> _loadInstructors() async {
     try {
       final querySnapshot = await FirebaseFirestore.instance
+          .collection('sessionizer')
+          .doc('users')
           .collection('users')
           .where('isInstructor', isEqualTo: true)
           .get();
@@ -40,9 +42,11 @@ class _ClientInstructorSelectionPageState extends State<ClientInstructorSelectio
         final data = doc.data();
         return {
           'id': doc.id,
-          'name': data['name'] ?? data['displayName'] ?? 'Unknown Instructor',
+          'name': '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim().isEmpty 
+              ? (data['displayName'] ?? 'Unknown Instructor')
+              : '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim(),
           'email': data['email'] ?? '',
-          'phone': data['phone'] ?? '',
+          'phone': data['phoneNumber'] ?? '',
           'bio': data['bio'] ?? '',
           'specialties': data['specialties'] ?? <String>[],
         };
