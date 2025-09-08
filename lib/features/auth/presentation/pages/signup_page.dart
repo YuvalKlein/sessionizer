@@ -52,8 +52,12 @@ class _SignupPageState extends State<SignupPage> {
         SignUpWithEmailRequested(
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          name: _nameController.text.trim(),
-          isInstructor: _isInstructor,
+          firstName: _nameController.text.trim().split(' ').first,
+          lastName: _nameController.text.trim().split(' ').length > 1 
+              ? _nameController.text.trim().split(' ').skip(1).join(' ')
+              : '',
+          phoneNumber: '000-000-0000', // Default value for now
+          role: _isInstructor ? 'instructor' : 'client',
         ),
       );
     }
