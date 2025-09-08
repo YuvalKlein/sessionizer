@@ -15,8 +15,10 @@ class SignUpWithEmail implements UseCase<UserEntity, SignUpWithEmailParams> {
     return await _repository.signUpWithEmailAndPassword(
       email: params.email,
       password: params.password,
-      name: params.name,
-      isInstructor: params.isInstructor,
+      firstName: params.firstName,
+      lastName: params.lastName,
+      phoneNumber: params.phoneNumber,
+      role: params.role,
     );
   }
 }
@@ -24,16 +26,20 @@ class SignUpWithEmail implements UseCase<UserEntity, SignUpWithEmailParams> {
 class SignUpWithEmailParams extends Equatable {
   final String email;
   final String password;
-  final String name;
-  final bool isInstructor;
+  final String firstName;
+  final String lastName;
+  final String phoneNumber;
+  final String role;
 
   const SignUpWithEmailParams({
     required this.email,
     required this.password,
-    required this.name,
-    required this.isInstructor,
+    required this.firstName,
+    required this.lastName,
+    required this.phoneNumber,
+    required this.role,
   });
 
   @override
-  List<Object> get props => [email, password, name, isInstructor];
+  List<Object> get props => [email, password, firstName, lastName, phoneNumber, role];
 }

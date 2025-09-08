@@ -17,8 +17,10 @@ abstract class AuthRepository {
   ResultFuture<UserEntity> signUpWithEmailAndPassword({
     required String email,
     required String password,
-    required String name,
-    required bool isInstructor,
+    required String firstName,
+    required String lastName,
+    required String phoneNumber,
+    required String role,
   });
   
   ResultVoid signOut();

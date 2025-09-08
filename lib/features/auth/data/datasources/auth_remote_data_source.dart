@@ -22,8 +22,10 @@ abstract class AuthRemoteDataSource {
   Future<UserModel> signUpWithEmailAndPassword({
     required String email,
     required String password,
-    required String name,
-    required bool isInstructor,
+    required String firstName,
+    required String lastName,
+    required String phoneNumber,
+    required String role,
   });
   
   Future<void> signOut();
@@ -158,8 +160,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<UserModel> signUpWithEmailAndPassword({
     required String email,
     required String password,
-    required String name,
-    required bool isInstructor,
+    required String firstName,
+    required String lastName,
+    required String phoneNumber,
+    required String role,
   }) async {
     try {
       print('🔐 Starting signup process for: $email');
@@ -182,9 +186,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final newUser = UserModel(
         id: user.uid,
         email: user.email ?? '',
-        displayName: name,
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: phoneNumber,
+        role: role,
+        isInstructor: role == 'instructor',
+        displayName: '$firstName $lastName',
         photoUrl: user.photoURL,
-        isInstructor: isInstructor,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

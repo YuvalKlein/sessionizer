@@ -64,15 +64,19 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, UserEntity>> signUpWithEmailAndPassword({
     required String email,
     required String password,
-    required String name,
-    required bool isInstructor,
+    required String firstName,
+    required String lastName,
+    required String phoneNumber,
+    required String role,
   }) async {
     try {
       final user = await _remoteDataSource.signUpWithEmailAndPassword(
         email: email,
         password: password,
-        name: name,
-        isInstructor: isInstructor,
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: phoneNumber,
+        role: role,
       );
       return Right(user);
     } on AuthException catch (e) {

@@ -121,8 +121,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await _signUpWithEmail(SignUpWithEmailParams(
       email: event.email,
       password: event.password,
-      name: event.name,
-      isInstructor: event.isInstructor,
+      firstName: event.firstName,
+      lastName: event.lastName,
+      phoneNumber: event.phoneNumber,
+      role: event.role,
     ));
 
     result.fold(
