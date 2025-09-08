@@ -98,6 +98,8 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
       // Load client data
       for (final clientId in clientIds) {
         final clientDoc = await FirebaseFirestore.instance
+            .collection('sessionizer')
+            .doc('users')
             .collection('users')
             .doc(clientId)
             .get();
@@ -282,6 +284,8 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
       // Find client by email
       try {
         final querySnapshot = await FirebaseFirestore.instance
+            .collection('sessionizer')
+            .doc('users')
             .collection('users')
             .where('email', isEqualTo: result)
             .where('isInstructor', isEqualTo: false)

@@ -90,6 +90,8 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
 
     try {
       final instructorDoc = await FirebaseFirestore.instance
+          .collection('sessionizer')
+          .doc('users')
           .collection('users')
           .doc(_selectedInstructorId!)
           .get();
@@ -97,7 +99,9 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
       if (instructorDoc.exists) {
         final data = instructorDoc.data()!;
         setState(() {
-          _instructorName = data['name'] ?? 'Unknown Instructor';
+          _instructorName = '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim().isEmpty 
+              ? (data['displayName'] ?? 'Unknown Instructor')
+              : '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim();
           _isLoadingInstructor = false;
         });
       } else {

@@ -48,6 +48,8 @@ class _PublicCalendarPageState extends State<PublicCalendarPage> {
   Future<void> _loadInstructorInfo() async {
     try {
       final instructorDoc = await FirebaseFirestore.instance
+          .collection('sessionizer')
+          .doc('users')
           .collection('users')
           .doc(widget.instructorId)
           .get();
@@ -55,7 +57,9 @@ class _PublicCalendarPageState extends State<PublicCalendarPage> {
       if (instructorDoc.exists) {
         final data = instructorDoc.data()!;
         setState(() {
-          _instructorName = data['name'] ?? 'Unknown Instructor';
+          _instructorName = '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim().isEmpty 
+              ? (data['displayName'] ?? 'Unknown Instructor')
+              : '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim();
         });
       }
     } catch (e) {
