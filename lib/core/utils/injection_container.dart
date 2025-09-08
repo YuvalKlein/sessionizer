@@ -92,8 +92,8 @@ Future<void> initializeDependencies() async {
   // External dependencies
   sl.registerLazySingleton(() => FirebaseAuth.instance);
   sl.registerLazySingleton(() {
-    // Try to get the 'play' database instance
-    final firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'play');
+    // Use default database for now to test if rules work
+    final firestore = FirebaseFirestore.instance;
     print('🔧 Firestore instance created with databaseId: ${firestore.databaseId}');
     print('🔧 Firestore app name: ${firestore.app.name}');
     print('🔧 Firestore app project: ${firestore.app.options.projectId}');
