@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:myapp/core/error/exceptions.dart';
 import 'package:myapp/core/utils/logger.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 import 'package:myapp/features/notification/data/models/notification_model.dart';
 import 'package:myapp/features/notification/domain/entities/notification_entity.dart';
 
@@ -37,10 +38,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       AppLogger.info('📤 Sending notification: ${notification.title}');
       
       // Save to Firestore
-      await _firestore
-          .collection('notifications')
-          .doc(notification.id)
-          .set(notification.toMap());
+      await FirestoreCollections.notification(notification.id).set(notification.toMap());
 
       // Send push notification if user has FCM token
       if (notification.userId != null) {
@@ -58,16 +56,13 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<void> sendBookingConfirmation(String bookingId) async {
     try {
       // Get booking details
-      final bookingDoc = await _firestore
-          .collection('bookings')
-          .doc(bookingId)
-          .get();
+      final bookingDoc = await FirestoreCollections.booking(bookingId).get();
 
       if (!bookingDoc.exists) {
         throw ServerException('Booking not found');
       }
 
-      final bookingData = bookingDoc.data()!;
+      final bookingData = bookingDoc.data() as Map<String, dynamic>;
       final clientId = bookingData['clientId'] as String?;
       
       if (clientId == null) {
@@ -75,16 +70,13 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       }
 
       // Get client details
-      final clientDoc = await _firestore
-          .collection('users')
-          .doc(clientId)
-          .get();
+      final clientDoc = await FirestoreCollections.user(clientId).get();
 
       if (!clientDoc.exists) {
         throw ServerException('Client not found');
       }
 
-      final clientData = clientDoc.data()!;
+      final clientData = clientDoc.data() as Map<String, dynamic>;
       final clientName = clientData['displayName'] ?? 'Client';
 
       // Create notification
@@ -114,16 +106,13 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<void> sendBookingReminder(String bookingId, int hoursBefore) async {
     try {
       // Get booking details
-      final bookingDoc = await _firestore
-          .collection('bookings')
-          .doc(bookingId)
-          .get();
+      final bookingDoc = await FirestoreCollections.booking(bookingId).get();
 
       if (!bookingDoc.exists) {
         throw ServerException('Booking not found');
       }
 
-      final bookingData = bookingDoc.data()!;
+      final bookingData = bookingDoc.data() as Map<String, dynamic>;
       final clientId = bookingData['clientId'] as String?;
       
       if (clientId == null) {
@@ -131,16 +120,13 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       }
 
       // Get client details
-      final clientDoc = await _firestore
-          .collection('users')
-          .doc(clientId)
-          .get();
+      final clientDoc = await FirestoreCollections.user(clientId).get();
 
       if (!clientDoc.exists) {
         throw ServerException('Client not found');
       }
 
-      final clientData = clientDoc.data()!;
+      final clientData = clientDoc.data() as Map<String, dynamic>;
       final clientName = clientData['displayName'] ?? 'Client';
 
       // Create reminder notification
@@ -171,16 +157,13 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<void> sendBookingCancellation(String bookingId) async {
     try {
       // Get booking details
-      final bookingDoc = await _firestore
-          .collection('bookings')
-          .doc(bookingId)
-          .get();
+      final bookingDoc = await FirestoreCollections.booking(bookingId).get();
 
       if (!bookingDoc.exists) {
         throw ServerException('Booking not found');
       }
 
-      final bookingData = bookingDoc.data()!;
+      final bookingData = bookingDoc.data() as Map<String, dynamic>;
       final clientId = bookingData['clientId'] as String?;
       
       if (clientId == null) {
@@ -188,16 +171,13 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       }
 
       // Get client details
-      final clientDoc = await _firestore
-          .collection('users')
-          .doc(clientId)
-          .get();
+      final clientDoc = await FirestoreCollections.user(clientId).get();
 
       if (!clientDoc.exists) {
         throw ServerException('Client not found');
       }
 
-      final clientData = clientDoc.data()!;
+      final clientData = clientDoc.data() as Map<String, dynamic>;
       final clientName = clientData['displayName'] ?? 'Client';
 
       // Create cancellation notification
@@ -227,16 +207,13 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<void> sendScheduleChange(String scheduleId) async {
     try {
       // Get schedule details
-      final scheduleDoc = await _firestore
-          .collection('schedules')
-          .doc(scheduleId)
-          .get();
+      final scheduleDoc = await FirestoreCollections.schedule(scheduleId).get();
 
       if (!scheduleDoc.exists) {
         throw ServerException('Schedule not found');
       }
 
-      final scheduleData = scheduleDoc.data()!;
+      final scheduleData = scheduleDoc.data() as Map<String, dynamic>;
       final instructorId = scheduleData['instructorId'] as String?;
       
       if (instructorId == null) {
@@ -244,25 +221,21 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       }
 
       // Get all bookings for this schedule
-      final bookingsSnapshot = await _firestore
-          .collection('bookings')
+      final bookingsSnapshot = await FirestoreCollections.bookings
           .where('instructorId', isEqualTo: instructorId)
           .get();
 
       // Send notifications to all clients with bookings
       for (final bookingDoc in bookingsSnapshot.docs) {
-        final bookingData = bookingDoc.data();
+        final bookingData = bookingDoc.data() as Map<String, dynamic>;
         final clientId = bookingData['clientId'] as String?;
         
         if (clientId != null) {
           // Get client details
-          final clientDoc = await _firestore
-              .collection('users')
-              .doc(clientId)
-              .get();
+          final clientDoc = await FirestoreCollections.user(clientId).get();
 
           if (clientDoc.exists) {
-            final clientData = clientDoc.data()!;
+            final clientData = clientDoc.data() as Map<String, dynamic>;
             final clientName = clientData['displayName'] ?? 'Client';
 
             final notification = NotificationModel(
@@ -292,14 +265,13 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   @override
   Future<List<NotificationModel>> getNotifications(String userId) async {
     try {
-      final snapshot = await _firestore
-          .collection('notifications')
+      final snapshot = await FirestoreCollections.notifications
           .where('userId', isEqualTo: userId)
           .orderBy('createdAt', descending: true)
           .get();
 
       return snapshot.docs
-          .map((doc) => NotificationModel.fromMap({...doc.data(), 'id': doc.id}))
+          .map((doc) => NotificationModel.fromMap({...doc.data() as Map<String, dynamic>, 'id': doc.id}))
           .toList();
     } catch (e) {
       AppLogger.error('❌ Error getting notifications: $e');
@@ -310,15 +282,14 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   @override
   Future<List<NotificationModel>> getUnreadNotifications(String userId) async {
     try {
-      final snapshot = await _firestore
-          .collection('notifications')
+      final snapshot = await FirestoreCollections.notifications
           .where('userId', isEqualTo: userId)
           .where('status', isEqualTo: NotificationStatus.pending.name)
           .orderBy('createdAt', descending: true)
           .get();
 
       return snapshot.docs
-          .map((doc) => NotificationModel.fromMap({...doc.data(), 'id': doc.id}))
+          .map((doc) => NotificationModel.fromMap({...doc.data() as Map<String, dynamic>, 'id': doc.id}))
           .toList();
     } catch (e) {
       AppLogger.error('❌ Error getting unread notifications: $e');
@@ -329,10 +300,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   @override
   Future<void> markAsRead(String notificationId) async {
     try {
-      await _firestore
-          .collection('notifications')
-          .doc(notificationId)
-          .update({
+      await FirestoreCollections.notification(notificationId).update({
         'status': NotificationStatus.read.name,
         'readAt': DateTime.now().toIso8601String(),
       });
@@ -346,8 +314,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<void> markAllAsRead(String userId) async {
     try {
       final batch = _firestore.batch();
-      final snapshot = await _firestore
-          .collection('notifications')
+      final snapshot = await FirestoreCollections.notifications
           .where('userId', isEqualTo: userId)
           .where('status', isEqualTo: NotificationStatus.pending.name)
           .get();
@@ -369,10 +336,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   @override
   Future<void> deleteNotification(String notificationId) async {
     try {
-      await _firestore
-          .collection('notifications')
-          .doc(notificationId)
-          .delete();
+      await FirestoreCollections.notification(notificationId).delete();
     } catch (e) {
       AppLogger.error('❌ Error deleting notification: $e');
       throw ServerException('Failed to delete notification: $e');
@@ -383,8 +347,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<void> deleteOldNotifications(int daysOld) async {
     try {
       final cutoffDate = DateTime.now().subtract(Duration(days: daysOld));
-      final snapshot = await _firestore
-          .collection('notifications')
+      final snapshot = await FirestoreCollections.notifications
           .where('createdAt', isLessThan: cutoffDate.toIso8601String())
           .get();
 
@@ -420,10 +383,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
         },
       );
 
-      await _firestore
-          .collection('scheduled_notifications')
-          .doc(notification.id)
-          .set(notification.toMap());
+      await FirestoreCollections.scheduledNotification(notification.id).set(notification.toMap());
     } catch (e) {
       AppLogger.error('❌ Error scheduling booking reminder: $e');
       throw ServerException('Failed to schedule booking reminder: $e');
@@ -433,10 +393,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   @override
   Future<void> cancelScheduledNotification(String notificationId) async {
     try {
-      await _firestore
-          .collection('scheduled_notifications')
-          .doc(notificationId)
-          .delete();
+      await FirestoreCollections.scheduledNotification(notificationId).delete();
     } catch (e) {
       AppLogger.error('❌ Error cancelling scheduled notification: $e');
       throw ServerException('Failed to cancel scheduled notification: $e');
@@ -446,14 +403,11 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   Future<void> _sendPushNotification(NotificationModel notification) async {
     try {
       // Get user's FCM token
-      final userDoc = await _firestore
-          .collection('users')
-          .doc(notification.userId!)
-          .get();
+      final userDoc = await FirestoreCollections.user(notification.userId!).get();
 
       if (!userDoc.exists) return;
 
-      final userData = userDoc.data()!;
+      final userData = userDoc.data() as Map<String, dynamic>;
       final fcmToken = userData['fcmToken'] as String?;
 
       if (fcmToken == null) {

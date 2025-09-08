@@ -1,0 +1,15 @@
+[33m1b426c8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mchangeFBToPlay[m[33m)[m Fix all remaining collection paths to use sessionizer subcollection structure
+[33m55f7424[m Fix instructor selection page collection path and field names
+[33m42b47d7[m Fix null safety error in Google sign-in UserModel creation
+[33me8e7204[m Fix UserModel creation in signInWithGoogle method
+[33m18d5ed4[m Update signup page to use new user model fields
+[33m2eecb4f[m Restore original user model with role and additional fields
+[33m2ee12ec[m Fix auth state emission in AuthBloc
+[33mf4e71f2[m Fix race condition in auth flow
+[33m82bc7cf[m Add debugging to auth flow and router redirect
+[33m3920caf[m Fix collection structure and rules for 'play' database
+[33m223e720[m Revert to 'play' database and fix rules
+[33mf671826[m Temporarily switch to default database for testing
+[33m325e476[m Add test write to debug Firestore permissions
+[33mb905320[m Fix missing app parameter in FirebaseFirestore.instanceFor()
+[33ma3ad66b[m Simplify Firestore instance creation for play database

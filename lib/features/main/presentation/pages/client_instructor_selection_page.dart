@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/features/booking/presentation/widgets/instructor_avatar.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 class ClientInstructorSelectionPage extends StatefulWidget {
   const ClientInstructorSelectionPage({Key? key}) : super(key: key);
@@ -31,15 +32,10 @@ class _ClientInstructorSelectionPageState extends State<ClientInstructorSelectio
 
   Future<void> _loadInstructors() async {
     try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('sessionizer')
-          .doc('users')
-          .collection('users')
-          .where('isInstructor', isEqualTo: true)
-          .get();
+      final querySnapshot = await FirestoreQueries.getInstructors().get();
       
       final instructors = querySnapshot.docs.map((doc) {
-        final data = doc.data();
+        final data = doc.data() as Map<String, dynamic>;
         return {
           'id': doc.id,
           'name': '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim().isEmpty 

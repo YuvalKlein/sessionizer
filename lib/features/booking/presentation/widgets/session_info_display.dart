@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 class SessionInfoDisplay extends StatefulWidget {
   final String sessionId;
@@ -41,13 +42,10 @@ class _SessionInfoDisplayState extends State<SessionInfoDisplay> {
       }
 
       // First try to get from bookable_sessions
-      final bookableSessionDoc = await FirebaseFirestore.instance
-          .collection('bookable_sessions')
-          .doc(widget.sessionId)
-          .get();
+      final bookableSessionDoc = await FirestoreCollections.bookableSession(widget.sessionId).get();
       
       if (bookableSessionDoc.exists) {
-        final sessionData = bookableSessionDoc.data()!;
+        final sessionData = bookableSessionDoc.data() as Map<String, dynamic>;
         final title = sessionData['title'] as String?;
         if (title != null && title.isNotEmpty) {
           if (mounted) {
@@ -64,15 +62,13 @@ class _SessionInfoDisplayState extends State<SessionInfoDisplay> {
       // Try both sessionId and bookableSessionId fields for compatibility
       QuerySnapshot bookingQuery;
       try {
-        bookingQuery = await FirebaseFirestore.instance
-            .collection('bookings')
+        bookingQuery = await FirestoreCollections.bookings
             .where('sessionId', isEqualTo: widget.sessionId)
             .limit(1)
             .get();
       } catch (e) {
         // If sessionId field doesn't exist, try bookableSessionId
-        bookingQuery = await FirebaseFirestore.instance
-            .collection('bookings')
+        bookingQuery = await FirestoreCollections.bookings
             .where('bookableSessionId', isEqualTo: widget.sessionId)
             .limit(1)
             .get();
@@ -83,13 +79,10 @@ class _SessionInfoDisplayState extends State<SessionInfoDisplay> {
         final sessionTypeId = bookingData?['sessionTypeId'] as String?;
         
         if (sessionTypeId != null && sessionTypeId.isNotEmpty) {
-          final sessionTypeDoc = await FirebaseFirestore.instance
-              .collection('session_types')
-              .doc(sessionTypeId)
-              .get();
+          final sessionTypeDoc = await FirestoreCollections.sessionType(sessionTypeId).get();
           
           if (sessionTypeDoc.exists) {
-            final sessionTypeData = sessionTypeDoc.data()!;
+            final sessionTypeData = sessionTypeDoc.data() as Map<String, dynamic>;
             final title = sessionTypeData['title'] as String?;
             if (title != null && title.isNotEmpty) {
               if (mounted) {

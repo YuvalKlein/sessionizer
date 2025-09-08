@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 import 'package:myapp/core/utils/injection_container.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
@@ -89,15 +90,10 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
     });
 
     try {
-      final instructorDoc = await FirebaseFirestore.instance
-          .collection('sessionizer')
-          .doc('users')
-          .collection('users')
-          .doc(_selectedInstructorId!)
-          .get();
+      final instructorDoc = await FirestoreCollections.user(_selectedInstructorId!).get();
       
       if (instructorDoc.exists) {
-        final data = instructorDoc.data()!;
+        final data = instructorDoc.data()! as Map<String, dynamic>;
         setState(() {
           _instructorName = '${data['firstName'] ?? ''} ${data['lastName'] ?? ''}'.trim().isEmpty 
               ? (data['displayName'] ?? 'Unknown Instructor')
@@ -904,24 +900,20 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
       // Get session type (should be exactly one)
       String sessionTypeName = 'Session';
       if (session.sessionTypeIds.isNotEmpty) {
-        final typeDoc = await FirebaseFirestore.instance
-            .collection('session_types')
-            .doc(session.sessionTypeIds.first)
-            .get();
+        final typeDoc = await FirestoreCollections.sessionType(session.sessionTypeIds.first).get();
         if (typeDoc.exists) {
-          sessionTypeName = typeDoc.data()!['title'] ?? 'Session';
+          final typeData = typeDoc.data() as Map<String, dynamic>;
+          sessionTypeName = typeData['title'] ?? 'Session';
         }
       }
 
       // Get location (should be exactly one)
       String locationName = 'Unknown Location';
       if (session.locationIds.isNotEmpty) {
-        final locationDoc = await FirebaseFirestore.instance
-            .collection('locations')
-            .doc(session.locationIds.first)
-            .get();
+        final locationDoc = await FirestoreCollections.location(session.locationIds.first).get();
         if (locationDoc.exists) {
-          locationName = locationDoc.data()!['name'] ?? 'Unknown Location';
+          final locationData = locationDoc.data() as Map<String, dynamic>;
+          locationName = locationData['name'] ?? 'Unknown Location';
         }
       }
 

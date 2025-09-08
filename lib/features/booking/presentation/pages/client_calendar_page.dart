@@ -3,6 +3,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/features/booking/presentation/widgets/booking_confirmation_modal.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 class ClientCalendarPage extends StatefulWidget {
   final String sessionId;
@@ -43,7 +44,7 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
-    _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
+    _selectedEvents = ValueNotifier([]); // Start with empty events
     _loadSessionDetails();
     _loadAvailableSlots();
   }
@@ -56,48 +57,58 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
 
   Future<void> _loadSessionDetails() async {
     try {
+      print('🔍 Loading session details for sessionId: ${widget.sessionId}');
+      print('🔍 Using collection path: sessionizer/bookable_sessions/bookable_sessions/${widget.sessionId}');
+      
       // Load session details
-      final sessionDoc = await FirebaseFirestore.instance
-          .collection('bookable_sessions')
-          .doc(widget.sessionId)
-          .get();
+      final sessionDoc = await FirestoreCollections.bookableSession(widget.sessionId).get();
       
       if (sessionDoc.exists) {
-        _sessionData = sessionDoc.data()!;
+        print('✅ Session document found');
+        _sessionData = sessionDoc.data() as Map<String, dynamic>;
+        print('📊 Session data keys: ${_sessionData!.keys.toList()}');
         
         // Load location (first one)
         final locationIds = List<String>.from(_sessionData!['locationIds'] ?? []);
+        print('🔍 Location IDs: $locationIds');
         if (locationIds.isNotEmpty) {
-          final locationDoc = await FirebaseFirestore.instance
-              .collection('locations')
-              .doc(locationIds.first)
-              .get();
+          print('🔍 Loading location: ${locationIds.first}');
+          final locationDoc = await FirestoreCollections.location(locationIds.first).get();
           if (locationDoc.exists) {
+            print('✅ Location document found');
+            final locationData = locationDoc.data() as Map<String, dynamic>;
             _locationData = {
               'id': locationIds.first,
-              'name': locationDoc.data()!['name'],
+              'name': locationData['name'],
             };
+          } else {
+            print('❌ Location document not found');
           }
         }
         
         // Load session type (first one)
         final typeIds = List<String>.from(_sessionData!['sessionTypeIds'] ?? []);
+        print('🔍 Session type IDs: $typeIds');
         if (typeIds.isNotEmpty) {
-          final typeDoc = await FirebaseFirestore.instance
-              .collection('session_types')
-              .doc(typeIds.first)
-              .get();
+          print('🔍 Loading session type: ${typeIds.first}');
+          final typeDoc = await FirestoreCollections.sessionType(typeIds.first).get();
           if (typeDoc.exists) {
+            print('✅ Session type document found');
+            final typeData = typeDoc.data() as Map<String, dynamic>;
             _sessionTypeData = {
               'id': typeIds.first,
-              'title': typeDoc.data()!['title'],
-              'duration': typeDoc.data()!['duration'],
+              'title': typeData['title'],
+              'duration': typeData['duration'],
             };
+          } else {
+            print('❌ Session type document not found');
           }
         }
+      } else {
+        print('❌ Session document not found');
       }
     } catch (e) {
-      print('Error loading session details: $e');
+      print('❌ Error loading session details: $e');
     }
   }
 
@@ -112,16 +123,13 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
       print('Loading schedules for instructor: ${widget.instructorId}');
       
       // First, get all bookable sessions for this instructor to find which schedules are used
-      final bookableSessionsQuery = await FirebaseFirestore.instance
-          .collection('bookable_sessions')
-          .where('instructorId', isEqualTo: widget.instructorId)
-          .get();
+      final bookableSessionsQuery = await FirestoreQueries.getBookableSessionsByInstructor(widget.instructorId).get();
       
       // Extract unique schedule IDs from bookable sessions and store session data
       final usedScheduleIds = <String>{};
       final bookableSessionsData = <String, Map<String, dynamic>>{};
       for (final sessionDoc in bookableSessionsQuery.docs) {
-        final sessionData = sessionDoc.data();
+        final sessionData = sessionDoc.data() as Map<String, dynamic>;
         final scheduleId = sessionData['scheduleId'] as String?;
         if (scheduleId != null) {
           usedScheduleIds.add(scheduleId);
@@ -140,8 +148,7 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
       }
 
       // Load existing bookings for this instructor to avoid double booking
-      final existingBookings = await FirebaseFirestore.instance
-          .collection('bookings')
+      final existingBookings = await FirestoreCollections.bookings
           .where('instructorId', isEqualTo: widget.instructorId)
           .where('status', whereIn: ['confirmed', 'pending'])
           .get();
@@ -151,7 +158,7 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
       // Create a map of booked times for quick lookup
       final bookedTimes = <String, Set<String>>{};
       for (final bookingDoc in existingBookings.docs) {
-        final bookingData = bookingDoc.data();
+        final bookingData = bookingDoc.data() as Map<String, dynamic>;
         final startTime = (bookingData['startTime'] as Timestamp).toDate();
         final endTime = (bookingData['endTime'] as Timestamp).toDate();
         
@@ -197,8 +204,7 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
       print('DEBUG: Final booked times map: $bookedTimes');
       
       // Load only the schedules that are actually used by bookable sessions
-      final schedulesQuery = await FirebaseFirestore.instance
-          .collection('schedules')
+      final schedulesQuery = await FirestoreCollections.schedules
           .where('instructorId', isEqualTo: widget.instructorId)
           .where(FieldPath.documentId, whereIn: usedScheduleIds.toList())
           .get();
@@ -217,7 +223,7 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
         final timeSlots = <TimeOfDay>[];
 
         for (final scheduleDoc in schedulesQuery.docs) {
-          final scheduleData = scheduleDoc.data();
+          final scheduleData = scheduleDoc.data() as Map<String, dynamic>;
           
           // Debug: Print schedule data structure (reduced)
           if (i == 0) { // Only print for first day to avoid spam
@@ -282,6 +288,9 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
         setState(() {
           _isLoading = false;
         });
+        
+        // Refresh the selected day's events after loading is complete
+        _selectedEvents.value = _getEventsForDay(_selectedDay!);
       }
     } catch (e) {
       print('CALENDAR ERROR: $e');
@@ -328,7 +337,7 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
       final endTimeStr = dayAvailability['endTime'] as String? ?? dayAvailability['end'] as String?;
       
           if (startTimeStr != null && endTimeStr != null) {
-            final timeSlots = _generateTimeSlots(startTimeStr, endTimeStr, intervalMinutes: slotIntervalMinutes);
+            final timeSlots = _generateTimeSlots(startTimeStr, endTimeStr, intervalMinutes: slotIntervalMinutes, forDate: date);
             slots.addAll(timeSlots);
           }
     } else if (dayAvailability is List<dynamic>) {
@@ -340,7 +349,7 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
           final endTimeStr = range['endTime'] as String? ?? range['end'] as String?;
           
           if (startTimeStr != null && endTimeStr != null) {
-            final timeSlots = _generateTimeSlots(startTimeStr, endTimeStr, intervalMinutes: slotIntervalMinutes);
+            final timeSlots = _generateTimeSlots(startTimeStr, endTimeStr, intervalMinutes: slotIntervalMinutes, forDate: date);
             slots.addAll(timeSlots);
           }
         }
@@ -350,17 +359,29 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
     return slots;
   }
   
-  List<TimeOfDay> _generateTimeSlots(String startTimeStr, String endTimeStr, {int intervalMinutes = 30}) {
+  List<TimeOfDay> _generateTimeSlots(String startTimeStr, String endTimeStr, {int intervalMinutes = 30, DateTime? forDate}) {
     final slots = <TimeOfDay>[];
     final startTime = _parseTimeString(startTimeStr);
     final endTime = _parseTimeString(endTimeStr);
     
     if (startTime != null && endTime != null) {
+      // Get current time for filtering past slots
+      final now = DateTime.now();
+      final isToday = forDate != null && 
+          now.year == forDate.year && 
+          now.month == forDate.month && 
+          now.day == forDate.day;
+      
       // Generate slots with the specified interval between start and end time
       var currentTime = startTime;
       while (currentTime.hour < endTime.hour || 
              (currentTime.hour == endTime.hour && currentTime.minute < endTime.minute)) {
-        slots.add(currentTime);
+        
+        // Only add slots that are in the future (for today) or all slots (for future days)
+        if (!isToday || _isTimeInFuture(currentTime, now)) {
+          slots.add(currentTime);
+        }
+        
         currentTime = TimeOfDay(
           hour: currentTime.hour + (currentTime.minute + intervalMinutes) ~/ 60,
           minute: (currentTime.minute + intervalMinutes) % 60,
@@ -369,6 +390,11 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
     }
     
     return slots;
+  }
+  
+  bool _isTimeInFuture(TimeOfDay timeSlot, DateTime now) {
+    final slotDateTime = DateTime(now.year, now.month, now.day, timeSlot.hour, timeSlot.minute);
+    return slotDateTime.isAfter(now);
   }
   
   TimeOfDay? _parseTimeString(String timeStr) {
@@ -498,6 +524,7 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
         _focusedDay = focusedDay;
       });
 
+      // Always update the events for the selected day
       _selectedEvents.value = _getEventsForDay(selectedDay);
     }
   }

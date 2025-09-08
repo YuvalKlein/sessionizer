@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 class ClientBookingCalendarPage extends StatefulWidget {
   final Map<String, dynamic> template;
@@ -40,10 +41,7 @@ class _ClientBookingCalendarPageState extends State<ClientBookingCalendarPage> {
 
       // Load schedule data
       if (widget.template['scheduleId'] != null) {
-        final scheduleDoc = await FirebaseFirestore.instance
-            .collection('schedules')
-            .doc(widget.template['scheduleId'])
-            .get();
+        final scheduleDoc = await FirestoreCollections.schedule(widget.template['scheduleId']).get();
         if (scheduleDoc.exists) {
           _schedule = {'id': scheduleDoc.id, ...scheduleDoc.data() as Map<String, dynamic>};
         }
@@ -51,10 +49,7 @@ class _ClientBookingCalendarPageState extends State<ClientBookingCalendarPage> {
 
       // Load session type data
       if (widget.template['sessionTypeId'] != null) {
-        final sessionTypeDoc = await FirebaseFirestore.instance
-            .collection('session_types')
-            .doc(widget.template['sessionTypeId'])
-            .get();
+        final sessionTypeDoc = await FirestoreCollections.sessionType(widget.template['sessionTypeId']).get();
         if (sessionTypeDoc.exists) {
           _sessionType = {'id': sessionTypeDoc.id, ...sessionTypeDoc.data() as Map<String, dynamic>};
         }
@@ -64,10 +59,7 @@ class _ClientBookingCalendarPageState extends State<ClientBookingCalendarPage> {
       if (widget.template['locationIds'] != null && 
           (widget.template['locationIds'] as List).isNotEmpty) {
         final locationId = (widget.template['locationIds'] as List).first;
-        final locationDoc = await FirebaseFirestore.instance
-            .collection('locations')
-            .doc(locationId)
-            .get();
+        final locationDoc = await FirestoreCollections.location(locationId).get();
         if (locationDoc.exists) {
           _location = {'id': locationDoc.id, ...locationDoc.data() as Map<String, dynamic>};
         }
@@ -75,13 +67,12 @@ class _ClientBookingCalendarPageState extends State<ClientBookingCalendarPage> {
 
       // Load existing bookings for the instructor
       if (widget.template['instructorId'] != null) {
-        final bookingsSnapshot = await FirebaseFirestore.instance
-            .collection('bookings')
+        final bookingsSnapshot = await FirestoreCollections.bookings
             .where('instructorId', isEqualTo: widget.template['instructorId'])
             .get();
         
         _existingBookings = bookingsSnapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
+            .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
             .toList();
       }
 
@@ -287,7 +278,7 @@ class _ClientBookingCalendarPageState extends State<ClientBookingCalendarPage> {
         'createdAt': FieldValue.serverTimestamp(),
       };
 
-      await FirebaseFirestore.instance.collection('bookings').add(bookingData);
+      await FirestoreCollections.bookings.add(bookingData);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

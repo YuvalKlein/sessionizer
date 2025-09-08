@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 class SimpleBookableSessionForm extends StatefulWidget {
   final QueryDocumentSnapshot? bookableSessionDoc;
@@ -49,30 +50,27 @@ class _SimpleBookableSessionFormState extends State<SimpleBookableSessionForm> {
       if (user == null) return;
 
       // Load session types for current instructor
-      final sessionTypesSnapshot = await FirebaseFirestore.instance
-          .collection('session_types')
+      final sessionTypesSnapshot = await FirestoreCollections.sessionTypes
           .where('idCreatedBy', isEqualTo: user.uid)
           .get();
       _sessionTypes = sessionTypesSnapshot.docs
-          .map((doc) => {'id': doc.id, ...doc.data()})
+          .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
           .toList();
 
       // Load locations for current instructor
-      final locationsSnapshot = await FirebaseFirestore.instance
-          .collection('locations')
+      final locationsSnapshot = await FirestoreCollections.locations
           .where('instructorId', isEqualTo: user.uid)
           .get();
       _locations = locationsSnapshot.docs
-          .map((doc) => {'id': doc.id, ...doc.data()})
+          .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
           .toList();
 
       // Load schedules for current instructor
-      final schedulesSnapshot = await FirebaseFirestore.instance
-          .collection('schedules')
+      final schedulesSnapshot = await FirestoreCollections.schedules
           .where('instructorId', isEqualTo: user.uid)
           .get();
       _schedules = schedulesSnapshot.docs
-          .map((doc) => {'id': doc.id, ...doc.data()})
+          .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
           .toList();
 
       setState(() {
@@ -199,9 +197,7 @@ class _SimpleBookableSessionFormState extends State<SimpleBookableSessionForm> {
           );
         }
       } else {
-        await FirebaseFirestore.instance
-            .collection('bookable_sessions')
-            .add(setData);
+        await FirestoreCollections.bookableSessions.add(setData);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

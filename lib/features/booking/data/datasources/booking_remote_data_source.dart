@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/features/booking/data/models/booking_model.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 abstract class BookingRemoteDataSource {
   Stream<List<BookingModel>> getBookings(String userId);
@@ -20,13 +21,12 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   @override
   Stream<List<BookingModel>> getBookings(String userId) {
-    return _firestore
-        .collection('bookings')
+    return FirestoreCollections.bookings
         .where('clientId', isEqualTo: userId)
         .snapshots()
         .map((snapshot) {
           final bookings = snapshot.docs
-              .map((doc) => BookingModel.fromMap({...doc.data(), 'id': doc.id}))
+              .map((doc) => BookingModel.fromMap({...doc.data() as Map<String, dynamic>, 'id': doc.id}))
               .toList();
           // Sort in memory to avoid composite index requirement
           bookings.sort((a, b) => a.startTime.compareTo(b.startTime));
@@ -36,13 +36,12 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   @override
   Stream<List<BookingModel>> getBookingsByInstructor(String instructorId) {
-    return _firestore
-        .collection('bookings')
+    return FirestoreCollections.bookings
         .where('instructorId', isEqualTo: instructorId)
         .snapshots()
         .map((snapshot) {
           final bookings = snapshot.docs
-              .map((doc) => BookingModel.fromMap({...doc.data(), 'id': doc.id}))
+              .map((doc) => BookingModel.fromMap({...doc.data() as Map<String, dynamic>, 'id': doc.id}))
               .toList();
           // Sort in memory to avoid composite index requirement
           bookings.sort((a, b) => a.startTime.compareTo(b.startTime));
@@ -52,13 +51,12 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   @override
   Stream<List<BookingModel>> getBookingsByClient(String clientId) {
-    return _firestore
-        .collection('bookings')
+    return FirestoreCollections.bookings
         .where('clientId', isEqualTo: clientId)
         .snapshots()
         .map((snapshot) {
           final bookings = snapshot.docs
-              .map((doc) => BookingModel.fromMap({...doc.data(), 'id': doc.id}))
+              .map((doc) => BookingModel.fromMap({...doc.data() as Map<String, dynamic>, 'id': doc.id}))
               .toList();
           // Sort in memory to avoid composite index requirement
           bookings.sort((a, b) => a.startTime.compareTo(b.startTime));
@@ -68,16 +66,16 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   @override
   Future<BookingModel> getBooking(String id) async {
-    final doc = await _firestore.collection('bookings').doc(id).get();
+    final doc = await FirestoreCollections.booking(id).get();
     if (!doc.exists) {
       throw Exception('Booking not found');
     }
-    return BookingModel.fromMap({...doc.data()!, 'id': doc.id});
+    return BookingModel.fromMap({...doc.data() as Map<String, dynamic>, 'id': doc.id});
   }
 
   @override
   Future<BookingModel> createBooking(BookingModel booking) async {
-    final docRef = await _firestore.collection('bookings').add(booking.toMap());
+    final docRef = await FirestoreCollections.bookings.add(booking.toMap());
     final createdBooking = booking.copyWith(id: docRef.id);
     await docRef.set(createdBooking.toMap());
     return createdBooking;
@@ -85,56 +83,47 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   @override
   Future<BookingModel> updateBooking(BookingModel booking) async {
-    await _firestore
-        .collection('bookings')
-        .doc(booking.id)
-        .update(booking.toMap());
+    await FirestoreCollections.booking(booking.id).update(booking.toMap());
     return booking;
   }
 
   @override
   Future<void> deleteBooking(String id) async {
-    await _firestore.collection('bookings').doc(id).delete();
+    await FirestoreCollections.booking(id).delete();
   }
 
   @override
   Future<BookingModel> cancelBooking(String id) async {
-    final doc = await _firestore.collection('bookings').doc(id).get();
+    final doc = await FirestoreCollections.booking(id).get();
     if (!doc.exists) {
       throw Exception('Booking not found');
     }
     
-    final booking = BookingModel.fromMap({...doc.data()!, 'id': doc.id});
+    final booking = BookingModel.fromMap({...doc.data() as Map<String, dynamic>, 'id': doc.id});
     final cancelledBooking = booking.copyWith(
       status: 'cancelled',
       updatedAt: DateTime.now(),
     );
     
-    await _firestore
-        .collection('bookings')
-        .doc(id)
-        .update(cancelledBooking.toMap());
+    await FirestoreCollections.booking(id).update(cancelledBooking.toMap());
     
     return cancelledBooking;
   }
 
   @override
   Future<BookingModel> confirmBooking(String id) async {
-    final doc = await _firestore.collection('bookings').doc(id).get();
+    final doc = await FirestoreCollections.booking(id).get();
     if (!doc.exists) {
       throw Exception('Booking not found');
     }
     
-    final booking = BookingModel.fromMap({...doc.data()!, 'id': doc.id});
+    final booking = BookingModel.fromMap({...doc.data() as Map<String, dynamic>, 'id': doc.id});
     final confirmedBooking = booking.copyWith(
       status: 'confirmed',
       updatedAt: DateTime.now(),
     );
     
-    await _firestore
-        .collection('bookings')
-        .doc(id)
-        .update(confirmedBooking.toMap());
+    await FirestoreCollections.booking(id).update(confirmedBooking.toMap());
     
     return confirmedBooking;
   }

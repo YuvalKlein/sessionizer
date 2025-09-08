@@ -1,0 +1,18 @@
+[1mdiff --git a/firestore.rules b/firestore.rules[m
+[1mindex a8f3bf5..0cc8e3d 100644[m
+[1m--- a/firestore.rules[m
+[1m+++ b/firestore.rules[m
+[36m@@ -1,7 +1,12 @@[m
+ rules_version = '2';[m
+ service cloud.firestore {[m
+   match /databases/play/documents {[m
+[31m-    // Allow all authenticated users to read and write to any collection[m
+[32m+[m[32m    // Sessionizer app collections[m
+[32m+[m[32m    match /sessionizer/{docId}/{collection}/{document} {[m
+[32m+[m[32m      allow read, write: if request.auth != null;[m
+[32m+[m[32m    }[m
+[32m+[m[41m    [m
+[32m+[m[32m    // Allow read/write access to any other collections (for existing apps)[m
+     match /{document=**} {[m
+       allow read, write: if request.auth != null;[m
+     }[m

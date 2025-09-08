@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
 
@@ -91,10 +92,7 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
           'updatedAt': DateTime.now(),
         };
         
-        await FirebaseFirestore.instance
-            .collection('bookings')
-            .doc(widget.rescheduleBookingId)
-            .update(rescheduleData);
+        await FirestoreCollections.booking(widget.rescheduleBookingId!).update(rescheduleData);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -106,9 +104,7 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
         // New booking mode - create new booking
         bookingData['createdAt'] = DateTime.now();
         
-        await FirebaseFirestore.instance
-            .collection('bookings')
-            .add(bookingData);
+        await FirestoreCollections.bookings.add(bookingData);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -121,15 +117,13 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
       // Close modal and call success callback
       Navigator.of(context).pop();
       
-      // If this was a reschedule, redirect to My Bookings
-      if (widget.rescheduleBookingId != null) {
-        // Use a post-frame callback to ensure the modal is fully closed
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) {
-            context.go('/client/bookings');
-          }
-        });
-      }
+      // Redirect to My Bookings for both new bookings and reschedules
+      // Use a post-frame callback to ensure the modal is fully closed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          context.go('/client/bookings');
+        }
+      });
       
       widget.onBookingSuccess();
 

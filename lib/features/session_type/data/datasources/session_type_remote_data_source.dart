@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/core/utils/logger.dart';
 import 'package:myapp/features/session_type/data/models/session_type_model.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 abstract class SessionTypeRemoteDataSource {
   Stream<List<SessionTypeModel>> getSessionTypes();
@@ -25,14 +26,12 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
     final List<SessionTypeModel> allSessionTypes = [];
     
     try {
-      // Get from new collection (session_types)
-      final newSnapshot = await _firestore
-          .collection('session_types')
-          .get();
+      // Get from new collection using FirestoreCollections
+      final newSnapshot = await FirestoreCollections.sessionTypes.get();
       
       for (final doc in newSnapshot.docs) {
         try {
-          allSessionTypes.add(SessionTypeModel.fromMap({...doc.data(), 'id': doc.id}));
+          allSessionTypes.add(SessionTypeModel.fromMap({...doc.data() as Map<String, dynamic>, 'id': doc.id}));
         } catch (e) {
           AppLogger.error('Error parsing new session type ${doc.id}: $e');
         }
@@ -42,8 +41,10 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
     }
     
     try {
-      // Get from old collection (sessionTypes) and convert
+      // Get from old collection (sessionizer/sessionTypes/sessionTypes) and convert
       final oldSnapshot = await _firestore
+          .collection('sessionizer')
+          .doc('sessionTypes')
           .collection('sessionTypes')
           .where('isActive', isEqualTo: true)
           .get();
@@ -81,16 +82,16 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
 
   @override
   Future<SessionTypeModel> getSessionType(String id) async {
-    final doc = await _firestore.collection('session_types').doc(id).get();
+    final doc = await FirestoreCollections.sessionType(id).get();
     if (!doc.exists) {
       throw Exception('Session type not found');
     }
-    return SessionTypeModel.fromMap({...doc.data()!, 'id': doc.id});
+    return SessionTypeModel.fromMap({...doc.data() as Map<String, dynamic>, 'id': doc.id});
   }
 
   @override
   Future<SessionTypeModel> createSessionType(SessionTypeModel sessionType) async {
-    final docRef = await _firestore.collection('session_types').add(sessionType.toMap());
+    final docRef = await FirestoreCollections.sessionTypes.add(sessionType.toMap());
     final createdSessionType = sessionType.copyWith(id: docRef.id);
     await docRef.set(createdSessionType.toMap());
     return createdSessionType;
@@ -98,10 +99,10 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
 
   @override
   Future<SessionTypeModel> updateSessionType(SessionTypeModel sessionType) async {
-    await _firestore
-        .collection('session_types')
-        .doc(sessionType.id)
-        .update(sessionType.toMap());
+    if (sessionType.id == null) {
+      throw Exception('Session type ID is required for update');
+    }
+    await FirestoreCollections.sessionType(sessionType.id!).update(sessionType.toMap());
     return sessionType;
   }
 
@@ -109,11 +110,11 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
   Future<void> deleteSessionType(String id) async {
     try {
       // Try new collection first
-      await _firestore.collection('session_types').doc(id).delete();
+      await FirestoreCollections.sessionType(id).delete();
     } catch (e) {
       try {
         // Try old collection if new one fails
-        await _firestore.collection('sessionTypes').doc(id).delete();
+        await _firestore.collection('sessionizer').doc('sessionTypes').collection('sessionTypes').doc(id).delete();
       } catch (e2) {
         throw Exception('Session type not found in either collection');
       }

@@ -355,17 +355,29 @@ class AppRouter {
           return null; // Let the loading state show
         }
         
-        // If authenticated, redirect from login/register to instructor selection
+        // If authenticated, redirect based on user role
         if (authState is AuthAuthenticated) {
           print('✅ Router: User authenticated');
+          final user = authState.user;
           if (isLoggingIn || isRegistering) {
-            print('🔄 Router: Redirecting from ${state.uri.path} to /client/instructor-selection');
-            return '/client/instructor-selection';
+            // Redirect instructors to their dashboard, clients to instructor selection
+            if (user.isInstructor) {
+              print('🔄 Router: Redirecting instructor to /instructor-dashboard');
+              return '/instructor-dashboard';
+            } else {
+              print('🔄 Router: Redirecting client to /client/instructor-selection');
+              return '/client/instructor-selection';
+            }
           }
-          // Also redirect from root path to instructor selection
+          // Also redirect from root path based on role
           if (state.uri.path == '/') {
-            print('🔄 Router: Redirecting from root to /client/instructor-selection');
-            return '/client/instructor-selection';
+            if (user.isInstructor) {
+              print('🔄 Router: Redirecting instructor from root to /instructor-dashboard');
+              return '/instructor-dashboard';
+            } else {
+              print('🔄 Router: Redirecting client from root to /client/instructor-selection');
+              return '/client/instructor-selection';
+            }
           }
           print('✅ Router: No redirect needed - user can access current route');
           return null; // Allow navigation to other routes

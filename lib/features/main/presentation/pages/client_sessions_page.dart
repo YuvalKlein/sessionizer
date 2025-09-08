@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 import 'package:myapp/features/bookable_session/presentation/bloc/bookable_session_bloc.dart';
 import 'package:myapp/features/bookable_session/presentation/bloc/bookable_session_event.dart';
 import 'package:myapp/features/bookable_session/presentation/bloc/bookable_session_state.dart';
@@ -516,12 +517,9 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
       // Get session type (should be exactly one)
       String sessionTypeName = 'Session';
       if (session.sessionTypeIds.isNotEmpty) {
-        final typeDoc = await FirebaseFirestore.instance
-            .collection('session_types')
-            .doc(session.sessionTypeIds.first)
-            .get();
+        final typeDoc = await FirestoreCollections.sessionType(session.sessionTypeIds.first).get();
         if (typeDoc.exists) {
-          final typeData = typeDoc.data()!;
+          final typeData = typeDoc.data() as Map<String, dynamic>;
           sessionTypeName = typeData['title'] ?? 'Session';
         }
       }
@@ -529,12 +527,9 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
       // Get location (should be exactly one)
       String locationName = 'Unknown Location';
       if (session.locationIds.isNotEmpty) {
-        final locationDoc = await FirebaseFirestore.instance
-            .collection('locations')
-            .doc(session.locationIds.first)
-            .get();
+        final locationDoc = await FirestoreCollections.location(session.locationIds.first).get();
         if (locationDoc.exists) {
-          final locationData = locationDoc.data()!;
+          final locationData = locationDoc.data() as Map<String, dynamic>;
           locationName = locationData['name'] ?? 'Unknown Location';
         }
       }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
@@ -575,13 +576,10 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
   Future<String> _getSessionName(String sessionId) async {
     try {
       // First try to get from bookable_sessions
-      final bookableSessionDoc = await FirebaseFirestore.instance
-          .collection('bookable_sessions')
-          .doc(sessionId)
-          .get();
+      final bookableSessionDoc = await FirestoreCollections.bookableSession(sessionId).get();
       
       if (bookableSessionDoc.exists) {
-        final sessionData = bookableSessionDoc.data()!;
+        final sessionData = bookableSessionDoc.data() as Map<String, dynamic>;
         final title = sessionData['title'] as String?;
         if (title != null && title.isNotEmpty) {
           return title;
@@ -589,24 +587,20 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
       }
       
       // If not found in bookable_sessions, try to get session type name
-      final bookingDoc = await FirebaseFirestore.instance
-          .collection('bookings')
+      final bookingDoc = await FirestoreCollections.bookings
           .where('bookableSessionId', isEqualTo: sessionId)
           .limit(1)
           .get();
       
       if (bookingDoc.docs.isNotEmpty) {
-        final bookingData = bookingDoc.docs.first.data();
+        final bookingData = bookingDoc.docs.first.data() as Map<String, dynamic>;
         final sessionTypeId = bookingData['sessionTypeId'] as String?;
         
         if (sessionTypeId != null) {
-          final sessionTypeDoc = await FirebaseFirestore.instance
-              .collection('session_types')
-              .doc(sessionTypeId)
-              .get();
+          final sessionTypeDoc = await FirestoreCollections.sessionType(sessionTypeId).get();
           
           if (sessionTypeDoc.exists) {
-            final sessionTypeData = sessionTypeDoc.data()!;
+            final sessionTypeData = sessionTypeDoc.data() as Map<String, dynamic>;
             final title = sessionTypeData['title'] as String?;
             if (title != null && title.isNotEmpty) {
               return title;

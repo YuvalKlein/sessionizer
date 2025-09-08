@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:myapp/core/error/exceptions.dart';
 import 'package:myapp/core/utils/logger.dart';
 import 'package:myapp/features/auth/data/models/user_model.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 abstract class AuthRemoteDataSource {
   Stream<UserModel?> get authStateChanges;
@@ -57,7 +58,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       
       try {
         print('🔍 Looking for user document: ${user.uid}');
-        final doc = await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).get();
+        final doc = await FirestoreCollections.user(user.uid).get();
         if (doc.exists) {
           print('✅ User document found - creating UserModel');
           return UserModel.fromFirestore(doc);
@@ -95,7 +96,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw const AuthException('Sign in failed');
       }
       
-      final userDoc = await _firestore.collection('sessionizer').doc('users').collection('users').doc(credential.user!.uid).get();
+      final userDoc = await FirestoreCollections.user(credential.user!.uid).get();
       if (!userDoc.exists) {
         throw const AuthException('User profile not found');
       }
@@ -130,7 +131,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
 
       final user = userCredential.user!;
-      final userDoc = await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).get();
+      final userDoc = await FirestoreCollections.user(user.uid).get();
       
       if (userDoc.exists) {
         return UserModel.fromFirestore(userDoc);
@@ -155,7 +156,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           updatedAt: DateTime.now(),
         );
         
-        await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).set(newUser.toMap());
+        await FirestoreCollections.user(user.uid).set(newUser.toMap());
         return newUser;
       }
     } on FirebaseAuthException catch (e) {
@@ -211,15 +212,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       
       // Test write to see if we have permissions
       try {
-        await _firestore.collection('test').doc('test').set({'test': 'value'});
+        await FirestoreCollections.users.doc('test').set({'test': 'value'});
         print('✅ Test write successful - permissions are working');
-        await _firestore.collection('test').doc('test').delete();
+        await FirestoreCollections.users.doc('test').delete();
         print('✅ Test cleanup successful');
       } catch (e) {
         print('❌ Test write failed: $e');
       }
       
-      await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).set(newUser.toMap());
+      await FirestoreCollections.user(user.uid).set(newUser.toMap());
       print('✅ User document created successfully!');
       
       // Wait a moment for the auth state changes to pick up the new user
@@ -274,7 +275,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw const AuthException('No user to delete');
       }
       
-      await _firestore.collection('sessionizer').doc('users').collection('users').doc(user.uid).delete();
+      await FirestoreCollections.user(user.uid).delete();
       await user.delete();
     } catch (e) {
       throw ServerException('Account deletion failed: $e');

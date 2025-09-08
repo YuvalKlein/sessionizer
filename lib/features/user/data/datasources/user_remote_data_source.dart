@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/core/error/exceptions.dart';
 import 'package:myapp/features/user/data/models/user_profile_model.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 abstract class UserRemoteDataSource {
   Stream<List<UserProfileModel>> getInstructors();
@@ -19,9 +20,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
 
   @override
   Stream<List<UserProfileModel>> getInstructors() {
-    return _firestore
-        .collection('users')
-        .where('isInstructor', isEqualTo: true)
+    return FirestoreQueries.getInstructors()
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -32,9 +31,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
 
   @override
   Stream<UserProfileModel?> getUser(String userId) {
-    return _firestore
-        .collection('users')
-        .doc(userId)
+    return FirestoreCollections.user(userId)
         .snapshots()
         .map((doc) {
       if (doc.exists) {
@@ -47,7 +44,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Future<UserProfileModel?> getUserById(String userId) async {
     try {
-      final doc = await _firestore.collection('sessionizer/users').doc(userId).get();
+      final doc = await FirestoreCollections.user(userId).get();
       if (doc.exists) {
         return UserProfileModel.fromFirestore(doc);
       }
@@ -60,7 +57,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Future<UserProfileModel> createUser(UserProfileModel user) async {
     try {
-      await _firestore.collection('sessionizer/users').doc(user.id).set(user.toMap());
+      await FirestoreCollections.user(user.id).set(user.toMap());
       return user;
     } catch (e) {
       throw ServerException('Failed to create user: $e');
@@ -70,9 +67,9 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Future<UserProfileModel> updateUser(String userId, Map<String, dynamic> data) async {
     try {
-      await _firestore.collection('sessionizer/users').doc(userId).update(data);
+      await FirestoreCollections.user(userId).update(data);
       
-      final updatedDoc = await _firestore.collection('sessionizer/users').doc(userId).get();
+      final updatedDoc = await FirestoreCollections.user(userId).get();
       return UserProfileModel.fromFirestore(updatedDoc);
     } catch (e) {
       throw ServerException('Failed to update user: $e');
@@ -82,7 +79,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Future<void> deleteUser(String userId) async {
     try {
-      await _firestore.collection('sessionizer/users').doc(userId).delete();
+      await FirestoreCollections.user(userId).delete();
     } catch (e) {
       throw ServerException('Failed to delete user: $e');
     }

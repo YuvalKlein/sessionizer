@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/features/bookable_session/presentation/pages/simple_bookable_session_form.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 class SimpleBookableSessionPage extends StatelessWidget {
   const SimpleBookableSessionPage({super.key});
@@ -39,9 +40,7 @@ class SimpleBookableSessionPage extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('bookable_sessions')
-            .where('instructorId', isEqualTo: user?.uid)
+        stream: FirestoreQueries.getBookableSessionsByInstructor(user?.uid ?? '')
             .orderBy('createdAt', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
