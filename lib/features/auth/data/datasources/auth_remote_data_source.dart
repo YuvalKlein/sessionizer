@@ -154,6 +154,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required bool isInstructor,
   }) async {
     try {
+      print('🔐 Starting signup process for: $email');
+      print('📊 Firestore instance: ${_firestore.app.name}');
+      print('📊 Database ID: ${_firestore.databaseId}');
+      
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -164,6 +168,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
 
       final user = credential.user!;
+      print('✅ Firebase Auth user created: ${user.uid}');
+      
       final newUser = UserModel(
         id: user.uid,
         email: user.email ?? '',
@@ -174,11 +180,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         updatedAt: DateTime.now(),
       );
       
+      print('💾 Creating user document in Firestore...');
+      print('📁 Collection path: users/${user.uid}');
+      
       await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
+      print('✅ User document created successfully!');
+      
       return newUser;
     } on FirebaseAuthException catch (e) {
+      print('❌ Firebase Auth error: ${e.message}');
       throw AuthException('Sign up failed: ${e.message}');
     } catch (e) {
+      print('❌ Unexpected error: $e');
       throw ServerException('Unexpected error: $e');
     }
   }
