@@ -20,8 +20,6 @@ class BookableSessionRemoteDataSourceImpl implements BookableSessionRemoteDataSo
     print('DEBUG: Querying bookable_sessions for instructorId: $instructorId');
     
     return _firestore
-        .collection('sessionizer')
-        .doc('bookable_sessions')
         .collection('bookable_sessions')
         .where('instructorId', isEqualTo: instructorId)
         .snapshots()
@@ -49,8 +47,6 @@ class BookableSessionRemoteDataSourceImpl implements BookableSessionRemoteDataSo
   @override
   Stream<List<BookableSessionModel>> getAllBookableSessions() {
     return _firestore
-        .collection('sessionizer')
-        .doc('bookable_sessions')
         .collection('bookable_sessions')
         .where('isActive', isEqualTo: true)
         .snapshots()
@@ -82,8 +78,6 @@ class BookableSessionRemoteDataSourceImpl implements BookableSessionRemoteDataSo
   @override
   Future<BookableSessionModel> updateBookableSession(BookableSessionModel bookableSession) async {
     await _firestore
-        .collection('sessionizer')
-        .doc('bookable_sessions')
         .collection('bookable_sessions')
         .doc(bookableSession.id)
         .update(bookableSession.toMap());

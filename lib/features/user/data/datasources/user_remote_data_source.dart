@@ -20,8 +20,6 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Stream<List<UserProfileModel>> getInstructors() {
     return _firestore
-        .collection('sessionizer')
-        .doc('users')
         .collection('users')
         .where('isInstructor', isEqualTo: true)
         .snapshots()
@@ -35,8 +33,6 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Stream<UserProfileModel?> getUser(String userId) {
     return _firestore
-        .collection('sessionizer')
-        .doc('users')
         .collection('users')
         .doc(userId)
         .snapshots()

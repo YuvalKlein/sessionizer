@@ -27,8 +27,6 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
     try {
       // Get from new collection (session_types)
       final newSnapshot = await _firestore
-          .collection('sessionizer')
-          .doc('session_types')
           .collection('session_types')
           .get();
       
@@ -83,7 +81,7 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
 
   @override
   Future<SessionTypeModel> getSessionType(String id) async {
-    final doc = await _firestore.collection('sessionizer').doc('session_types').collection('session_types').doc(id).get();
+    final doc = await _firestore.collection('session_types').doc(id).get();
     if (!doc.exists) {
       throw Exception('Session type not found');
     }
@@ -92,7 +90,7 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
 
   @override
   Future<SessionTypeModel> createSessionType(SessionTypeModel sessionType) async {
-    final docRef = await _firestore.collection('sessionizer').doc('session_types').collection('session_types').add(sessionType.toMap());
+    final docRef = await _firestore.collection('session_types').add(sessionType.toMap());
     final createdSessionType = sessionType.copyWith(id: docRef.id);
     await docRef.set(createdSessionType.toMap());
     return createdSessionType;
@@ -101,8 +99,6 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
   @override
   Future<SessionTypeModel> updateSessionType(SessionTypeModel sessionType) async {
     await _firestore
-        .collection('sessionizer')
-        .doc('session_types')
         .collection('session_types')
         .doc(sessionType.id)
         .update(sessionType.toMap());
@@ -113,7 +109,7 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
   Future<void> deleteSessionType(String id) async {
     try {
       // Try new collection first
-      await _firestore.collection('sessionizer').doc('session_types').collection('session_types').doc(id).delete();
+      await _firestore.collection('session_types').doc(id).delete();
     } catch (e) {
       try {
         // Try old collection if new one fails
