@@ -18,6 +18,11 @@ keys.json
 .swiftpm/
 migrate_working_dir/
 
+# Firebase and Google services
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
+
 # IntelliJ related
 *.iml
 *.ipr
