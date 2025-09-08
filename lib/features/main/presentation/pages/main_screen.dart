@@ -198,13 +198,18 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   int _calculateSelectedIndex(BuildContext context, bool isInstructor) {
-    final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith('/profile')) {
-      return isInstructor ? 1 : 2;
-    } else if (location.startsWith('/client/bookings')) {
-      return 1;
+    try {
+      final location = GoRouterState.of(context).matchedLocation;
+      if (location.startsWith('/profile')) {
+        return isInstructor ? 1 : 2;
+      } else if (location.startsWith('/client/bookings')) {
+        return 1;
+      }
+      return 0;
+    } catch (e) {
+      // If GoRouterState is not available, return default index
+      return 0;
     }
-    return 0;
   }
 
   void _onItemTapped(int index, BuildContext context, bool isInstructor) {
