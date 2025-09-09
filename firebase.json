@@ -1,1 +1,53 @@
-{"hosting":{"public":"build/web","ignore":["firebase.json","**/.*","**/node_modules/**"],"rewrites":[{"source":"**","destination":"/index.html"}],"headers":[{"source":"**/*.@(js|css)","headers":[{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"},{"key":"Pragma","value":"no-cache"},{"key":"Expires","value":"0"}]},{"source":"**/*.@(html|json)","headers":[{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"},{"key":"Pragma","value":"no-cache"},{"key":"Expires","value":"0"}]}]},"firestore":{"rules":"firestore.rules","indexes":"firestore.indexes.json"},"flutter":{"platforms":{"android":{"default":{"projectId":"play-e37a6","appId":"1:469320289654:android:f76ee4470dee7142247e57","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"play-e37a6","configurations":{"android":"1:469320289654:android:f76ee4470dee7142247e57","web":"1:469320289654:web:59cda4ca811d3579247e57"}}}}}}
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{"source": "**", "destination": "/index.html"}],
+    "headers": [
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {"key": "Cache-Control", "value": "no-cache, no-store, must-revalidate"},
+          {"key": "Pragma", "value": "no-cache"},
+          {"key": "Expires", "value": "0"}
+        ]
+      },
+      {
+        "source": "**/*.@(html|json)",
+        "headers": [
+          {"key": "Cache-Control", "value": "no-cache, no-store, must-revalidate"},
+          {"key": "Pragma", "value": "no-cache"},
+          {"key": "Expires", "value": "0"}
+        ]
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs18"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "play-e37a6",
+          "appId": "1:469320289654:android:f76ee4470dee7142247e57",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "play-e37a6",
+          "configurations": {
+            "android": "1:469320289654:android:f76ee4470dee7142247e57",
+            "web": "1:469320289654:web:59cda4ca811d3579247e57"
+          }
+        }
+      }
+    }
+  }
+}

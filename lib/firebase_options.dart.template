@@ -69,3 +69,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'play-e37a6.appspot.com',
   );
 }
+

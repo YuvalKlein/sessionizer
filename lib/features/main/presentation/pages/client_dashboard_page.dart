@@ -44,6 +44,7 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
       createBooking: sl(),
       cancelBooking: sl(),
       repository: sl(),
+      sendBookingConfirmation: sl(),
     );
     
     _bookableSessionBloc = BookableSessionBloc(

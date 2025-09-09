@@ -103,17 +103,21 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
         );
       } else {
         // New booking mode - create new booking
+        print('📝 Creating new booking...');
         bookingData['createdAt'] = DateTime.now();
         
         final docRef = await FirestoreCollections.bookings.add(bookingData);
+        print('📝 Booking created with ID: ${docRef.id}');
 
         // Send email notification
         try {
+          print('📧 Attempting to send booking confirmation email for booking: ${docRef.id}');
           final sendBookingConfirmation = sl<SendBookingConfirmation>();
           await sendBookingConfirmation(docRef.id);
+          print('✅ Booking confirmation email sent successfully');
         } catch (e) {
           // Log error but don't fail the booking process
-          print('Error sending booking confirmation email: $e');
+          print('❌ Error sending booking confirmation email: $e');
         }
 
         ScaffoldMessenger.of(context).showSnackBar(

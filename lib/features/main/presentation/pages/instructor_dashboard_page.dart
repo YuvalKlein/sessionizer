@@ -102,6 +102,7 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
         createBooking: sl(),
         cancelBooking: sl(),
         repository: sl(),
+        sendBookingConfirmation: sl(),
       )..add(LoadBookingsByInstructor(instructorId: userId));
       AppLogger.blocEvent('BookingBloc', 'LoadBookingsByInstructor', data: {'instructorId': userId});
     }

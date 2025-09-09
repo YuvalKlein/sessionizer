@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/core/config/firestore_collections.dart';
+import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/features/notification/domain/usecases/send_booking_confirmation.dart';
 
 class ClientBookingCalendarPage extends StatefulWidget {
   final Map<String, dynamic> template;
@@ -278,7 +280,18 @@ class _ClientBookingCalendarPageState extends State<ClientBookingCalendarPage> {
         'createdAt': FieldValue.serverTimestamp(),
       };
 
-      await FirestoreCollections.bookings.add(bookingData);
+      final docRef = await FirestoreCollections.bookings.add(bookingData);
+
+      // Send email notification
+      try {
+        print('📧 Attempting to send booking confirmation email for booking: ${docRef.id}');
+        final sendBookingConfirmation = sl<SendBookingConfirmation>();
+        await sendBookingConfirmation(docRef.id);
+        print('✅ Booking confirmation email sent successfully');
+      } catch (e) {
+        // Log error but don't fail the booking process
+        print('❌ Error sending booking confirmation email: $e');
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,0 +1,64 @@
+[1mdiff --git a/firebase.json b/firebase.json[m
+[1mindex 7799263..098deaf 100644[m
+[1m--- a/firebase.json[m
+[1m+++ b/firebase.json[m
+[36m@@ -1,56 +1 @@[m
+[31m-{[m
+[31m-  "hosting": {[m
+[31m-    "public": "build/web",[m
+[31m-    "ignore": [[m
+[31m-      "firebase.json",[m
+[31m-      "**/.*",[m
+[31m-      "**/node_modules/**"[m
+[31m-    ],[m
+[31m-    "rewrites": [[m
+[31m-      {[m
+[31m-        "source": "**",[m
+[31m-        "destination": "/index.html"[m
+[31m-      }[m
+[31m-    ],[m
+[31m-    "headers": [[m
+[31m-      {[m
+[31m-        "source": "**/*.@(js|css)",[m
+[31m-        "headers": [[m
+[31m-          {[m
+[31m-            "key": "Cache-Control",[m
+[31m-            "value": "no-cache, no-store, must-revalidate"[m
+[31m-          },[m
+[31m-          {[m
+[31m-            "key": "Pragma",[m
+[31m-            "value": "no-cache"[m
+[31m-          },[m
+[31m-          {[m
+[31m-            "key": "Expires",[m
+[31m-            "value": "0"[m
+[31m-          }[m
+[31m-        ][m
+[31m-      },[m
+[31m-      {[m
+[31m-        "source": "**/*.@(html|json)",[m
+[31m-        "headers": [[m
+[31m-          {[m
+[31m-            "key": "Cache-Control",[m
+[31m-            "value": "no-cache, no-store, must-revalidate"[m
+[31m-          },[m
+[31m-          {[m
+[31m-            "key": "Pragma",[m
+[31m-            "value": "no-cache"[m
+[31m-          },[m
+[31m-          {[m
+[31m-            "key": "Expires",[m
+[31m-            "value": "0"[m
+[31m-          }[m
+[31m-        ][m
+[31m-      }[m
+[31m-    ][m
+[31m-  },[m
+[31m-  "firestore": {[m
+[31m-    "rules": "firestore.rules",[m
+[31m-    "indexes": "firestore.indexes.json"[m
+[31m-  }[m
+[31m-}[m
+\ No newline at end of file[m
+[32m+[m[32m{"hosting":{"public":"build/web","ignore":["firebase.json","**/.*","**/node_modules/**"],"rewrites":[{"source":"**","destination":"/index.html"}],"headers":[{"source":"**/*.@(js|css)","headers":[{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"},{"key":"Pragma","value":"no-cache"},{"key":"Expires","value":"0"}]},{"source":"**/*.@(html|json)","headers":[{"key":"Cache-Control","value":"no-cache, no-store, must-revalidate"},{"key":"Pragma","value":"no-cache"},{"key":"Expires","value":"0"}]}]},"firestore":{"rules":"firestore.rules","indexes":"firestore.indexes.json"},"flutter":{"platforms":{"android":{"default":{"projectId":"play-e37a6","appId":"1:469320289654:android:f76ee4470dee7142247e57","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"play-e37a6","configurations":{"android":"1:469320289654:android:f76ee4470dee7142247e57","web":"1:469320289654:web:59cda4ca811d3579247e57"}}}}}}[m
+\ No newline at end of file[m

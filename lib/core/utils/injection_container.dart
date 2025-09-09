@@ -86,6 +86,9 @@ import 'package:myapp/features/notification/domain/usecases/send_booking_confirm
 import 'package:myapp/features/notification/domain/usecases/send_booking_reminder.dart';
 import 'package:myapp/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:myapp/core/services/dependency_checker.dart';
+import 'package:myapp/core/services/email_service.dart';
+import 'package:myapp/core/services/email_service_dev.dart';
+import 'package:myapp/core/services/email_service_web.dart';
 
 final sl = GetIt.instance;
 
@@ -107,6 +110,9 @@ Future<void> initializeDependencies() async {
   
   // Services
   sl.registerLazySingleton(() => DependencyChecker(firestore: sl()));
+  
+  // Email Service - Use web-compatible service to avoid CORS issues (temporary)
+  sl.registerLazySingleton<EmailService>(() => WebEmailService());
 
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
@@ -257,6 +263,7 @@ Future<void> initializeDependencies() async {
       createBooking: sl(),
       cancelBooking: sl(),
       repository: sl(),
+      sendBookingConfirmation: sl(),
     ),
   );
 
@@ -280,6 +287,7 @@ Future<void> initializeDependencies() async {
     () => NotificationRemoteDataSourceImpl(
       firestore: sl(),
       messaging: sl(),
+      emailService: sl(),
     ),
   );
 

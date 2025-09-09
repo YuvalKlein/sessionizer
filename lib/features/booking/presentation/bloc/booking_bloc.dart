@@ -5,22 +5,26 @@ import 'package:myapp/features/booking/domain/usecases/create_booking.dart';
 import 'package:myapp/features/booking/domain/usecases/cancel_booking.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
+import 'package:myapp/features/notification/domain/usecases/send_booking_confirmation.dart';
 
 class BookingBloc extends Bloc<BookingEvent, BookingState> {
   final GetBookings _getBookings;
   final CreateBooking _createBooking;
   final CancelBooking _cancelBooking;
   final BookingRepository _repository;
+  final SendBookingConfirmation _sendBookingConfirmation;
 
   BookingBloc({
     required GetBookings getBookings,
     required CreateBooking createBooking,
     required CancelBooking cancelBooking,
     required BookingRepository repository,
+    required SendBookingConfirmation sendBookingConfirmation,
   })  : _getBookings = getBookings,
         _createBooking = createBooking,
         _cancelBooking = cancelBooking,
         _repository = repository,
+        _sendBookingConfirmation = sendBookingConfirmation,
         super(BookingInitial()) {
     on<LoadBookings>(_onLoadBookings);
     on<LoadBookingsByInstructor>(_onLoadBookingsByInstructor);
@@ -81,7 +85,21 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
     result.fold(
       (failure) => emit(BookingError(message: failure.message)),
-      (booking) => emit(BookingCreated(booking: booking)),
+      (booking) async {
+        // Send email notification after successful booking creation
+        try {
+          print('📧 Attempting to send booking confirmation email for booking: ${booking.id}');
+          print('📧 Booking details: ${booking.toString()}');
+          await _sendBookingConfirmation(booking.id);
+          print('✅ Booking confirmation email sent successfully');
+        } catch (e) {
+          // Log error but don't fail the booking process
+          print('❌ Error sending booking confirmation email: $e');
+          print('❌ Error details: ${e.toString()}');
+        }
+        
+        emit(BookingCreated(booking: booking));
+      },
     );
   }
 
