@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:myapp/core/config/firestore_collections.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
+import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/features/notification/domain/usecases/send_booking_confirmation.dart';
 
 class BookingConfirmationModal extends StatefulWidget {
   final String sessionId;
@@ -103,7 +105,22 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
         // New booking mode - create new booking
         bookingData['createdAt'] = DateTime.now();
         
+<<<<<<< HEAD
         await FirestoreCollections.bookings.add(bookingData);
+=======
+        final docRef = await FirebaseFirestore.instance
+            .collection('bookings')
+            .add(bookingData);
+>>>>>>> notification
+
+        // Send email notification
+        try {
+          final sendBookingConfirmation = sl<SendBookingConfirmation>();
+          await sendBookingConfirmation(docRef.id);
+        } catch (e) {
+          // Log error but don't fail the booking process
+          print('Error sending booking confirmation email: $e');
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

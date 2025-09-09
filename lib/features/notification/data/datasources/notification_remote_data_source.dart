@@ -64,6 +64,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final bookingData = bookingDoc.data() as Map<String, dynamic>;
       final clientId = bookingData['clientId'] as String?;
+      final instructorId = bookingData['instructorId'] as String?;
       
       if (clientId == null) {
         throw ServerException('Client ID not found in booking');
@@ -78,8 +79,56 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final clientData = clientDoc.data() as Map<String, dynamic>;
       final clientName = clientData['displayName'] ?? 'Client';
+      final clientEmail = clientData['email'] as String? ?? 'yuklein@gmail.com'; // Default to test email
 
-      // Create notification
+      // Get instructor details
+      String instructorName = 'Your Instructor';
+      if (instructorId != null) {
+        final instructorDoc = await _firestore
+            .collection('users')
+            .doc(instructorId)
+            .get();
+        
+        if (instructorDoc.exists) {
+          final instructorData = instructorDoc.data()!;
+          instructorName = instructorData['displayName'] ?? 'Your Instructor';
+        }
+      }
+
+      // Get bookable session details
+      final bookableSessionId = bookingData['bookableSessionId'] as String?;
+      String sessionTitle = 'Your Session';
+      if (bookableSessionId != null) {
+        final sessionDoc = await _firestore
+            .collection('bookable_sessions')
+            .doc(bookableSessionId)
+            .get();
+        
+        if (sessionDoc.exists) {
+          final sessionData = sessionDoc.data()!;
+          sessionTitle = sessionData['title'] ?? 'Your Session';
+        }
+      }
+
+      // Format booking date and time
+      final startTime = bookingData['startTime'] as String?;
+      final endTime = bookingData['endTime'] as String?;
+      final bookingDate = bookingData['date'] as String?;
+      
+      String formattedDateTime = 'TBD';
+      if (startTime != null && endTime != null && bookingDate != null) {
+        try {
+          final startDateTime = DateTime.parse(startTime);
+          final endDateTime = DateTime.parse(endTime);
+          final date = DateTime.parse(bookingDate);
+          
+          formattedDateTime = '${date.day}/${date.month}/${date.year} at ${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')} - ${endDateTime.hour.toString().padLeft(2, '0')}:${endDateTime.minute.toString().padLeft(2, '0')}';
+        } catch (e) {
+          AppLogger.warning('Error parsing booking date/time: $e');
+        }
+      }
+
+      // Create in-app notification
       final notification = NotificationModel(
         id: 'booking_confirmation_${bookingId}_${DateTime.now().millisecondsSinceEpoch}',
         title: 'Booking Confirmed! 🎉',
@@ -96,6 +145,17 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       );
 
       await sendNotification(notification);
+
+      // Send email notification using Firebase Trigger Email extension
+      await _sendBookingConfirmationEmail(
+        clientName: clientName,
+        clientEmail: clientEmail,
+        instructorName: instructorName,
+        sessionTitle: sessionTitle,
+        bookingDateTime: formattedDateTime,
+        bookingId: bookingId,
+      );
+
     } catch (e) {
       AppLogger.error('❌ Error sending booking confirmation: $e');
       throw ServerException('Failed to send booking confirmation: $e');
@@ -425,5 +485,152 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       AppLogger.error('❌ Error sending push notification: $e');
       // Don't throw here as push notifications are not critical
     }
+  }
+
+  /// Send booking confirmation email using Firebase Trigger Email extension
+  Future<void> _sendBookingConfirmationEmail({
+    required String clientName,
+    required String clientEmail,
+    required String instructorName,
+    required String sessionTitle,
+    required String bookingDateTime,
+    required String bookingId,
+  }) async {
+    try {
+      AppLogger.info('📧 Sending booking confirmation email to: $clientEmail');
+      
+      // Create email document for Firebase Trigger Email extension
+      final emailDoc = {
+        'to': [clientEmail], // For testing, this will be yuklein@gmail.com
+        'message': {
+          'subject': '🎉 Booking Confirmed - $sessionTitle',
+          'text': _generateEmailText(
+            clientName: clientName,
+            instructorName: instructorName,
+            sessionTitle: sessionTitle,
+            bookingDateTime: bookingDateTime,
+            bookingId: bookingId,
+          ),
+          'html': _generateEmailHtml(
+            clientName: clientName,
+            instructorName: instructorName,
+            sessionTitle: sessionTitle,
+            bookingDateTime: bookingDateTime,
+            bookingId: bookingId,
+          ),
+        },
+        'createdAt': DateTime.now().toIso8601String(),
+        'type': 'booking_confirmation',
+        'bookingId': bookingId,
+      };
+
+      // Add document to 'mail' collection to trigger email
+      await _firestore
+          .collection('mail')
+          .add(emailDoc);
+
+      AppLogger.info('✅ Booking confirmation email queued successfully');
+    } catch (e) {
+      AppLogger.error('❌ Error sending booking confirmation email: $e');
+      // Don't throw here as email is not critical for the booking process
+    }
+  }
+
+  /// Generate plain text email content
+  String _generateEmailText({
+    required String clientName,
+    required String instructorName,
+    required String sessionTitle,
+    required String bookingDateTime,
+    required String bookingId,
+  }) {
+    return '''
+Hi $clientName! 🎉
+
+Your session has been confirmed! We're excited to see you.
+
+📅 Session Details:
+• Session: $sessionTitle
+• Instructor: $instructorName
+• Date & Time: $bookingDateTime
+• Booking ID: $bookingId
+
+We look forward to seeing you soon!
+
+Best regards,
+The Sessionizer Team
+
+---
+This is an automated message. Please do not reply to this email.
+''';
+  }
+
+  /// Generate HTML email content
+  String _generateEmailHtml({
+    required String clientName,
+    required String instructorName,
+    required String sessionTitle,
+    required String bookingDateTime,
+    required String bookingId,
+  }) {
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .session-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .detail-row { display: flex; margin: 10px 0; }
+        .detail-label { font-weight: bold; width: 120px; color: #666; }
+        .detail-value { flex: 1; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; }
+        .emoji { font-size: 24px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span class="emoji">🎉</span> Booking Confirmed!</h1>
+        <p>Hi $clientName! Your session has been confirmed.</p>
+    </div>
+    
+    <div class="content">
+        <p>We're excited to see you! Here are your session details:</p>
+        
+        <div class="session-details">
+            <div class="detail-row">
+                <div class="detail-label">Session:</div>
+                <div class="detail-value">$sessionTitle</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Instructor:</div>
+                <div class="detail-value">$instructorName</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Date & Time:</div>
+                <div class="detail-value">$bookingDateTime</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Booking ID:</div>
+                <div class="detail-value">$bookingId</div>
+            </div>
+        </div>
+        
+        <p>We look forward to seeing you soon!</p>
+        
+        <p>Best regards,<br>
+        <strong>The Sessionizer Team</strong></p>
+    </div>
+    
+    <div class="footer">
+        <p>This is an automated message. Please do not reply to this email.</p>
+    </div>
+</body>
+</html>
+''';
   }
 }

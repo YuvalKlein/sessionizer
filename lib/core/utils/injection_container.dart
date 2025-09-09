@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:myapp/core/config/app_config.dart';
@@ -99,6 +100,7 @@ Future<void> initializeDependencies() async {
     print('🔧 Firestore app project: ${firestore.app.options.projectId}');
     return firestore;
   });
+  sl.registerLazySingleton(() => FirebaseMessaging.instance);
   sl.registerLazySingleton(() => GoogleSignIn(
     clientId: kIsWeb ? AppConfig.googleClientId : null,
   ));
