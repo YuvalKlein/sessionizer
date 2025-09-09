@@ -105,13 +105,7 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
         // New booking mode - create new booking
         bookingData['createdAt'] = DateTime.now();
         
-<<<<<<< HEAD
-        await FirestoreCollections.bookings.add(bookingData);
-=======
-        final docRef = await FirebaseFirestore.instance
-            .collection('bookings')
-            .add(bookingData);
->>>>>>> notification
+        final docRef = await FirestoreCollections.bookings.add(bookingData);
 
         // Send email notification
         try {
