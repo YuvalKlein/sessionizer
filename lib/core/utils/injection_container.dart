@@ -87,8 +87,10 @@ import 'package:myapp/features/notification/domain/usecases/send_booking_reminde
 import 'package:myapp/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:myapp/core/services/dependency_checker.dart';
 import 'package:myapp/core/services/email_service.dart';
-import 'package:myapp/core/services/email_service_dev.dart';
 import 'package:myapp/core/services/email_service_web.dart';
+import 'package:myapp/core/services/email_service_firebase.dart';
+import 'package:myapp/core/services/email_service_simple.dart';
+import 'package:myapp/core/config/environment_config.dart';
 
 final sl = GetIt.instance;
 
@@ -111,8 +113,8 @@ Future<void> initializeDependencies() async {
   // Services
   sl.registerLazySingleton(() => DependencyChecker(firestore: sl()));
   
-  // Email Service - Use web-compatible service to avoid CORS issues (temporary)
-  sl.registerLazySingleton<EmailService>(() => WebEmailService());
+  // Email Service - Environment-based selection
+  sl.registerLazySingleton<EmailService>(() => _createEmailService());
 
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
@@ -309,4 +311,19 @@ Future<void> initializeDependencies() async {
       repository: sl(),
     ),
   );
+}
+
+/// Factory function to create the appropriate email service based on environment
+EmailService _createEmailService() {
+  // Print environment information
+  EnvironmentConfig.printEnvironmentInfo();
+  
+  // Choose email service based on environment
+  if (EnvironmentConfig.shouldUseRealEmail) {
+    print('🔧 Email Service: Using FirebaseEmailService for real email delivery via SendGrid');
+    return FirebaseEmailService();
+  } else {
+    print('🔧 Email Service: Using SimpleEmailService for console logging');
+    return SimpleEmailService();
+  }
 }

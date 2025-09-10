@@ -1,11 +1,12 @@
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:myapp/core/services/email_service.dart';
 import 'package:myapp/core/utils/logger.dart';
 
-/// Firebase Functions email service that calls server-side functions
+/// Firebase Functions email service that calls server-side functions via HTTP
 /// This bypasses CORS issues by using Firebase Functions
 class FirebaseEmailService implements EmailService {
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  static const String _baseUrl = 'https://us-central1-play-e37a6.cloudfunctions.net';
 
   @override
   Future<void> sendEmail({
@@ -21,19 +22,28 @@ class FirebaseEmailService implements EmailService {
       AppLogger.info('📧 To: $to');
       AppLogger.info('📧 Subject: $subject');
       
-      final callable = _functions.httpsCallable('sendEmail');
+      final url = Uri.parse('$_baseUrl/sendEmail');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'to': to,
+          'subject': subject,
+          'textContent': textContent,
+          'htmlContent': htmlContent,
+          'fromName': fromName,
+          'fromEmail': fromEmail,
+        }),
+      );
       
-      final result = await callable.call({
-        'to': to,
-        'subject': subject,
-        'textContent': textContent,
-        'htmlContent': htmlContent,
-        'fromName': fromName,
-        'fromEmail': fromEmail,
-      });
-      
-      AppLogger.info('✅ Email sent successfully via Firebase Function');
-      print('✅ Email sent successfully via Firebase Function: ${result.data}');
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Email sent successfully via Firebase Function');
+        print('✅ Email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
     } catch (e) {
       AppLogger.error('❌ Error sending email via Firebase Function: $e');
       print('❌ Error sending email via Firebase Function: $e');
@@ -58,19 +68,28 @@ class FirebaseEmailService implements EmailService {
       AppLogger.info('📧 Date/Time: $bookingDateTime');
       AppLogger.info('📧 Booking ID: $bookingId');
       
-      final callable = _functions.httpsCallable('sendBookingConfirmation');
+      final url = Uri.parse('$_baseUrl/sendBookingConfirmation');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'clientName': clientName,
+          'clientEmail': clientEmail,
+          'instructorName': instructorName,
+          'sessionTitle': sessionTitle,
+          'bookingDateTime': bookingDateTime,
+          'bookingId': bookingId,
+        }),
+      );
       
-      final result = await callable.call({
-        'clientName': clientName,
-        'clientEmail': clientEmail,
-        'instructorName': instructorName,
-        'sessionTitle': sessionTitle,
-        'bookingDateTime': bookingDateTime,
-        'bookingId': bookingId,
-      });
-      
-      AppLogger.info('✅ Booking confirmation email sent successfully via Firebase Function');
-      print('✅ Booking confirmation email sent successfully via Firebase Function: ${result.data}');
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Booking confirmation email sent successfully via Firebase Function');
+        print('✅ Booking confirmation email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
     } catch (e) {
       AppLogger.error('❌ Error sending booking confirmation email via Firebase Function: $e');
       print('❌ Error sending booking confirmation email via Firebase Function: $e');
@@ -95,19 +114,28 @@ class FirebaseEmailService implements EmailService {
       AppLogger.info('📧 Date/Time: $bookingDateTime');
       AppLogger.info('📧 Booking ID: $bookingId');
       
-      final callable = _functions.httpsCallable('sendInstructorNotification');
+      final url = Uri.parse('$_baseUrl/sendInstructorBookingNotification');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'instructorName': instructorName,
+          'instructorEmail': instructorEmail,
+          'clientName': clientName,
+          'sessionTitle': sessionTitle,
+          'bookingDateTime': bookingDateTime,
+          'bookingId': bookingId,
+        }),
+      );
       
-      final result = await callable.call({
-        'instructorName': instructorName,
-        'instructorEmail': instructorEmail,
-        'clientName': clientName,
-        'sessionTitle': sessionTitle,
-        'bookingDateTime': bookingDateTime,
-        'bookingId': bookingId,
-      });
-      
-      AppLogger.info('✅ Instructor notification email sent successfully via Firebase Function');
-      print('✅ Instructor notification email sent successfully via Firebase Function: ${result.data}');
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Instructor notification email sent successfully via Firebase Function');
+        print('✅ Instructor notification email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
     } catch (e) {
       AppLogger.error('❌ Error sending instructor notification email via Firebase Function: $e');
       print('❌ Error sending instructor notification email via Firebase Function: $e');

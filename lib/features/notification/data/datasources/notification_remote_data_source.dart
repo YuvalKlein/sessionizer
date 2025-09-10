@@ -69,8 +69,18 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       }
 
       final bookingData = bookingDoc.data() as Map<String, dynamic>;
+      print('📧 Booking data keys: ${bookingData.keys.toList()}');
+      print('📧 Full booking data: $bookingData');
       final clientId = bookingData['clientId'] as String?;
       final instructorId = bookingData['instructorId'] as String?;
+      print('📧 Client ID: $clientId');
+      print('📧 Instructor ID: $instructorId');
+      
+      // Debug session and time data
+      print('📧 Bookable session ID: ${bookingData['bookableSessionId']}');
+      print('📧 Start time: ${bookingData['startTime']}');
+      print('📧 End time: ${bookingData['endTime']}');
+      print('📧 Date: ${bookingData['date']}');
       
       if (clientId == null) {
         throw ServerException('Client ID not found in booking');
@@ -94,29 +104,31 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       // Get instructor details
       String instructorName = 'Your Instructor';
       if (instructorId != null) {
-        final instructorDoc = await _firestore
-            .collection('users')
-            .doc(instructorId)
-            .get();
+        final instructorDoc = await FirestoreCollections.user(instructorId).get();
         
         if (instructorDoc.exists) {
-          final instructorData = instructorDoc.data()!;
+          final instructorData = instructorDoc.data()! as Map<String, dynamic>;
           instructorName = instructorData['displayName'] ?? 'Your Instructor';
         }
       }
 
       // Get bookable session details
       final bookableSessionId = bookingData['bookableSessionId'] as String?;
+      print('📧 Getting session details for ID: $bookableSessionId');
+      if (bookableSessionId != null) {
+        print('📧 Using FirestoreCollections path: ${FirestoreCollections.bookableSession(bookableSessionId).path}');
+      }
       String sessionTitle = 'Your Session';
       if (bookableSessionId != null) {
-        final sessionDoc = await _firestore
-            .collection('bookable_sessions')
-            .doc(bookableSessionId)
-            .get();
+        final sessionDoc = await FirestoreCollections.bookableSession(bookableSessionId).get();
         
         if (sessionDoc.exists) {
-          final sessionData = sessionDoc.data()!;
+          final sessionData = sessionDoc.data()! as Map<String, dynamic>;
+          print('📧 Session data: $sessionData');
           sessionTitle = sessionData['title'] ?? 'Your Session';
+          print('📧 Session title from document: $sessionTitle');
+        } else {
+          print('❌ Session document does not exist');
         }
       }
 
@@ -150,16 +162,22 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       }
       
       String formattedDateTime = 'TBD';
-      if (startTime != null && endTime != null && bookingDate != null) {
+      if (startTime != null && endTime != null) {
         try {
           final startDateTime = DateTime.parse(startTime);
           final endDateTime = DateTime.parse(endTime);
-          final date = DateTime.parse(bookingDate);
+          
+          // Use the date from startTime if bookingDate is null
+          final date = bookingDate != null ? DateTime.parse(bookingDate) : startDateTime;
           
           formattedDateTime = '${date.day}/${date.month}/${date.year} at ${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')} - ${endDateTime.hour.toString().padLeft(2, '0')}:${endDateTime.minute.toString().padLeft(2, '0')}';
+          print('📧 Formatted date/time: $formattedDateTime');
         } catch (e) {
           AppLogger.warning('Error parsing booking date/time: $e');
+          print('❌ Error parsing date/time: $e');
         }
+      } else {
+        print('❌ Missing startTime or endTime for date formatting');
       }
 
       // Create in-app notification
@@ -205,24 +223,35 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       }
 
       // Send instructor notification email
+      print('📧 Checking instructor email - instructorId: $instructorId');
       if (instructorId != null) {
+        print('📧 Instructor ID found, getting instructor document...');
+        print('📧 Using FirestoreCollections path: ${FirestoreCollections.user(instructorId).path}');
         // Get instructor email
-        final instructorDoc = await _firestore
-            .collection('users')
-            .doc(instructorId)
-            .get();
+        final instructorDoc = await FirestoreCollections.user(instructorId).get();
         
+        print('📧 Instructor document exists: ${instructorDoc.exists}');
+        
+        // Always use test email for now - will be replaced with real emails later
+        final instructorEmail = 'yuklein@gmail.com';
+        
+        // Get instructor name from document if it exists, otherwise use fallback
+        String finalInstructorName = instructorName;
         if (instructorDoc.exists) {
-          final instructorData = instructorDoc.data()!;
-          // Always use test email for now - will be replaced with real emails later
-          final instructorEmail = 'yuklein@gmail.com';
-          
-          AppLogger.info('📧 Instructor email: $instructorEmail');
-          AppLogger.info('📧 Instructor name: $instructorName');
-          
-          print('📧 About to send instructor email to: $instructorEmail');
+          final instructorData = instructorDoc.data()! as Map<String, dynamic>;
+          finalInstructorName = instructorData['displayName'] ?? instructorName;
+        } else {
+          print('⚠️ Instructor document does not exist, using fallback name');
+          finalInstructorName = 'Instructor';
+        }
+        
+        AppLogger.info('📧 Instructor email: $instructorEmail');
+        AppLogger.info('📧 Instructor name: $finalInstructorName');
+        
+        print('📧 About to send instructor email to: $instructorEmail');
+        try {
           await _emailService.sendInstructorBookingNotificationEmail(
-            instructorName: instructorName,
+            instructorName: finalInstructorName,
             instructorEmail: instructorEmail,
             clientName: clientName,
             sessionTitle: sessionTitle,
@@ -230,7 +259,12 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
             bookingId: bookingId,
           );
           print('📧 Instructor email sent successfully');
+        } catch (e) {
+          print('❌ Error sending instructor email: $e');
+          print('❌ Error type: ${e.runtimeType}');
         }
+      } else {
+        print('❌ No instructor ID found in booking data');
       }
 
     } catch (e) {
@@ -272,29 +306,31 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       final instructorId = bookingData['instructorId'] as String?;
       String instructorName = 'Your Instructor';
       if (instructorId != null) {
-        final instructorDoc = await _firestore
-            .collection('users')
-            .doc(instructorId)
-            .get();
+        final instructorDoc = await FirestoreCollections.user(instructorId).get();
         
         if (instructorDoc.exists) {
-          final instructorData = instructorDoc.data()!;
+          final instructorData = instructorDoc.data()! as Map<String, dynamic>;
           instructorName = instructorData['displayName'] ?? 'Your Instructor';
         }
       }
 
       // Get bookable session details
       final bookableSessionId = bookingData['bookableSessionId'] as String?;
+      print('📧 Getting session details for ID: $bookableSessionId');
+      if (bookableSessionId != null) {
+        print('📧 Using FirestoreCollections path: ${FirestoreCollections.bookableSession(bookableSessionId).path}');
+      }
       String sessionTitle = 'Your Session';
       if (bookableSessionId != null) {
-        final sessionDoc = await _firestore
-            .collection('bookable_sessions')
-            .doc(bookableSessionId)
-            .get();
+        final sessionDoc = await FirestoreCollections.bookableSession(bookableSessionId).get();
         
         if (sessionDoc.exists) {
-          final sessionData = sessionDoc.data()!;
+          final sessionData = sessionDoc.data()! as Map<String, dynamic>;
+          print('📧 Session data: $sessionData');
           sessionTitle = sessionData['title'] ?? 'Your Session';
+          print('📧 Session title from document: $sessionTitle');
+        } else {
+          print('❌ Session document does not exist');
         }
       }
 
@@ -328,16 +364,22 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       }
       
       String formattedDateTime = 'TBD';
-      if (startTime != null && endTime != null && bookingDate != null) {
+      if (startTime != null && endTime != null) {
         try {
           final startDateTime = DateTime.parse(startTime);
           final endDateTime = DateTime.parse(endTime);
-          final date = DateTime.parse(bookingDate);
+          
+          // Use the date from startTime if bookingDate is null
+          final date = bookingDate != null ? DateTime.parse(bookingDate) : startDateTime;
           
           formattedDateTime = '${date.day}/${date.month}/${date.year} at ${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')} - ${endDateTime.hour.toString().padLeft(2, '0')}:${endDateTime.minute.toString().padLeft(2, '0')}';
+          print('📧 Formatted date/time: $formattedDateTime');
         } catch (e) {
           AppLogger.warning('Error parsing booking date/time: $e');
+          print('❌ Error parsing date/time: $e');
         }
+      } else {
+        print('❌ Missing startTime or endTime for date formatting');
       }
 
       // Create reminder notification
@@ -407,29 +449,31 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       final instructorId = bookingData['instructorId'] as String?;
       String instructorName = 'Your Instructor';
       if (instructorId != null) {
-        final instructorDoc = await _firestore
-            .collection('users')
-            .doc(instructorId)
-            .get();
+        final instructorDoc = await FirestoreCollections.user(instructorId).get();
         
         if (instructorDoc.exists) {
-          final instructorData = instructorDoc.data()!;
+          final instructorData = instructorDoc.data()! as Map<String, dynamic>;
           instructorName = instructorData['displayName'] ?? 'Your Instructor';
         }
       }
 
       // Get bookable session details
       final bookableSessionId = bookingData['bookableSessionId'] as String?;
+      print('📧 Getting session details for ID: $bookableSessionId');
+      if (bookableSessionId != null) {
+        print('📧 Using FirestoreCollections path: ${FirestoreCollections.bookableSession(bookableSessionId).path}');
+      }
       String sessionTitle = 'Your Session';
       if (bookableSessionId != null) {
-        final sessionDoc = await _firestore
-            .collection('bookable_sessions')
-            .doc(bookableSessionId)
-            .get();
+        final sessionDoc = await FirestoreCollections.bookableSession(bookableSessionId).get();
         
         if (sessionDoc.exists) {
-          final sessionData = sessionDoc.data()!;
+          final sessionData = sessionDoc.data()! as Map<String, dynamic>;
+          print('📧 Session data: $sessionData');
           sessionTitle = sessionData['title'] ?? 'Your Session';
+          print('📧 Session title from document: $sessionTitle');
+        } else {
+          print('❌ Session document does not exist');
         }
       }
 
@@ -463,16 +507,22 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
       }
       
       String formattedDateTime = 'TBD';
-      if (startTime != null && endTime != null && bookingDate != null) {
+      if (startTime != null && endTime != null) {
         try {
           final startDateTime = DateTime.parse(startTime);
           final endDateTime = DateTime.parse(endTime);
-          final date = DateTime.parse(bookingDate);
+          
+          // Use the date from startTime if bookingDate is null
+          final date = bookingDate != null ? DateTime.parse(bookingDate) : startDateTime;
           
           formattedDateTime = '${date.day}/${date.month}/${date.year} at ${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')} - ${endDateTime.hour.toString().padLeft(2, '0')}:${endDateTime.minute.toString().padLeft(2, '0')}';
+          print('📧 Formatted date/time: $formattedDateTime');
         } catch (e) {
           AppLogger.warning('Error parsing booking date/time: $e');
+          print('❌ Error parsing date/time: $e');
         }
+      } else {
+        print('❌ Missing startTime or endTime for date formatting');
       }
 
       // Create cancellation notification
