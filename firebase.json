@@ -1,7 +1,7 @@
 {
   "hosting": {
-    "site": "arenna",
-    "public": "deploy-web",
+    "site": "apiclientapp",
+    "public": "build/web",
     "rewrites": [
       {
         "source": "**",
