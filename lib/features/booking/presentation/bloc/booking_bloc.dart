@@ -109,7 +109,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   ) async {
     emit(BookingLoading());
 
-    final result = await _cancelBooking(CancelBookingParams(id: event.id));
+    final result = await _cancelBooking(CancelBookingParams(id: event.id, cancelledBy: event.cancelledBy));
 
     result.fold(
       (failure) => emit(BookingError(message: failure.message)),

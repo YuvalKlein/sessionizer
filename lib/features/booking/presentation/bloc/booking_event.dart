@@ -55,11 +55,12 @@ class UpdateBookingEvent extends BookingEvent {
 
 class CancelBookingEvent extends BookingEvent {
   final String id;
+  final String cancelledBy; // 'client' or 'instructor'
 
-  const CancelBookingEvent({required this.id});
+  const CancelBookingEvent({required this.id, required this.cancelledBy});
 
   @override
-  List<Object> get props => [id];
+  List<Object> get props => [id, cancelledBy];
 }
 
 class ConfirmBookingEvent extends BookingEvent {

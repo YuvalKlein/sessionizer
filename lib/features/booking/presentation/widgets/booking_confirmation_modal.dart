@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/core/config/firestore_collections.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
 import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/core/services/email_service.dart';
 import 'package:myapp/features/notification/domain/usecases/send_booking_confirmation.dart';
 
 class BookingConfirmationModal extends StatefulWidget {
@@ -93,7 +95,84 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
           'updatedAt': DateTime.now(),
         };
         
+        // Get the old booking data for email comparison
+        final oldBookingDoc = await FirestoreCollections.booking(widget.rescheduleBookingId!).get();
+        final oldBookingData = oldBookingDoc.data() as Map<String, dynamic>?;
+        final oldStartTime = oldBookingData?['startTime'] as Timestamp?;
+        final oldEndTime = oldBookingData?['endTime'] as Timestamp?;
+        
         await FirestoreCollections.booking(widget.rescheduleBookingId!).update(rescheduleData);
+
+        // Send reschedule emails
+        try {
+          print('📧 Sending reschedule emails for booking: ${widget.rescheduleBookingId}');
+          
+          // Get booking details for emails
+          final bookingDoc = await FirestoreCollections.booking(widget.rescheduleBookingId!).get();
+          final bookingData = bookingDoc.data() as Map<String, dynamic>?;
+          
+          if (bookingData != null) {
+            final clientId = bookingData['clientId'] as String?;
+            final instructorId = bookingData['instructorId'] as String?;
+            final bookableSessionId = bookingData['bookableSessionId'] as String?;
+            
+            if (clientId != null && instructorId != null && bookableSessionId != null) {
+              // Get client details
+              final clientDoc = await FirestoreCollections.user(clientId).get();
+              final clientData = clientDoc.data() as Map<String, dynamic>?;
+              final clientName = clientData?['name'] as String? ?? 'Client';
+              final clientEmail = clientData?['email'] as String? ?? 'client@example.com';
+              
+              // Get instructor details
+              final instructorDoc = await FirestoreCollections.user(instructorId).get();
+              final instructorData = instructorDoc.data() as Map<String, dynamic>?;
+              final instructorName = instructorData?['name'] as String? ?? 'Instructor';
+              final instructorEmail = instructorData?['email'] as String? ?? 'instructor@example.com';
+              
+              // Get session details
+              final sessionDoc = await FirestoreCollections.bookableSession(bookableSessionId).get();
+              final sessionData = sessionDoc.data() as Map<String, dynamic>?;
+              final sessionTitle = sessionData?['title'] as String? ?? 'Session';
+              
+              // Format old and new times
+              final oldStartDateTime = oldStartTime?.toDate() ?? DateTime.now();
+              final oldEndDateTime = oldEndTime?.toDate() ?? DateTime.now();
+              final oldBookingDateTime = '${oldStartDateTime.day}/${oldStartDateTime.month}/${oldStartDateTime.year} at ${oldStartDateTime.hour}:${oldStartDateTime.minute.toString().padLeft(2, '0')} - ${oldEndDateTime.hour}:${oldEndDateTime.minute.toString().padLeft(2, '0')}';
+              
+              final newBookingDateTime = '${startTime.day}/${startTime.month}/${startTime.year} at ${startTime.hour}:${startTime.minute.toString().padLeft(2, '0')} - ${endTime.hour}:${endTime.minute.toString().padLeft(2, '0')}';
+              
+              // Send reschedule emails
+              final emailService = sl<EmailService>();
+              
+              // Send client reschedule email
+              await emailService.sendBookingRescheduleEmail(
+                clientName: clientName,
+                clientEmail: clientEmail,
+                instructorName: instructorName,
+                sessionTitle: sessionTitle,
+                oldBookingDateTime: oldBookingDateTime,
+                newBookingDateTime: newBookingDateTime,
+                bookingId: widget.rescheduleBookingId!,
+              );
+              
+              // Send instructor reschedule notification email
+              await emailService.sendInstructorRescheduleNotificationEmail(
+                instructorName: instructorName,
+                instructorEmail: instructorEmail,
+                clientName: clientName,
+                sessionTitle: sessionTitle,
+                oldBookingDateTime: oldBookingDateTime,
+                newBookingDateTime: newBookingDateTime,
+                bookingId: widget.rescheduleBookingId!,
+              );
+              
+              print('✅ Reschedule emails sent successfully');
+            }
+          }
+        } catch (e) {
+          print('❌ Error sending reschedule emails: $e');
+          // Don't fail the reschedule if email fails
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

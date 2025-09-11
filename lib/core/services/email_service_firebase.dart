@@ -6,7 +6,7 @@ import 'package:myapp/core/utils/logger.dart';
 /// Firebase Functions email service that calls server-side functions via HTTP
 /// This bypasses CORS issues by using Firebase Functions
 class FirebaseEmailService implements EmailService {
-  static const String _baseUrl = 'https://us-central1-play-e37a6.cloudfunctions.net';
+  static const String _baseUrl = 'https://us-central1-apiclientapp.cloudfunctions.net';
 
   @override
   Future<void> sendEmail({
@@ -152,17 +152,87 @@ class FirebaseEmailService implements EmailService {
     required String bookingDateTime,
     required String bookingId,
   }) async {
-    // For now, use the generic sendEmail method
-    await sendEmail(
-      to: clientEmail,
-      subject: 'Booking Cancelled',
-      htmlContent: _getBookingCancellationHtml(
-        clientName, instructorName, sessionTitle, bookingDateTime, bookingId
-      ),
-      textContent: _getBookingCancellationText(
-        clientName, instructorName, sessionTitle, bookingDateTime, bookingId
-      ),
-    );
+    try {
+      AppLogger.info('📧 FirebaseEmailService.sendBookingCancellationEmail called');
+      AppLogger.info('📧 Client: $clientName ($clientEmail)');
+      AppLogger.info('📧 Instructor: $instructorName');
+      AppLogger.info('📧 Session: $sessionTitle');
+      AppLogger.info('📧 Date/Time: $bookingDateTime');
+      AppLogger.info('📧 Booking ID: $bookingId');
+      
+      final url = Uri.parse('$_baseUrl/sendBookingCancellation');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'clientName': clientName,
+          'clientEmail': clientEmail,
+          'instructorName': instructorName,
+          'sessionTitle': sessionTitle,
+          'bookingDateTime': bookingDateTime,
+          'bookingId': bookingId,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Booking cancellation email sent successfully via Firebase Function');
+        print('✅ Booking cancellation email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error sending booking cancellation email via Firebase Function: $e');
+      print('❌ Error sending booking cancellation email via Firebase Function: $e');
+      throw Exception('Failed to send booking cancellation email: $e');
+    }
+  }
+
+  @override
+  Future<void> sendInstructorCancellationNotificationEmail({
+    required String instructorName,
+    required String instructorEmail,
+    required String clientName,
+    required String sessionTitle,
+    required String bookingDateTime,
+    required String bookingId,
+  }) async {
+    try {
+      AppLogger.info('📧 FirebaseEmailService.sendInstructorCancellationNotificationEmail called');
+      AppLogger.info('📧 Instructor: $instructorName ($instructorEmail)');
+      AppLogger.info('📧 Client: $clientName');
+      AppLogger.info('📧 Session: $sessionTitle');
+      AppLogger.info('📧 Date/Time: $bookingDateTime');
+      AppLogger.info('📧 Booking ID: $bookingId');
+      
+      final url = Uri.parse('$_baseUrl/sendInstructorCancellationNotification');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'instructorName': instructorName,
+          'instructorEmail': instructorEmail,
+          'clientName': clientName,
+          'sessionTitle': sessionTitle,
+          'bookingDateTime': bookingDateTime,
+          'bookingId': bookingId,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Instructor cancellation notification email sent successfully via Firebase Function');
+        print('✅ Instructor cancellation notification email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error sending instructor cancellation notification email via Firebase Function: $e');
+      print('❌ Error sending instructor cancellation notification email via Firebase Function: $e');
+      throw Exception('Failed to send instructor cancellation notification email: $e');
+    }
   }
 
   @override
@@ -175,17 +245,43 @@ class FirebaseEmailService implements EmailService {
     required String bookingId,
     required int hoursBefore,
   }) async {
-    // For now, use the generic sendEmail method
-    await sendEmail(
-      to: clientEmail,
-      subject: 'Reminder: Your Session Tomorrow',
-      htmlContent: _getBookingReminderHtml(
-        clientName, instructorName, sessionTitle, bookingDateTime, bookingId
-      ),
-      textContent: _getBookingReminderText(
-        clientName, instructorName, sessionTitle, bookingDateTime, bookingId
-      ),
-    );
+    try {
+      AppLogger.info('📧 FirebaseEmailService.sendBookingReminderEmail called');
+      AppLogger.info('📧 Client: $clientName ($clientEmail)');
+      AppLogger.info('📧 Instructor: $instructorName');
+      AppLogger.info('📧 Session: $sessionTitle');
+      AppLogger.info('📧 Date/Time: $bookingDateTime');
+      AppLogger.info('📧 Booking ID: $bookingId');
+      AppLogger.info('📧 Hours Before: $hoursBefore');
+      
+      final url = Uri.parse('$_baseUrl/sendBookingReminder');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'clientName': clientName,
+          'clientEmail': clientEmail,
+          'instructorName': instructorName,
+          'sessionTitle': sessionTitle,
+          'bookingDateTime': bookingDateTime,
+          'bookingId': bookingId,
+          'hoursBefore': hoursBefore,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Booking reminder email sent successfully via Firebase Function');
+        print('✅ Booking reminder email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error sending booking reminder email via Firebase Function: $e');
+      print('❌ Error sending booking reminder email via Firebase Function: $e');
+      throw Exception('Failed to send booking reminder email: $e');
+    }
   }
 
   @override
@@ -195,13 +291,37 @@ class FirebaseEmailService implements EmailService {
     required String instructorName,
     required String message,
   }) async {
-    // For now, use the generic sendEmail method
-    await sendEmail(
-      to: clientEmail,
-      subject: 'Schedule Change Notification',
-      htmlContent: _getScheduleChangeHtml(clientName, instructorName, message),
-      textContent: _getScheduleChangeText(clientName, instructorName, message),
-    );
+    try {
+      AppLogger.info('📧 FirebaseEmailService.sendScheduleChangeEmail called');
+      AppLogger.info('📧 Client: $clientName ($clientEmail)');
+      AppLogger.info('📧 Instructor: $instructorName');
+      AppLogger.info('📧 Message: $message');
+      
+      final url = Uri.parse('$_baseUrl/sendScheduleChange');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'clientName': clientName,
+          'clientEmail': clientEmail,
+          'instructorName': instructorName,
+          'message': message,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Schedule change email sent successfully via Firebase Function');
+        print('✅ Schedule change email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error sending schedule change email via Firebase Function: $e');
+      print('❌ Error sending schedule change email via Firebase Function: $e');
+      throw Exception('Failed to send schedule change email: $e');
+    }
   }
 
   // HTML Templates (simplified for Firebase)
@@ -342,5 +462,195 @@ Please check your updated schedule.
 
 ARENNA Team
     ''';
+  }
+
+  @override
+  Future<void> sendInstructorBookingCancellationEmail({
+    required String instructorName,
+    required String instructorEmail,
+    required String clientName,
+    required String sessionTitle,
+    required String bookingDateTime,
+    required String bookingId,
+  }) async {
+    try {
+      AppLogger.info('📧 FirebaseEmailService.sendInstructorBookingCancellationEmail called');
+      AppLogger.info('📧 Instructor: $instructorName ($instructorEmail)');
+      AppLogger.info('📧 Client: $clientName');
+      AppLogger.info('📧 Session: $sessionTitle');
+      AppLogger.info('📧 Date/Time: $bookingDateTime');
+      AppLogger.info('📧 Booking ID: $bookingId');
+      
+      final url = Uri.parse('$_baseUrl/sendInstructorBookingCancellation');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'instructorName': instructorName,
+          'instructorEmail': instructorEmail,
+          'clientName': clientName,
+          'sessionTitle': sessionTitle,
+          'bookingDateTime': bookingDateTime,
+          'bookingId': bookingId,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Instructor booking cancellation email sent successfully via Firebase Function');
+        print('✅ Instructor booking cancellation email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error sending instructor booking cancellation email via Firebase Function: $e');
+      print('❌ Error sending instructor booking cancellation email via Firebase Function: $e');
+      throw Exception('Failed to send instructor booking cancellation email: $e');
+    }
+  }
+
+  @override
+  Future<void> sendClientCancellationNotificationEmail({
+    required String clientName,
+    required String clientEmail,
+    required String instructorName,
+    required String sessionTitle,
+    required String bookingDateTime,
+    required String bookingId,
+  }) async {
+    try {
+      AppLogger.info('📧 FirebaseEmailService.sendClientCancellationNotificationEmail called');
+      AppLogger.info('📧 Client: $clientName ($clientEmail)');
+      AppLogger.info('📧 Instructor: $instructorName');
+      AppLogger.info('📧 Session: $sessionTitle');
+      AppLogger.info('📧 Date/Time: $bookingDateTime');
+      AppLogger.info('📧 Booking ID: $bookingId');
+      
+      final url = Uri.parse('$_baseUrl/sendClientCancellationNotification');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'clientName': clientName,
+          'clientEmail': clientEmail,
+          'instructorName': instructorName,
+          'sessionTitle': sessionTitle,
+          'bookingDateTime': bookingDateTime,
+          'bookingId': bookingId,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Client cancellation notification email sent successfully via Firebase Function');
+        print('✅ Client cancellation notification email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error sending client cancellation notification email via Firebase Function: $e');
+      print('❌ Error sending client cancellation notification email via Firebase Function: $e');
+      throw Exception('Failed to send client cancellation notification email: $e');
+    }
+  }
+
+  @override
+  Future<void> sendBookingRescheduleEmail({
+    required String clientName,
+    required String clientEmail,
+    required String instructorName,
+    required String sessionTitle,
+    required String oldBookingDateTime,
+    required String newBookingDateTime,
+    required String bookingId,
+  }) async {
+    try {
+      AppLogger.info('📧 FirebaseEmailService.sendBookingRescheduleEmail called');
+      AppLogger.info('📧 Client: $clientName ($clientEmail)');
+      AppLogger.info('📧 Instructor: $instructorName');
+      AppLogger.info('📧 Session: $sessionTitle');
+      AppLogger.info('📧 Old Date/Time: $oldBookingDateTime');
+      AppLogger.info('📧 New Date/Time: $newBookingDateTime');
+      AppLogger.info('📧 Booking ID: $bookingId');
+      
+      final url = Uri.parse('$_baseUrl/sendBookingReschedule');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'clientName': clientName,
+          'clientEmail': clientEmail,
+          'instructorName': instructorName,
+          'sessionTitle': sessionTitle,
+          'oldBookingDateTime': oldBookingDateTime,
+          'newBookingDateTime': newBookingDateTime,
+          'bookingId': bookingId,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Booking reschedule email sent successfully via Firebase Function');
+        print('✅ Booking reschedule email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error sending booking reschedule email via Firebase Function: $e');
+      print('❌ Error sending booking reschedule email via Firebase Function: $e');
+      throw Exception('Failed to send booking reschedule email: $e');
+    }
+  }
+
+  @override
+  Future<void> sendInstructorRescheduleNotificationEmail({
+    required String instructorName,
+    required String instructorEmail,
+    required String clientName,
+    required String sessionTitle,
+    required String oldBookingDateTime,
+    required String newBookingDateTime,
+    required String bookingId,
+  }) async {
+    try {
+      AppLogger.info('📧 FirebaseEmailService.sendInstructorRescheduleNotificationEmail called');
+      AppLogger.info('📧 Instructor: $instructorName ($instructorEmail)');
+      AppLogger.info('📧 Client: $clientName');
+      AppLogger.info('📧 Session: $sessionTitle');
+      AppLogger.info('📧 Old Date/Time: $oldBookingDateTime');
+      AppLogger.info('📧 New Date/Time: $newBookingDateTime');
+      AppLogger.info('📧 Booking ID: $bookingId');
+      
+      final url = Uri.parse('$_baseUrl/sendInstructorRescheduleNotification');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'instructorName': instructorName,
+          'instructorEmail': instructorEmail,
+          'clientName': clientName,
+          'sessionTitle': sessionTitle,
+          'oldBookingDateTime': oldBookingDateTime,
+          'newBookingDateTime': newBookingDateTime,
+          'bookingId': bookingId,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        AppLogger.info('✅ Instructor reschedule notification email sent successfully via Firebase Function');
+        print('✅ Instructor reschedule notification email sent successfully via Firebase Function: ${response.body}');
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error sending instructor reschedule notification email via Firebase Function: $e');
+      print('❌ Error sending instructor reschedule notification email via Firebase Function: $e');
+      throw Exception('Failed to send instructor reschedule notification email: $e');
+    }
   }
 }

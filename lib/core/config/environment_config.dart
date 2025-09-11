@@ -1,15 +1,29 @@
 import 'package:flutter/foundation.dart';
+import 'environment.dart';
 
 /// Environment configuration for the application
 class EnvironmentConfig {
   /// Check if we're running in development mode
   static bool get isDevelopment {
-    return kDebugMode || !kReleaseMode;
+    return EnvironmentConfig.current == Environment.development;
   }
   
   /// Check if we're running in production mode
   static bool get isProduction {
-    return kReleaseMode && !kDebugMode;
+    return EnvironmentConfig.current == Environment.production;
+  }
+  
+  /// Get the current environment
+  static Environment get current {
+    const String envString = String.fromEnvironment('ENVIRONMENT', defaultValue: 'development');
+    
+    switch (envString.toLowerCase()) {
+      case 'production':
+        return Environment.production;
+      case 'development':
+      default:
+        return Environment.development;
+    }
   }
   
   /// Check if we're running on web
@@ -31,21 +45,22 @@ class EnvironmentConfig {
   
   /// Check if we should use real email sending
   static bool get shouldUseRealEmail {
-    // Use real email in production web mode (API key is handled by Firebase Functions)
-    if (isProduction && isWeb) {
+    // Use real email in both development and production web mode
+    // API key is handled by Firebase Functions
+    if (isWeb) {
       return true;
     }
     
-    // Use console logging in development
+    // Use console logging for mobile
     return false;
   }
   
   /// Get the appropriate email service type
   static String get emailServiceType {
     if (shouldUseRealEmail) {
-      return 'FirebaseEmailService (Production)';
+      return 'FirebaseEmailService (Real Email via SendGrid)';
     } else {
-      return 'WebEmailService (Development/Console)';
+      return 'SimpleEmailService (Console Logging)';
     }
   }
   
@@ -56,6 +71,63 @@ class EnvironmentConfig {
     print('   - Platform: ${isWeb ? 'Web' : 'Mobile'}');
     print('   - Email Service: $emailServiceType');
     print('   - Real Email: ${shouldUseRealEmail ? 'Yes' : 'No'}');
+  }
+  
+  // Database configuration
+  static String get databaseId {
+    switch (current) {
+      case Environment.development:
+        return '(default)'; // Development database
+      case Environment.production:
+        return 'play'; // Production database
+    }
+  }
+  
+  // Collection prefix for environment separation
+  static String get collectionPrefix {
+    switch (current) {
+      case Environment.development:
+        return 'DevData';
+      case Environment.production:
+        return 'ProdData';
+    }
+  }
+  
+  // Email configuration
+  static String get fromEmail => 'noreply@arenna.link';
+  static String get fromName => 'ARENNA';
+  
+  // Firebase Functions URLs
+  static String get firebaseFunctionsUrl {
+    switch (current) {
+      case Environment.development:
+        return 'https://us-central1-play-e37a6.cloudfunctions.net';
+      case Environment.production:
+        return 'https://us-central1-play-e37a6.cloudfunctions.net';
+    }
+  }
+  
+  // Debug settings
+  static bool get enableDebugLogging => isDevelopment;
+  static bool get enableConsoleEmails => isDevelopment;
+  
+  // App configuration
+  static String get appName {
+    switch (current) {
+      case Environment.development:
+        return 'ARENNA (Dev)';
+      case Environment.production:
+        return 'ARENNA';
+    }
+  }
+  
+  static String get appVersion {
+    switch (current) {
+      case Environment.development:
+        return '1.0.0-dev';
+      case Environment.production:
+        return '1.0.0';
+    }
   }
 }
 

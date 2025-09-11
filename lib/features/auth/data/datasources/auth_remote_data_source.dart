@@ -1,11 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:myapp/core/error/exceptions.dart';
 import 'package:myapp/core/utils/logger.dart';
 import 'package:myapp/features/auth/data/models/user_model.dart';
 import 'package:myapp/core/config/firestore_collections.dart';
+import 'package:myapp/core/services/google_signin_service.dart';
 
 abstract class AuthRemoteDataSource {
   Stream<UserModel?> get authStateChanges;
@@ -37,15 +37,15 @@ abstract class AuthRemoteDataSource {
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
-  final GoogleSignIn _googleSignIn;
+  final GoogleSignInService _googleSignInService;
 
   AuthRemoteDataSourceImpl({
     required FirebaseAuth firebaseAuth,
     required FirebaseFirestore firestore,
-    required GoogleSignIn googleSignIn,
+    required GoogleSignInService googleSignInService,
   }) : _firebaseAuth = firebaseAuth,
        _firestore = firestore,
-       _googleSignIn = googleSignIn;
+       _googleSignInService = googleSignInService;
 
   @override
   Stream<UserModel?> get authStateChanges {
@@ -114,51 +114,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required bool isInstructor,
   }) async {
     try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
+      // Always use the modern Google Sign-In service
+      final result = await _googleSignInService.signInWithGoogle(isInstructor: isInstructor);
+      if (result == null) {
         throw const AuthException('Google sign in cancelled');
       }
-
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final userCredential = await _firebaseAuth.signInWithCredential(credential);
-      if (userCredential.user == null) {
-        throw const AuthException('Google sign in failed');
-      }
-
-      final user = userCredential.user!;
-      final userDoc = await FirestoreCollections.user(user.uid).get();
-      
-      if (userDoc.exists) {
-        return UserModel.fromFirestore(userDoc);
-      } else {
-        // Create new user profile
-        final displayName = user.displayName ?? '';
-        final nameParts = displayName.split(' ');
-        final firstName = nameParts.isNotEmpty ? nameParts.first : 'User';
-        final lastName = nameParts.length > 1 ? nameParts.skip(1).join(' ') : '';
-        
-        final newUser = UserModel(
-          id: user.uid,
-          email: user.email ?? '',
-          firstName: firstName,
-          lastName: lastName,
-          phoneNumber: '000-000-0000', // Default value
-          role: isInstructor ? 'instructor' : 'client',
-          isInstructor: isInstructor,
-          displayName: user.displayName,
-          photoUrl: user.photoURL,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-        
-        await FirestoreCollections.user(user.uid).set(newUser.toMap());
-        return newUser;
-      }
+      return result;
     } on FirebaseAuthException catch (e) {
       throw AuthException('Google sign in failed: ${e.message}');
     } catch (e) {
@@ -241,24 +202,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       AppLogger.info('🔄 Starting sign out process...');
       
-      // Always sign out from Firebase Auth first
+      // Sign out from Firebase Auth
       AppLogger.info('🔄 Signing out from Firebase Auth...');
       await _firebaseAuth.signOut();
       AppLogger.info('✅ Firebase Auth sign out successful');
-      
-      // For web platform, only use Firebase Auth sign out
-      // Google Sign-In sign out on web can cause issues
-      if (!kIsWeb) {
-        try {
-          AppLogger.info('🔄 Signing out from Google Sign-In (non-web platform)...');
-          await _googleSignIn.signOut();
-          AppLogger.info('✅ Google Sign-In sign out successful');
-        } catch (googleError) {
-          AppLogger.warning('⚠️ Google Sign-In signOut failed (this is OK): $googleError');
-        }
-      } else {
-        AppLogger.info('🌐 Web platform detected - skipping Google Sign-In sign out');
-      }
       
       AppLogger.info('✅ Sign out process completed successfully');
     } catch (e) {

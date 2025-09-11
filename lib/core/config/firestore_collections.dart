@@ -1,10 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/core/config/environment.dart';
+import 'package:myapp/core/config/environment_config.dart';
 
 /// Centralized collection path manager for Firestore
 /// This ensures all collection paths are consistent and can be changed in one place
+/// Now supports environment-based collection separation (DevData/ProdData)
 class FirestoreCollections {
-  static const String _rootCollection = 'sessionizer';
+  /// Get the root collection name based on current environment
+  static String get _rootCollection => EnvironmentConfig.collectionPrefix;
   
   // Collection names
   static const String _users = 'users';
@@ -20,16 +24,15 @@ class FirestoreCollections {
   /// Get the configured Firestore instance (play database)
   static FirebaseFirestore get _firestore {
     final instance = sl<FirebaseFirestore>();
+    print('🔍 Project Name: ${instance.app.options.projectId}');
     print('🔍 FirestoreCollections using database ID: ${instance.databaseId}');
     return instance;
   }
 
   /// Helper method to get a collection reference
+  /// Now uses nested collection access: sessionizer/{environmentPrefix}/{collectionName}
   static CollectionReference _getCollection(String collectionName) => 
-      _firestore
-          .collection(_rootCollection)
-          .doc(collectionName)
-          .collection(collectionName);
+      _firestore.collection('sessionizer').doc(_rootCollection).collection(collectionName);
 
   /// Get the users collection reference
   static CollectionReference get users => _getCollection(_users);

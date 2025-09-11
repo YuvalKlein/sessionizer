@@ -10,11 +10,32 @@ import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/router.dart';
+import 'package:myapp/core/config/environment.dart';
+import 'package:myapp/core/config/environment_config.dart';
 import 'firebase_options.dart';
+import 'firebase_options_production.dart' as prod;
+import 'firebase_options_development.dart' as dev;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  // Initialize Firebase with apiclientapp project for development
+  final environment = EnvironmentConfig.current;
+  
+  if (environment == Environment.development) {
+    // Use apiclientapp project for development
+    final firebaseOptions = dev.DefaultFirebaseOptions.currentPlatform;
+    print('🔧 Initializing Firebase for DEVELOPMENT (apiclientapp)');
+    print('🔧 Environment Name: development');
+    print('🔧 Project Name: apiclientapp');
+    await Firebase.initializeApp(options: firebaseOptions);
+  } else {
+    // Use default firebase_options.dart for production (play-e37a6)
+    print('🚀 Initializing Firebase for PRODUCTION (play-e37a6)');
+    print('🚀 Environment Name: production');
+    print('🚀 Project Name: play-e37a6');
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  }
   
   // Initialize Firebase Messaging
   await FirebaseMessaging.instance.requestPermission();

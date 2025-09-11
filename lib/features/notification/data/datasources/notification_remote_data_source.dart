@@ -12,6 +12,9 @@ abstract class NotificationRemoteDataSource {
   Future<void> sendBookingConfirmation(String bookingId);
   Future<void> sendBookingReminder(String bookingId, int hoursBefore);
   Future<void> sendBookingCancellation(String bookingId);
+  Future<void> sendInstructorCancellationNotification(String bookingId);
+  Future<void> sendInstructorBookingCancellation(String bookingId);
+  Future<void> sendClientCancellationNotification(String bookingId);
   Future<void> sendScheduleChange(String scheduleId);
   Future<List<NotificationModel>> getNotifications(String userId);
   Future<List<NotificationModel>> getUnreadNotifications(String userId);
@@ -300,7 +303,8 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final clientData = clientDoc.data() as Map<String, dynamic>;
       final clientName = clientData['displayName'] ?? 'Client';
-      final clientEmail = clientData['email'] as String? ?? 'yuklein@gmail.com'; // Default to test email
+      // Always use test email for now - will be replaced with real emails later
+      final clientEmail = 'yuklein@gmail.com';
 
       // Get instructor details
       final instructorId = bookingData['instructorId'] as String?;
@@ -443,7 +447,8 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final clientData = clientDoc.data() as Map<String, dynamic>;
       final clientName = clientData['displayName'] ?? 'Client';
-      final clientEmail = clientData['email'] as String? ?? 'yuklein@gmail.com'; // Default to test email
+      // Always use test email for now - will be replaced with real emails later
+      final clientEmail = 'yuklein@gmail.com';
 
       // Get instructor details
       final instructorId = bookingData['instructorId'] as String?;
@@ -559,6 +564,85 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   }
 
   @override
+  Future<void> sendInstructorCancellationNotification(String bookingId) async {
+    try {
+      // Get booking details
+      final bookingDoc = await FirestoreCollections.booking(bookingId).get();
+
+      if (!bookingDoc.exists) {
+        throw ServerException('Booking not found');
+      }
+
+      final bookingData = bookingDoc.data() as Map<String, dynamic>;
+      final instructorId = bookingData['instructorId'] as String?;
+      
+      if (instructorId == null) {
+        throw ServerException('Instructor ID not found in booking');
+      }
+
+      // Get instructor details
+      final instructorDoc = await FirestoreCollections.user(instructorId).get();
+
+      if (!instructorDoc.exists) {
+        throw ServerException('Instructor not found');
+      }
+
+      final instructorData = instructorDoc.data() as Map<String, dynamic>;
+      final instructorName = instructorData['displayName'] ?? 'Instructor';
+      // Always use test email for now - will be replaced with real emails later
+      final instructorEmail = 'yuklein@gmail.com';
+
+      // Get client details
+      final clientId = bookingData['clientId'] as String?;
+      String clientName = 'Client';
+      if (clientId != null) {
+        final clientDoc = await FirestoreCollections.user(clientId).get();
+        if (clientDoc.exists) {
+          final clientData = clientDoc.data() as Map<String, dynamic>;
+          clientName = clientData['displayName'] ?? 'Client';
+        }
+      }
+
+      // Get bookable session details
+      final bookableSessionId = bookingData['bookableSessionId'] as String?;
+      String sessionTitle = 'Your Session';
+      if (bookableSessionId != null) {
+        final sessionDoc = await FirestoreCollections.bookableSession(bookableSessionId).get();
+        if (sessionDoc.exists) {
+          final sessionData = sessionDoc.data() as Map<String, dynamic>;
+          sessionTitle = sessionData['title'] ?? 'Your Session';
+        }
+      }
+
+      // Format date/time
+      final startTime = bookingData['startTime'] as Timestamp?;
+      final endTime = bookingData['endTime'] as Timestamp?;
+      String formattedDateTime = 'TBD';
+      
+      if (startTime != null && endTime != null) {
+        final start = startTime.toDate();
+        final end = endTime.toDate();
+        formattedDateTime = '${start.month}/${start.day}/${start.year} at ${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+      }
+
+      // Send instructor cancellation notification email
+      await _emailService.sendInstructorCancellationNotificationEmail(
+        instructorName: instructorName,
+        instructorEmail: instructorEmail,
+        clientName: clientName,
+        sessionTitle: sessionTitle,
+        bookingDateTime: formattedDateTime,
+        bookingId: bookingId,
+      );
+
+      AppLogger.info('✅ Instructor cancellation notification sent successfully');
+    } catch (e) {
+      AppLogger.error('❌ Error sending instructor cancellation notification: $e');
+      throw ServerException('Failed to send instructor cancellation notification: $e');
+    }
+  }
+
+  @override
   Future<void> sendScheduleChange(String scheduleId) async {
     try {
       // Get schedule details
@@ -592,7 +676,8 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
           if (clientDoc.exists) {
             final clientData = clientDoc.data() as Map<String, dynamic>;
             final clientName = clientData['displayName'] ?? 'Client';
-            final clientEmail = clientData['email'] as String? ?? 'yuklein@gmail.com'; // Default to test email
+            // Always use test email for now - will be replaced with real emails later
+      final clientEmail = 'yuklein@gmail.com';
 
             // Get instructor details
             String instructorName = 'Your Instructor';
@@ -802,6 +887,164 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
     } catch (e) {
       AppLogger.error('❌ Error sending push notification: $e');
       // Don't throw here as push notifications are not critical
+    }
+  }
+
+  @override
+  Future<void> sendInstructorBookingCancellation(String bookingId) async {
+    try {
+      // Get booking details
+      final bookingDoc = await FirestoreCollections.booking(bookingId).get();
+
+      if (!bookingDoc.exists) {
+        throw ServerException('Booking not found');
+      }
+
+      final bookingData = bookingDoc.data() as Map<String, dynamic>;
+      final instructorId = bookingData['instructorId'] as String?;
+      
+      if (instructorId == null) {
+        throw ServerException('Instructor ID not found in booking');
+      }
+
+      // Get instructor details
+      final instructorDoc = await FirestoreCollections.user(instructorId).get();
+
+      if (!instructorDoc.exists) {
+        throw ServerException('Instructor not found');
+      }
+
+      final instructorData = instructorDoc.data() as Map<String, dynamic>;
+      final instructorName = instructorData['displayName'] ?? 'Instructor';
+      // Always use test email for now - will be replaced with real emails later
+      final instructorEmail = 'yuklein@gmail.com';
+
+      // Get client details
+      final clientId = bookingData['clientId'] as String?;
+      String clientName = 'Client';
+      if (clientId != null) {
+        final clientDoc = await FirestoreCollections.user(clientId).get();
+        if (clientDoc.exists) {
+          final clientData = clientDoc.data() as Map<String, dynamic>;
+          clientName = clientData['displayName'] ?? 'Client';
+        }
+      }
+
+      // Get bookable session details
+      final bookableSessionId = bookingData['bookableSessionId'] as String?;
+      String sessionTitle = 'Your Session';
+      if (bookableSessionId != null) {
+        final sessionDoc = await FirestoreCollections.bookableSession(bookableSessionId).get();
+        if (sessionDoc.exists) {
+          final sessionData = sessionDoc.data() as Map<String, dynamic>;
+          sessionTitle = sessionData['title'] ?? 'Your Session';
+        }
+      }
+
+      // Format date/time
+      final startTime = bookingData['startTime'] as Timestamp?;
+      final endTime = bookingData['endTime'] as Timestamp?;
+      String formattedDateTime = 'TBD';
+      
+      if (startTime != null && endTime != null) {
+        final start = startTime.toDate();
+        final end = endTime.toDate();
+        formattedDateTime = '${start.month}/${start.day}/${start.year} at ${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+      }
+
+      // Send instructor cancellation email (when instructor cancels)
+      await _emailService.sendInstructorBookingCancellationEmail(
+        instructorName: instructorName,
+        instructorEmail: instructorEmail,
+        clientName: clientName,
+        sessionTitle: sessionTitle,
+        bookingDateTime: formattedDateTime,
+        bookingId: bookingId,
+      );
+
+      AppLogger.info('✅ Instructor booking cancellation email sent successfully');
+    } catch (e) {
+      AppLogger.error('❌ Error sending instructor booking cancellation email: $e');
+      throw ServerException('Failed to send instructor booking cancellation email: $e');
+    }
+  }
+
+  @override
+  Future<void> sendClientCancellationNotification(String bookingId) async {
+    try {
+      // Get booking details
+      final bookingDoc = await FirestoreCollections.booking(bookingId).get();
+
+      if (!bookingDoc.exists) {
+        throw ServerException('Booking not found');
+      }
+
+      final bookingData = bookingDoc.data() as Map<String, dynamic>;
+      final clientId = bookingData['clientId'] as String?;
+      
+      if (clientId == null) {
+        throw ServerException('Client ID not found in booking');
+      }
+
+      // Get client details
+      final clientDoc = await FirestoreCollections.user(clientId).get();
+
+      if (!clientDoc.exists) {
+        throw ServerException('Client not found');
+      }
+
+      final clientData = clientDoc.data() as Map<String, dynamic>;
+      final clientName = clientData['displayName'] ?? 'Client';
+      // Always use test email for now - will be replaced with real emails later
+      final clientEmail = 'yuklein@gmail.com';
+
+      // Get instructor details
+      final instructorId = bookingData['instructorId'] as String?;
+      String instructorName = 'Instructor';
+      if (instructorId != null) {
+        final instructorDoc = await FirestoreCollections.user(instructorId).get();
+        if (instructorDoc.exists) {
+          final instructorData = instructorDoc.data() as Map<String, dynamic>;
+          instructorName = instructorData['displayName'] ?? 'Instructor';
+        }
+      }
+
+      // Get bookable session details
+      final bookableSessionId = bookingData['bookableSessionId'] as String?;
+      String sessionTitle = 'Your Session';
+      if (bookableSessionId != null) {
+        final sessionDoc = await FirestoreCollections.bookableSession(bookableSessionId).get();
+        if (sessionDoc.exists) {
+          final sessionData = sessionDoc.data() as Map<String, dynamic>;
+          sessionTitle = sessionData['title'] ?? 'Your Session';
+        }
+      }
+
+      // Format date/time
+      final startTime = bookingData['startTime'] as Timestamp?;
+      final endTime = bookingData['endTime'] as Timestamp?;
+      String formattedDateTime = 'TBD';
+      
+      if (startTime != null && endTime != null) {
+        final start = startTime.toDate();
+        final end = endTime.toDate();
+        formattedDateTime = '${start.month}/${start.day}/${start.year} at ${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')} - ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+      }
+
+      // Send client cancellation notification (when instructor cancels)
+      await _emailService.sendClientCancellationNotificationEmail(
+        clientName: clientName,
+        clientEmail: clientEmail,
+        instructorName: instructorName,
+        sessionTitle: sessionTitle,
+        bookingDateTime: formattedDateTime,
+        bookingId: bookingId,
+      );
+
+      AppLogger.info('✅ Client cancellation notification email sent successfully');
+    } catch (e) {
+      AppLogger.error('❌ Error sending client cancellation notification email: $e');
+      throw ServerException('Failed to send client cancellation notification email: $e');
     }
   }
 

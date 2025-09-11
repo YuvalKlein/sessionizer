@@ -11,15 +11,16 @@ class CancelBooking implements UseCase<void, CancelBookingParams> {
 
   @override
   Future<Either<Failure, void>> call(CancelBookingParams params) async {
-    return await _repository.cancelBooking(params.id);
+    return await _repository.cancelBooking(params.id, params.cancelledBy);
   }
 }
 
 class CancelBookingParams extends Equatable {
   final String id;
+  final String cancelledBy; // 'client' or 'instructor'
 
-  const CancelBookingParams({required this.id});
+  const CancelBookingParams({required this.id, required this.cancelledBy});
 
   @override
-  List<Object> get props => [id];
+  List<Object> get props => [id, cancelledBy];
 }

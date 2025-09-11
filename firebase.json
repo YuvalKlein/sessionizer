@@ -2,14 +2,39 @@
   "hosting": {
     "site": "arenna",
     "public": "deploy-web",
-    "rewrites": [{"source": "**", "destination": "/index.html"}]
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   },
   "firestore": {
-    "rules": "firestore.rules",
+    "rules": "firestore_dev.rules",
     "indexes": "firestore.indexes.json"
   },
   "functions": {
     "source": "functions",
     "runtime": "nodejs20"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "apiclientapp",
+          "appId": "1:707974722454:android:a8aae63809100940a7e3b7",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "apiclientapp",
+          "configurations": {
+            "android": "1:707974722454:android:a8aae63809100940a7e3b7",
+            "web": "1:707974722454:web:e02711bc06fb039aa7e3b7"
+          }
+        }
+      }
+    }
   }
 }

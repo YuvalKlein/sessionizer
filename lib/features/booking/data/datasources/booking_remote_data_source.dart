@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/features/booking/data/models/booking_model.dart';
 import 'package:myapp/core/config/firestore_collections.dart';
+import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/features/notification/data/datasources/notification_remote_data_source.dart';
 
 abstract class BookingRemoteDataSource {
   Stream<List<BookingModel>> getBookings(String userId);
@@ -10,7 +12,7 @@ abstract class BookingRemoteDataSource {
   Future<BookingModel> createBooking(BookingModel booking);
   Future<BookingModel> updateBooking(BookingModel booking);
   Future<void> deleteBooking(String id);
-  Future<BookingModel> cancelBooking(String id);
+  Future<BookingModel> cancelBooking(String id, String cancelledBy);
   Future<BookingModel> confirmBooking(String id);
 }
 
@@ -93,7 +95,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   }
 
   @override
-  Future<BookingModel> cancelBooking(String id) async {
+  Future<BookingModel> cancelBooking(String id, String cancelledBy) async {
     final doc = await FirestoreCollections.booking(id).get();
     if (!doc.exists) {
       throw Exception('Booking not found');
@@ -106,6 +108,30 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     );
     
     await FirestoreCollections.booking(id).update(cancelledBooking.toMap());
+    
+    // Send appropriate cancellation emails based on who cancelled
+    try {
+      final notificationService = sl<NotificationRemoteDataSource>();
+      
+      if (cancelledBy == 'client') {
+        // Client cancelled - send appropriate emails
+        await notificationService.sendBookingCancellation(id);
+        print('📧 Client cancellation email sent for booking: $id');
+        
+        await notificationService.sendInstructorCancellationNotification(id);
+        print('📧 Instructor cancellation notification sent for booking: $id');
+      } else if (cancelledBy == 'instructor') {
+        // Instructor cancelled - send different emails
+        await notificationService.sendInstructorBookingCancellation(id);
+        print('📧 Instructor cancellation email sent for booking: $id');
+        
+        await notificationService.sendClientCancellationNotification(id);
+        print('📧 Client cancellation notification sent for booking: $id');
+      }
+    } catch (e) {
+      print('❌ Error sending cancellation emails: $e');
+      // Don't throw here - the booking was already cancelled successfully
+    }
     
     return cancelledBooking;
   }

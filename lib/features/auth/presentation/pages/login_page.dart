@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_event.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
 import 'package:myapp/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:myapp/features/auth/presentation/widgets/auth_button.dart';
+import 'package:myapp/features/auth/presentation/widgets/google_sign_in_button.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_event.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
@@ -169,21 +171,18 @@ class _LoginPageState extends State<LoginPage> {
                   
                   const SizedBox(height: 16),
                   
-                  // Temporarily disabled for web due to Client ID configuration
-                  // BlocBuilder<AuthBloc, AuthState>(
-                  //   builder: (context, state) {
-                  //     return AuthButton(
-                  //       text: 'Continue with Google',
-                  //       icon: FontAwesomeIcons.google,
-                  //       isLoading: state is AuthLoading,
-                  //       onPressed: () {
-                  //         context.read<AuthBloc>().add(
-                  //           const SignInWithGoogleRequested(isInstructor: false),
-                  //         );
-                  //       },
-                  //     );
-                  //   },
-                  // ),
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      return GoogleSignInButton(
+                        onPressed: () {
+                          context.read<AuthBloc>().add(
+                            const SignInWithGoogleRequested(isInstructor: false),
+                          );
+                        },
+                        isLoading: state is AuthLoading,
+                      );
+                    },
+                  ),
                   
                   const SizedBox(height: 24),
                   

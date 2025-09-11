@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_event.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
 import 'package:myapp/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:myapp/features/auth/presentation/widgets/auth_button.dart';
+import 'package:myapp/features/auth/presentation/widgets/google_sign_in_button.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_event.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
@@ -220,6 +222,34 @@ class _SignupPageState extends State<SignupPage> {
                       return AuthButton(
                         text: 'Create Account',
                         onPressed: state is AuthLoading ? null : _handleSignup,
+                        isLoading: state is AuthLoading,
+                      );
+                    },
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  const Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('OR'),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      return GoogleSignInButton(
+                        onPressed: () {
+                          context.read<AuthBloc>().add(
+                            SignInWithGoogleRequested(isInstructor: _isInstructor),
+                          );
+                        },
                         isLoading: state is AuthLoading,
                       );
                     },

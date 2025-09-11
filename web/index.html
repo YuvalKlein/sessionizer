@@ -19,11 +19,38 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  
+  <!-- Security headers for Google Sign-In -->
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="unsafe-none">
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none">
 
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
   <!-- Google Sign-In Configuration -->
-  <!-- This will be replaced at build time with the actual Client ID -->
-  <meta name="google-signin-client_id" content="707974722454-o7f4paigfd3nkpihs3fvbto2m5obc1h0.apps.googleusercontent.com">
-  <script src="https://apis.google.com/js/platform.js" async defer></script>
+  <script>
+    window.googleSignInConfig = {
+      client_id: '707974722454-o7f4paigfd3nkpihs3fvbto2m5obc1h0.apps.googleusercontent.com',
+      callback: 'handleGoogleSignIn',
+      error_callback: 'handleGoogleSignInError',
+      auto_select: false,
+      cancel_on_tap_outside: true
+    };
+    
+    // Global callbacks for Google Sign-In
+    window.handleGoogleSignIn = function(response) {
+      console.log('Google Sign-In response received');
+      // This will be handled by the Flutter app
+      window.googleSignInResponse = response;
+      window.dispatchEvent(new CustomEvent('googleSignInSuccess', { detail: response }));
+    };
+    
+    window.handleGoogleSignInError = function(error) {
+      console.error('Google Sign-In error:', error);
+      window.googleSignInError = error;
+      window.dispatchEvent(new CustomEvent('googleSignInError', { detail: error }));
+    };
+  </script>
 
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">

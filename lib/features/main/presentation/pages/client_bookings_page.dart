@@ -779,7 +779,7 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
               try {
                 // Use the correct context that has access to BookingBloc
                 final bookingBloc = context.read<BookingBloc>();
-                bookingBloc.add(CancelBookingEvent(id: booking.id));
+                bookingBloc.add(CancelBookingEvent(id: booking.id, cancelledBy: 'client'));
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Booking cancelled')),
                 );

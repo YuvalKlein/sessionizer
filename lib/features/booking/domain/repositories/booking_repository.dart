@@ -9,6 +9,6 @@ abstract class BookingRepository {
   ResultFuture<BookingEntity> createBooking(BookingEntity booking);
   ResultFuture<BookingEntity> updateBooking(BookingEntity booking);
   ResultVoid deleteBooking(String id);
-  ResultFuture<BookingEntity> cancelBooking(String id);
+  ResultFuture<BookingEntity> cancelBooking(String id, String cancelledBy);
   ResultFuture<BookingEntity> confirmBooking(String id);
 }

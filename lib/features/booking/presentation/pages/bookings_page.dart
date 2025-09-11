@@ -5,6 +5,8 @@ import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
 import 'package:myapp/features/booking/presentation/widgets/instructor_avatar.dart';
 import 'package:myapp/features/booking/presentation/widgets/session_info_display.dart';
+import 'package:myapp/core/utils/injection_container.dart';
+import 'package:myapp/features/notification/data/datasources/notification_remote_data_source.dart';
 
 class BookingsPage extends StatelessWidget {
   final String userId;
@@ -123,7 +125,13 @@ class BookingsPage extends StatelessWidget {
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) {
                         if (value == 'cancel') {
-                          context.read<BookingBloc>().add(CancelBookingEvent(id: booking.id));
+                          context.read<BookingBloc>().add(CancelBookingEvent(id: booking.id, cancelledBy: 'client'));
+                        } else if (value == 'test_reminder') {
+                          _testBookingReminder(context, booking.id);
+                        } else if (value == 'test_cancellation') {
+                          _testBookingCancellation(context, booking.id);
+                        } else if (value == 'test_schedule_change') {
+                          _testScheduleChange(context, booking.instructorId);
                         }
                       },
                       itemBuilder: (context) => [
@@ -134,6 +142,36 @@ class BookingsPage extends StatelessWidget {
                               Icon(Icons.cancel, color: Colors.red),
                               SizedBox(width: 8),
                               Text('Cancel'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'test_reminder',
+                          child: Row(
+                            children: [
+                              Icon(Icons.alarm, color: Colors.orange),
+                              SizedBox(width: 8),
+                              Text('Test Reminder Email'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'test_cancellation',
+                          child: Row(
+                            children: [
+                              Icon(Icons.email, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Test Cancellation Email'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'test_schedule_change',
+                          child: Row(
+                            children: [
+                              Icon(Icons.schedule, color: Colors.blue),
+                              SizedBox(width: 8),
+                              Text('Test Schedule Change Email'),
                             ],
                           ),
                         ),
@@ -167,5 +205,85 @@ class BookingsPage extends StatelessWidget {
 
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Test methods for email functionality
+  void _testBookingReminder(BuildContext context, String bookingId) async {
+    try {
+      // Import the notification service
+      final notificationService = sl<NotificationRemoteDataSource>();
+      await notificationService.sendBookingReminder(bookingId, 24); // 24 hours before
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📧 Test reminder email sent!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error sending reminder email: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _testBookingCancellation(BuildContext context, String bookingId) async {
+    try {
+      // Import the notification service
+      final notificationService = sl<NotificationRemoteDataSource>();
+      await notificationService.sendBookingCancellation(bookingId);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📧 Test cancellation email sent!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error sending cancellation email: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _testScheduleChange(BuildContext context, String instructorId) async {
+    try {
+      // Import the notification service
+      final notificationService = sl<NotificationRemoteDataSource>();
+      // Use a dummy schedule ID for testing
+      await notificationService.sendScheduleChange('test_schedule_id');
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📧 Test schedule change email sent!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error sending schedule change email: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

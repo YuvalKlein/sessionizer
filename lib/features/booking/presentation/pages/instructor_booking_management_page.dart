@@ -213,7 +213,7 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
     );
 
     if (confirmed == true && mounted) {
-      context.read<BookingBloc>().add(CancelBookingEvent(id: booking.id));
+      context.read<BookingBloc>().add(CancelBookingEvent(id: booking.id, cancelledBy: 'instructor'));
     }
   }
 

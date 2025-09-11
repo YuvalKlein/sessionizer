@@ -3,7 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:myapp/core/config/app_config.dart';
 
@@ -90,6 +89,7 @@ import 'package:myapp/core/services/email_service.dart';
 import 'package:myapp/core/services/email_service_web.dart';
 import 'package:myapp/core/services/email_service_firebase.dart';
 import 'package:myapp/core/services/email_service_simple.dart';
+import 'package:myapp/core/services/google_signin_service.dart';
 import 'package:myapp/core/config/environment_config.dart';
 
 final sl = GetIt.instance;
@@ -98,17 +98,21 @@ Future<void> initializeDependencies() async {
   // External dependencies
   sl.registerLazySingleton(() => FirebaseAuth.instance);
   sl.registerLazySingleton(() {
-    // Use 'play' database as required
-    final firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'play');
+    // Use environment-specific database
+    final environment = EnvironmentConfig.current;
+    final databaseId = EnvironmentConfig.databaseId;
+    
+    final firestore = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: databaseId);
     print('🔧 Firestore instance created with databaseId: ${firestore.databaseId}');
     print('🔧 Firestore app name: ${firestore.app.name}');
     print('🔧 Firestore app project: ${firestore.app.options.projectId}');
+    print('🔧 Environment: ${environment.name}');
+    print('🔧 Environment Name: ${EnvironmentConfig.environmentName}');
+    print('🔧 Project Name: ${firestore.app.options.projectId}');
     return firestore;
   });
   sl.registerLazySingleton(() => FirebaseMessaging.instance);
-  sl.registerLazySingleton(() => GoogleSignIn(
-    clientId: kIsWeb ? AppConfig.googleClientId : null,
-  ));
+  sl.registerLazySingleton(() => GoogleSignInService());
   
   // Services
   sl.registerLazySingleton(() => DependencyChecker(firestore: sl()));
@@ -121,7 +125,7 @@ Future<void> initializeDependencies() async {
     () => AuthRemoteDataSourceImpl(
       firebaseAuth: sl(),
       firestore: sl(),
-      googleSignIn: sl(),
+      googleSignInService: sl(),
     ),
   );
 
