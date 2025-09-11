@@ -20,6 +20,14 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
   
+  <!-- iOS Safari compatibility -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-touch-fullscreen" content="yes">
+  
   <!-- Security headers for Google Sign-In -->
   <meta http-equiv="Cross-Origin-Opener-Policy" content="unsafe-none">
   <meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none">
@@ -53,9 +61,7 @@
   </script>
 
   <!-- iOS meta tags & icons -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="myapp">
+  <meta name="apple-mobile-web-app-title" content="ARENNA">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
@@ -73,16 +79,37 @@
 </head>
 <body>
   <script>
+    // iOS Safari compatibility fixes
     window.addEventListener('load', function(ev) {
-      // Download main.dart.js
-      _flutter.loader.loadEntrypoint({
+      // Check if we're on iOS Safari
+      const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      
+      // Add loading indicator for iOS
+      if (isIOSSafari) {
+        document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif;"><div style="text-align: center;"><div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0175C2; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div><p>Loading ARENNA...</p></div></div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>';
+      }
+      
+      // Download main.dart.js with iOS-specific configuration
+      const config = {
         serviceWorker: {
           serviceWorkerVersion: serviceWorkerVersion,
-        }
-      }).then(function(engineInitializer) {
+        },
+        // iOS Safari specific settings
+        ...(isIOSSafari && {
+          canvasKitBaseUrl: 'canvaskit/',
+          renderer: 'html'
+        })
+      };
+      
+      _flutter.loader.loadEntrypoint(config).then(function(engineInitializer) {
         return engineInitializer.initializeEngine();
       }).then(function(appRunner) {
         return appRunner.runApp();
+      }).catch(function(error) {
+        console.error('Flutter initialization error:', error);
+        if (isIOSSafari) {
+          document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; padding: 20px;"><div><h2>Loading Error</h2><p>Please refresh the page or try again later.</p><button onclick="location.reload()" style="background: #0175C2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Refresh</button></div></div>';
+        }
       });
     });
   </script>
