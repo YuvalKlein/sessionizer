@@ -27,7 +27,6 @@ class _SignupPageState extends State<SignupPage> {
   final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  bool _isInstructor = false;
 
   @override
   void dispose() {
@@ -59,7 +58,7 @@ class _SignupPageState extends State<SignupPage> {
               ? _nameController.text.trim().split(' ').skip(1).join(' ')
               : '',
           phoneNumber: '000-000-0000', // Default value for now
-          role: _isInstructor ? 'instructor' : 'client',
+          role: 'client',
         ),
       );
     }
@@ -204,17 +203,6 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                   const SizedBox(height: 16),
                   
-                  SwitchListTile(
-                    title: const Text('I am an instructor'),
-                    subtitle: const Text('Check this if you are an instructor'),
-                    value: _isInstructor,
-                    onChanged: (value) {
-                      setState(() {
-                        _isInstructor = value;
-                      });
-                    },
-                  ),
-                  
                   const SizedBox(height: 24),
                   
                   BlocBuilder<AuthBloc, AuthState>(
@@ -247,7 +235,7 @@ class _SignupPageState extends State<SignupPage> {
                       return GoogleSignInButton(
                         onPressed: () {
                           context.read<AuthBloc>().add(
-                            SignInWithGoogleRequested(isInstructor: _isInstructor),
+                            const SignInWithGoogleRequested(isInstructor: false),
                           );
                         },
                         isLoading: state is AuthLoading,

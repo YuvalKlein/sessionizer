@@ -55,19 +55,10 @@ class _LoginPageState extends State<LoginPage> {
           BlocListener<UserBloc, UserState>(
             listener: (context, state) {
               if (state is UserLoaded) {
-                // Check if user is instructor - if so, sign them out and show error
+                // Redirect based on user role
                 if (state.user.isInstructor) {
-                  // Sign out the instructor immediately
-                  context.read<AuthBloc>().add(const SignOutRequested());
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Instructor access is not available through this login page. Please use the instructor portal.'),
-                      backgroundColor: Colors.orange,
-                      duration: Duration(seconds: 5),
-                    ),
-                  );
+                  context.go('/instructor-dashboard');
                 } else {
-                  // Redirect clients to their dashboard
                   context.go('/client-dashboard');
                 }
               }
@@ -93,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Sign in to your client account',
+                    'Sign in to your account',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey,
