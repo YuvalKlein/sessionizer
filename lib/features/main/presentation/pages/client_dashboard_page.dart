@@ -37,6 +37,7 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
   void initState() {
     super.initState();
     _selectedInstructorId = widget.instructorId;
+    print('🔍 ClientDashboardPage initState: instructorId = $_selectedInstructorId');
     
     // Initialize BLoCs
     _bookingBloc = BookingBloc(
@@ -56,15 +57,15 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
     );
     
     if (_selectedInstructorId != null) {
+      print('✅ ClientDashboardPage: Instructor ID found, loading data');
       _loadInstructorInfo();
       _loadData();
     } else {
-      // If no instructor is selected, redirect to instructor selection
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.go('/client/instructor-selection');
-        }
-      });
+      print('❌ ClientDashboardPage: No instructor ID, using default instructor');
+      // Use the default instructor ID instead of redirecting
+      _selectedInstructorId = '1ftCSRo1JBQR23NpQy5digDt1tm2';
+      _loadInstructorInfo();
+      _loadData();
     }
   }
 
@@ -135,23 +136,7 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
   }
 
   Widget _buildDashboardContent(String userName) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_selectedInstructorId != null 
-            ? 'Dashboard - ${_instructorName ?? 'Loading...'}'
-            : 'Client Dashboard'),
-        backgroundColor: Colors.blue.shade600,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: _selectedInstructorId != null ? [
-          IconButton(
-            icon: const Icon(Icons.swap_horiz),
-            onPressed: () => context.go('/client/instructor-selection'),
-            tooltip: 'Change Instructor',
-          ),
-        ] : null,
-      ),
-      body: SingleChildScrollView(
+    return SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,8 +156,7 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
             _buildAvailableSessions(),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildWelcomeHeader(String userName) {
@@ -414,7 +398,10 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
                 title: 'Find Sessions',
                 subtitle: 'Browse available sessions',
                 color: Colors.green,
-                onTap: () => context.go('/client/sessions?instructorId=$_selectedInstructorId'),
+                onTap: () {
+                  print('🔍 Find Sessions clicked: instructorId = $_selectedInstructorId');
+                  context.go('/client/sessions?instructorId=$_selectedInstructorId');
+                },
               ),
             ),
             const SizedBox(width: 12),

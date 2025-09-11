@@ -44,7 +44,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
+    apiKey: 'AIzaSyAtqDIORJAVB5kaNZRKNuEEAJ5gqyH3Vm8',
     appId: '1:707974722454:web:e02711bc06fb039aa7e3b7',
     messagingSenderId: '707974722454',
     projectId: 'apiclientapp',
@@ -53,7 +53,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
+    apiKey: 'AIzaSyBPFgTPcpmhpMvJlGrxkb4sUdPScEZQWAU',
     appId: '1:707974722454:android:a8aae63809100940a7e3b7',
     messagingSenderId: '707974722454',
     projectId: 'apiclientapp',
@@ -61,7 +61,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
+    apiKey: 'AIzaSyBPFgTPcpmhpMvJlGrxkb4sUdPScEZQWAU',
     appId: '1:987654321:ios:fedcba987654321',
     messagingSenderId: '987654321',
     projectId: 'apiclientapp',
@@ -71,7 +71,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
+    apiKey: 'AIzaSyBPFgTPcpmhpMvJlGrxkb4sUdPScEZQWAU',
     appId: '1:987654321:ios:fedcba987654321',
     messagingSenderId: '987654321',
     projectId: 'apiclientapp',

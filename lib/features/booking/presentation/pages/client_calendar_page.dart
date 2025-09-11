@@ -214,11 +214,12 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
       _availableSlots.clear();
       _scheduleData.clear();
 
-      // Check availability for the next 3 months
+      // Check availability for the next maxDaysAhead days
       final startDate = DateTime.now();
-      final endDate = DateTime.now().add(const Duration(days: 90));
+      final maxDaysAhead = _sessionData?['maxDaysAhead'] ?? 7;
+      final endDate = DateTime.now().add(Duration(days: maxDaysAhead));
 
-      for (int i = 0; i < 90; i++) {
+      for (int i = 0; i < maxDaysAhead; i++) {
         final date = startDate.add(Duration(days: i));
         final timeSlots = <TimeOfDay>[];
 
@@ -687,29 +688,16 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
                                       color: Colors.grey[600],
                                     ),
                                   ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      TextButton(
-                                        onPressed: () {
-                                          // Navigate to detailed booking form
-                                          context.go('/client/book/${widget.sessionId}/${widget.instructorId}?time=${time.hour}:${time.minute}&date=${_selectedDay?.year}-${_selectedDay?.month}-${_selectedDay?.day}');
-                                        },
-                                        child: const Text('Details'),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          // Show booking confirmation modal
-                                          _showBookingConfirmation(time);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blue[600],
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        child: const Text('Book'),
-                                      ),
-                                    ],
+                                  trailing: ElevatedButton(
+                                    onPressed: () {
+                                      // Show booking confirmation modal
+                                      _showBookingConfirmation(time);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue[600],
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('Book'),
                                   ),
                                 ),
                               );

@@ -15,8 +15,9 @@ import 'package:myapp/core/utils/logger.dart';
 
 class MainScreen extends StatefulWidget {
   final Widget child;
+  final String? instructorId;
 
-  const MainScreen({super.key, required this.child});
+  const MainScreen({super.key, required this.child, this.instructorId});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -25,12 +26,50 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   UserBloc? _userBloc;
   String? _currentUserId;
+  String? _instructorName;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.instructorId != null) {
+      _loadInstructorName();
+    }
+  }
 
   @override
   void dispose() {
     AppLogger.widgetBuild('MainScreenClean', data: {'action': 'dispose'});
     _userBloc?.close();
     super.dispose();
+  }
+
+  Future<void> _loadInstructorName() async {
+    try {
+      final userRepository = sl<UserRepository>();
+      final result = await userRepository.getUserById(widget.instructorId!);
+      if (mounted) {
+        result.fold(
+          (failure) {
+            print('Error loading instructor name: ${failure.message}');
+            setState(() {
+              _instructorName = 'Instructor';
+            });
+          },
+          (instructor) {
+            setState(() {
+              _instructorName = instructor.displayName ?? 'Instructor';
+            });
+          },
+        );
+      }
+    } catch (e) {
+      print('Error loading instructor name: $e');
+      if (mounted) {
+        setState(() {
+          _instructorName = 'Instructor';
+        });
+      }
+    }
   }
 
   @override
@@ -126,7 +165,14 @@ class _MainScreenState extends State<MainScreen> {
                 if (userState is UserLoaded) {
                   final user = userState.user;
                   final isInstructor = user.isInstructor;
-                  final title = isInstructor ? 'Instructor Dashboard' : 'Client Dashboard';
+                  String title;
+                  if (isInstructor) {
+                    title = 'Instructor Dashboard';
+                  } else if (widget.instructorId != null && _instructorName != null) {
+                    title = 'Dashboard - $_instructorName';
+                  } else {
+                    title = 'Client Dashboard';
+                  }
 
                   return Scaffold(
                     appBar: AppBar(
@@ -225,7 +271,7 @@ class _MainScreenState extends State<MainScreen> {
     } else {
       switch (index) {
         case 0:
-          context.go('/client/instructor-selection');
+          context.go('/client-dashboard?instructorId=1ftCSRo1JBQR23NpQy5digDt1tm2');
           break;
         case 1:
           context.go('/client/bookings');

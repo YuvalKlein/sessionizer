@@ -272,23 +272,6 @@ class _ClientSessionsPageState extends State<ClientSessionsPage> {
                 width: 80,
                 height: 20,
                 child: ElevatedButton(
-                  onPressed: () => _showBookingDialog(session),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade600,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    padding: EdgeInsets.zero,
-                  ),
-                  child: const Text('Details', style: TextStyle(fontSize: 8)),
-                ),
-              ),
-              const SizedBox(height: 1),
-              SizedBox(
-                width: 80,
-                height: 20,
-                child: ElevatedButton(
                   onPressed: () => _showCalendarView(session),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade600,

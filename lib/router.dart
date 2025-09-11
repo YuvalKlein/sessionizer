@@ -91,7 +91,10 @@ class AppRouter {
         path: '/client-dashboard',
         builder: (context, state) {
           final instructorId = state.uri.queryParameters['instructorId'];
+          print('🔍 Router: /client-dashboard called with instructorId = $instructorId');
+          print('🔍 Router: Full URI = ${state.uri}');
           return MainScreen(
+            instructorId: instructorId,
             child: ClientDashboardPage(instructorId: instructorId),
           );
         },
@@ -110,7 +113,10 @@ class AppRouter {
         path: '/client/sessions',
         builder: (context, state) {
           final instructorId = state.uri.queryParameters['instructorId'];
-          return MainScreen(child: ClientSessionsPage(instructorId: instructorId));
+          return MainScreen(
+            instructorId: instructorId,
+            child: ClientSessionsPage(instructorId: instructorId),
+          );
         },
       ),
       GoRoute(
@@ -365,8 +371,8 @@ class AppRouter {
               print('🔄 Router: Redirecting instructor to /instructor-dashboard');
               return '/instructor-dashboard';
             } else {
-              print('🔄 Router: Redirecting client to /client/instructor-selection');
-              return '/client/instructor-selection';
+              print('🔄 Router: Redirecting client to specific instructor dashboard');
+              return '/client-dashboard?instructorId=1ftCSRo1JBQR23NpQy5digDt1tm2';
             }
           }
           // Also redirect from root path based on role
@@ -375,8 +381,8 @@ class AppRouter {
               print('🔄 Router: Redirecting instructor from root to /instructor-dashboard');
               return '/instructor-dashboard';
             } else {
-              print('🔄 Router: Redirecting client from root to /client/instructor-selection');
-              return '/client/instructor-selection';
+              print('🔄 Router: Redirecting client from root to specific instructor dashboard');
+              return '/client-dashboard?instructorId=1ftCSRo1JBQR23NpQy5digDt1tm2';
             }
           }
           print('✅ Router: No redirect needed - user can access current route');
