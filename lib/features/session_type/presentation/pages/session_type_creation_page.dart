@@ -38,13 +38,22 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
   final _maxPlayersController = TextEditingController(text: '1');
   final _minPlayersController = TextEditingController(text: '1');
   
+  // Cancellation Policy Controllers
+  final _cancellationTimeController = TextEditingController(text: '18');
+  final _cancellationFeeController = TextEditingController(text: '100');
+  
   String _selectedDurationUnit = 'hours';
+  String _selectedCancellationTimeUnit = 'hours';
+  String _selectedCancellationFeeType = '%';
   bool _notifyCancelation = false;
   bool _showParticipants = true;
   bool _showMinMax = true;
   bool _isLoading = false;
+  bool _hasCancellationFee = true;
 
   final List<String> _durationUnits = ['hours', 'minutes'];
+  final List<String> _cancellationTimeUnits = ['hours', 'minutes'];
+  final List<String> _cancellationFeeTypes = ['%', '\$'];
 
 
   @override
@@ -76,6 +85,13 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
     _notifyCancelation = sessionType.notifyCancelation;
     _showParticipants = sessionType.showParticipants;
     _showMinMax = sessionType.showParticipants; // Use showParticipants as default for showMinMax
+    
+    // Populate cancellation policy fields
+    _hasCancellationFee = sessionType.hasCancellationFee;
+    _cancellationTimeController.text = sessionType.cancellationTimeBefore.toString();
+    _selectedCancellationTimeUnit = sessionType.cancellationTimeUnit;
+    _cancellationFeeController.text = sessionType.cancellationFeeAmount.toString();
+    _selectedCancellationFeeType = sessionType.cancellationFeeType;
   }
 
   @override
@@ -86,6 +102,8 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
     _durationController.dispose();
     _maxPlayersController.dispose();
     _minPlayersController.dispose();
+    _cancellationTimeController.dispose();
+    _cancellationFeeController.dispose();
     super.dispose();
   }
 
@@ -157,6 +175,8 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
                 _buildDurationSection(),
                 const SizedBox(height: 24),
                 _buildStatusSection(),
+                const SizedBox(height: 24),
+                _buildCancellationPolicySection(),
                 const SizedBox(height: 100), // Space for floating action button
               ],
             ),
@@ -445,6 +465,152 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
     );
   }
 
+  Widget _buildCancellationPolicySection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Cancellation Policy',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Cancellation Fee Toggle
+            SwitchListTile(
+              title: const Text('Cancellation Fee'),
+              subtitle: const Text('Enable cancellation fees for late cancellations'),
+              value: _hasCancellationFee,
+              onChanged: (value) {
+                setState(() {
+                  _hasCancellationFee = value;
+                });
+              },
+            ),
+            
+            // Cancellation Policy Details (shown when enabled)
+            if (_hasCancellationFee) ...[
+              const SizedBox(height: 16),
+              
+              // Time to Cancel
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _cancellationTimeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Time to Cancel',
+                        hintText: '18',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (_hasCancellationFee && (value == null || value.isEmpty)) {
+                          return 'Please enter cancellation time';
+                        }
+                        final time = int.tryParse(value ?? '');
+                        if (_hasCancellationFee && (time == null || time <= 0)) {
+                          return 'Please enter a valid time';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedCancellationTimeUnit,
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _cancellationTimeUnits.map((String unit) {
+                        return DropdownMenuItem<String>(
+                          value: unit,
+                          child: Text(unit.capitalize()),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedCancellationTimeUnit = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: 'How much time before the session the client can cancel without a fee',
+                    child: Icon(
+                      Icons.info_outline,
+                      color: Colors.grey[600],
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Cancellation Fee Amount
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _cancellationFeeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Cancellation Fee',
+                        hintText: '100',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (_hasCancellationFee && (value == null || value.isEmpty)) {
+                          return 'Please enter cancellation fee';
+                        }
+                        final fee = int.tryParse(value ?? '');
+                        if (_hasCancellationFee && (fee == null || fee < 0)) {
+                          return 'Please enter a valid fee';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedCancellationFeeType,
+                      decoration: const InputDecoration(
+                        labelText: 'Type',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _cancellationFeeTypes.map((String type) {
+                        return DropdownMenuItem<String>(
+                          value: type,
+                          child: Text(type == '%' ? 'Percentage (%)' : 'Fixed Amount (\$)'),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedCancellationFeeType = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 
   void _saveSessionType() {
     if (!_formKey.currentState!.validate()) {
@@ -476,6 +642,19 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
       showParticipants: _showParticipants,
       category: 'tennis',
       price: int.parse(_priceController.text),
+      
+      // Cancellation Policy
+      hasCancellationFee: _hasCancellationFee,
+      cancellationTimeBefore: _hasCancellationFee 
+          ? (_selectedCancellationTimeUnit == 'hours' 
+              ? int.parse(_cancellationTimeController.text) * 60 
+              : int.parse(_cancellationTimeController.text))
+          : 0,
+      cancellationTimeUnit: _selectedCancellationTimeUnit,
+      cancellationFeeAmount: _hasCancellationFee 
+          ? int.parse(_cancellationFeeController.text)
+          : 0,
+      cancellationFeeType: _selectedCancellationFeeType,
     );
 
     if (widget.isEdit) {

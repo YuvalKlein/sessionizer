@@ -14,6 +14,13 @@ class SessionTypeEntity extends Equatable {
   final bool showParticipants;
   final String category;
   final int price;
+  
+  // Cancellation Policy Fields
+  final bool hasCancellationFee;
+  final int cancellationTimeBefore; // in minutes
+  final String cancellationTimeUnit; // 'hours' or 'minutes'
+  final int cancellationFeeAmount; // fee amount
+  final String cancellationFeeType; // '%' or '$'
 
   const SessionTypeEntity({
     this.id,
@@ -29,22 +36,34 @@ class SessionTypeEntity extends Equatable {
     this.showParticipants = true,
     this.category = '',
     required this.price,
+    
+    // Cancellation Policy defaults
+    this.hasCancellationFee = true,
+    this.cancellationTimeBefore = 18,
+    this.cancellationTimeUnit = 'hours',
+    this.cancellationFeeAmount = 100,
+    this.cancellationFeeType = '%',
   });
 
   @override
   List<Object?> get props => [
-              id,
-      title,
-      notifyCancelation,
-        createdTime,
-        duration,
-        durationUnit,
-              details,
-      idCreatedBy,
-      maxPlayers,
-      minPlayers,
-      showParticipants,
-        category,
-        price,
-      ];
+    id,
+    title,
+    notifyCancelation,
+    createdTime,
+    duration,
+    durationUnit,
+    details,
+    idCreatedBy,
+    maxPlayers,
+    minPlayers,
+    showParticipants,
+    category,
+    price,
+    hasCancellationFee,
+    cancellationTimeBefore,
+    cancellationTimeUnit,
+    cancellationFeeAmount,
+    cancellationFeeType,
+  ];
 }
