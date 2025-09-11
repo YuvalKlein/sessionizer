@@ -47,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 );
               } else if (state is AuthAuthenticated) {
-                // Load user profile to determine redirect
+                // Load user profile to check if user is instructor
                 context.read<UserBloc>().add(LoadUser(userId: state.user.id));
               }
             },
@@ -55,10 +55,19 @@ class _LoginPageState extends State<LoginPage> {
           BlocListener<UserBloc, UserState>(
             listener: (context, state) {
               if (state is UserLoaded) {
-                // Redirect based on user role
+                // Check if user is instructor - if so, sign them out and show error
                 if (state.user.isInstructor) {
-                  context.go('/instructor-dashboard');
+                  // Sign out the instructor immediately
+                  context.read<AuthBloc>().add(const SignOutRequested());
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Instructor access is not available through this login page. Please use the instructor portal.'),
+                      backgroundColor: Colors.orange,
+                      duration: Duration(seconds: 5),
+                    ),
+                  );
                 } else {
+                  // Redirect clients to their dashboard
                   context.go('/client-dashboard');
                 }
               }
@@ -84,7 +93,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Sign in to your account',
+                    'Sign in to your client account',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey,
