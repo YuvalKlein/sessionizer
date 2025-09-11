@@ -44,7 +44,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
+    apiKey: 'YOUR_DEV_FIREBASE_API_KEY_HERE',
     appId: '1:707974722454:web:e02711bc06fb039aa7e3b7',
     messagingSenderId: '707974722454',
     projectId: 'apiclientapp',
@@ -53,15 +53,16 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
+    apiKey: 'YOUR_DEV_FIREBASE_API_KEY_HERE',
     appId: '1:707974722454:android:a8aae63809100940a7e3b7',
     messagingSenderId: '707974722454',
     projectId: 'apiclientapp',
+    authDomain: 'apiclientapp.firebaseapp.com',
     storageBucket: 'apiclientapp.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
+    apiKey: 'YOUR_DEV_FIREBASE_API_KEY_HERE',
     appId: '1:987654321:ios:fedcba987654321',
     messagingSenderId: '987654321',
     projectId: 'apiclientapp',
@@ -71,7 +72,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
+    apiKey: 'YOUR_DEV_FIREBASE_API_KEY_HERE',
     appId: '1:987654321:ios:fedcba987654321',
     messagingSenderId: '987654321',
     projectId: 'apiclientapp',

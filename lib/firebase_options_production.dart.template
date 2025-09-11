@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart'
 ///
 /// Example:
 /// ```dart
-/// import 'firebase_options_development.dart';
+/// import 'firebase_options_production.dart';
 /// // ...
 /// await Firebase.initializeApp(
 ///   options: DefaultFirebaseOptions.currentPlatform,
@@ -44,39 +44,44 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
-    appId: '1:707974722454:web:e02711bc06fb039aa7e3b7',
-    messagingSenderId: '707974722454',
-    projectId: 'apiclientapp',
-    authDomain: 'apiclientapp.firebaseapp.com',
-    storageBucket: 'apiclientapp.firebasestorage.app',
+    apiKey: 'YOUR_PROD_FIREBASE_API_KEY_HERE',
+    appId: '1:123456789:web:abcdef123456789',
+    messagingSenderId: '123456789',
+    projectId: 'play-e37a6',
+    authDomain: 'play-e37a6.firebaseapp.com',
+    storageBucket: 'play-e37a6.appspot.com',
+    databaseURL: 'https://play-e37a6-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
-    appId: '1:707974722454:android:a8aae63809100940a7e3b7',
-    messagingSenderId: '707974722454',
-    projectId: 'apiclientapp',
-    storageBucket: 'apiclientapp.firebasestorage.app',
+    apiKey: 'YOUR_PROD_FIREBASE_API_KEY_HERE',
+    appId: '1:123456789:android:abcdef123456789',
+    messagingSenderId: '123456789',
+    projectId: 'play-e37a6',
+    authDomain: 'play-e37a6.firebaseapp.com',
+    storageBucket: 'play-e37a6.appspot.com',
+    databaseURL: 'https://play-e37a6-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
-    appId: '1:987654321:ios:fedcba987654321',
-    messagingSenderId: '987654321',
-    projectId: 'apiclientapp',
-    storageBucket: 'apiclientapp.appspot.com',
-    databaseURL: 'https://apiclientapp-default-rtdb.firebaseio.com',
-    iosBundleId: 'com.example.sessionizer.dev',
+    apiKey: 'YOUR_PROD_FIREBASE_API_KEY_HERE',
+    appId: '1:123456789:ios:abcdef123456789',
+    messagingSenderId: '123456789',
+    projectId: 'play-e37a6',
+    authDomain: 'play-e37a6.firebaseapp.com',
+    storageBucket: 'play-e37a6.appspot.com',
+    databaseURL: 'https://play-e37a6-default-rtdb.firebaseio.com',
+    iosBundleId: 'com.example.sessionizer.prod',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: String.fromEnvironment('FIREBASE_API_KEY', defaultValue: ''),
-    appId: '1:987654321:ios:fedcba987654321',
-    messagingSenderId: '987654321',
-    projectId: 'apiclientapp',
-    storageBucket: 'apiclientapp.appspot.com',
-    databaseURL: 'https://apiclientapp-default-rtdb.firebaseio.com',
-    iosBundleId: 'com.example.sessionizer.dev',
+    apiKey: 'YOUR_PROD_FIREBASE_API_KEY_HERE',
+    appId: '1:123456789:ios:abcdef123456789',
+    messagingSenderId: '123456789',
+    projectId: 'play-e37a6',
+    authDomain: 'play-e37a6.firebaseapp.com',
+    storageBucket: 'play-e37a6.appspot.com',
+    databaseURL: 'https://play-e37a6-default-rtdb.firebaseio.com',
+    iosBundleId: 'com.example.sessionizer.prod',
   );
 }

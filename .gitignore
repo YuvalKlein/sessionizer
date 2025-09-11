@@ -22,10 +22,14 @@ migrate_working_dir/
 google-services.json
 GoogleService-Info.plist
 firebase_options.dart
+firebase_options_development.dart
+firebase_options_production.dart
 
 # Keep template files but ignore actual config files
 !google-services.json.template
 !firebase_options.dart.template
+!firebase_options_development.dart.template
+!firebase_options_production.dart.template
 
 # IntelliJ related
 *.iml

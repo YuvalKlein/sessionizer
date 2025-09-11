@@ -2,6 +2,10 @@ import 'dart:io';
 import 'dart:convert';
 
 void main(List<String> args) async {
+  // Determine environment (development or production)
+  final environment = args.isNotEmpty ? args[0] : 'development';
+  print('🔧 Building for $environment environment');
+  
   // Read the keys.json file
   final keysFile = File('keys.json');
   if (!keysFile.existsSync()) {
@@ -15,6 +19,16 @@ void main(List<String> args) async {
   final googleClientId = keys['GOOGLE_CLIENT_ID'] as String?;
   if (googleClientId == null) {
     print('Error: GOOGLE_CLIENT_ID not found in keys.json');
+    exit(1);
+  }
+
+  // Get Firebase API key based on environment
+  final firebaseApiKey = environment == 'production' 
+      ? keys['FIREBASE_API_KEY_PROD'] as String?
+      : keys['FIREBASE_API_KEY_DEV'] as String?;
+      
+  if (firebaseApiKey == null) {
+    print('Error: FIREBASE_API_KEY_${environment.toUpperCase()} not found in keys.json');
     exit(1);
   }
 
@@ -35,4 +49,5 @@ void main(List<String> args) async {
   
   print('✅ Successfully updated web/index.html with Google Client ID');
   print('🔒 Client ID is now securely managed via environment variables');
+  print('🔑 Firebase API key configured for $environment environment');
 }
