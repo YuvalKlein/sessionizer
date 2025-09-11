@@ -17,7 +17,7 @@ class SessionTypeEntity extends Equatable {
   
   // Cancellation Policy Fields
   final bool hasCancellationFee;
-  final int cancellationTimeBefore; // in minutes
+  final int cancellationTimeBefore; // just the number (e.g., 18)
   final String cancellationTimeUnit; // 'hours' or 'minutes'
   final int cancellationFeeAmount; // fee amount
   final String cancellationFeeType; // '%' or '$'
@@ -44,6 +44,28 @@ class SessionTypeEntity extends Equatable {
     this.cancellationFeeAmount = 100,
     this.cancellationFeeType = '%',
   });
+
+  /// Calculate the actual cancellation fee amount in dollars
+  /// If cancellationFeeType is '%', multiplies by session price
+  /// If cancellationFeeType is '$', returns the amount directly
+  int getActualCancellationFee() {
+    if (!hasCancellationFee) return 0;
+    
+    if (cancellationFeeType == '%') {
+      return (cancellationFeeAmount * price / 100).round();
+    } else {
+      return cancellationFeeAmount;
+    }
+  }
+
+  /// Get cancellation time in minutes for calculations
+  int getCancellationTimeInMinutes() {
+    if (cancellationTimeUnit == 'hours') {
+      return cancellationTimeBefore * 60;
+    } else {
+      return cancellationTimeBefore;
+    }
+  }
 
   @override
   List<Object?> get props => [

@@ -593,7 +593,7 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
                       items: _cancellationFeeTypes.map((String type) {
                         return DropdownMenuItem<String>(
                           value: type,
-                          child: Text(type == '%' ? 'Percentage (%)' : 'Fixed Amount (\$)'),
+                          child: Text(type),
                         );
                       }).toList(),
                       onChanged: (String? newValue) {
@@ -646,9 +646,7 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
       // Cancellation Policy
       hasCancellationFee: _hasCancellationFee,
       cancellationTimeBefore: _hasCancellationFee 
-          ? (_selectedCancellationTimeUnit == 'hours' 
-              ? int.parse(_cancellationTimeController.text) * 60 
-              : int.parse(_cancellationTimeController.text))
+          ? int.parse(_cancellationTimeController.text)
           : 0,
       cancellationTimeUnit: _selectedCancellationTimeUnit,
       cancellationFeeAmount: _hasCancellationFee 
