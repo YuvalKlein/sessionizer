@@ -11,6 +11,7 @@ import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
 import 'package:myapp/features/review/presentation/bloc/review_bloc.dart';
 import 'package:myapp/features/review/presentation/widgets/review_dialog.dart';
+import 'package:myapp/features/booking/presentation/widgets/cancellation_fee_warning_modal.dart';
 
 class ClientBookingsPage extends StatefulWidget {
   const ClientBookingsPage({super.key});
@@ -720,86 +721,60 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
     );
   }
 
-  void _showRescheduleDialog(dynamic booking) {
+  void _showRescheduleDialog(dynamic booking) async {
+    // Get cancellation policy and session type data
+    final cancellationPolicy = await _getCancellationPolicy(booking);
+    final sessionTypeData = await _getSessionTypeData(booking);
+    final sessionTitle = await _getSessionName(booking.bookableSessionId);
+
+    if (cancellationPolicy == null || sessionTypeData == null) {
+      // Fallback to simple dialog if we can't get policy data
+      _showSimpleRescheduleDialog(booking);
+      return;
+    }
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reschedule Booking'),
-        content: const Text('Select a new time for your booking?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Navigate to calendar page for reschedule
-              try {
-                if (booking.bookableSessionId.isEmpty || booking.instructorId.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Unable to reschedule: Session information not available'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-                context.go('/client/calendar/${booking.bookableSessionId}/${booking.instructorId}?reschedule=${booking.id}');
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Unable to reschedule: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text('Choose New Time'),
-          ),
-        ],
+      builder: (context) => CancellationFeeWarningModal(
+        sessionTitle: sessionTitle,
+        sessionStartTime: booking.startTime,
+        cancellationPolicy: cancellationPolicy,
+        sessionTypeData: sessionTypeData,
+        action: 'reschedule',
+        onConfirm: () {
+          Navigator.pop(context);
+          _proceedWithReschedule(booking);
+        },
+        onCancel: () => Navigator.pop(context),
       ),
     );
   }
 
-  void _showCancelDialog(dynamic booking) {
+  void _showCancelDialog(dynamic booking) async {
+    // Get cancellation policy and session type data
+    final cancellationPolicy = await _getCancellationPolicy(booking);
+    final sessionTypeData = await _getSessionTypeData(booking);
+    final sessionTitle = await _getSessionName(booking.bookableSessionId);
+
+    if (cancellationPolicy == null || sessionTypeData == null) {
+      // Fallback to simple dialog if we can't get policy data
+      _showSimpleCancelDialog(booking);
+      return;
+    }
+
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Cancel Booking'),
-        content: const Text('Are you sure you want to cancel this booking?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('No'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              try {
-                // Use the correct context that has access to BookingBloc
-                final bookingBloc = context.read<BookingBloc>();
-                bookingBloc.add(CancelBookingEvent(id: booking.id, cancelledBy: 'client'));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Booking cancelled')),
-                );
-              } catch (e) {
-                print('Error cancelling booking: $e');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error cancelling booking: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Yes, Cancel'),
-          ),
-        ],
+      builder: (context) => CancellationFeeWarningModal(
+        sessionTitle: sessionTitle,
+        sessionStartTime: booking.startTime,
+        cancellationPolicy: cancellationPolicy,
+        sessionTypeData: sessionTypeData,
+        action: 'cancel',
+        onConfirm: () {
+          Navigator.pop(context);
+          _proceedWithCancellation(booking);
+        },
+        onCancel: () => Navigator.pop(context),
       ),
     );
   }
@@ -870,5 +845,182 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
 
   void _bookSimilarSession(dynamic booking) {
     context.go('/client/sessions');
+  }
+
+  // Helper methods for cancellation policy integration
+  
+  Future<Map<String, dynamic>?> _getCancellationPolicy(dynamic booking) async {
+    try {
+      // First check if booking has specific cancellation policy
+      final bookingDoc = await FirestoreCollections.booking(booking.id).get();
+      if (bookingDoc.exists) {
+        final bookingData = bookingDoc.data() as Map<String, dynamic>?;
+        final bookingPolicy = bookingData?['cancellationPolicy'] as Map<String, dynamic>?;
+        if (bookingPolicy != null) {
+          return bookingPolicy;
+        }
+      }
+
+      // If no specific policy, get from session type
+      final sessionTypeData = await _getSessionTypeData(booking);
+      if (sessionTypeData != null) {
+        print('📋 Session type data found: ${sessionTypeData.keys}');
+        
+        // Handle both old format (separate fields) and new format (cancellationPolicy map)
+        final cancellationPolicy = sessionTypeData['cancellationPolicy'] as Map<String, dynamic>? ?? {};
+        
+        final policy = {
+          'hasCancellationFee': cancellationPolicy['hasCancellationFee'] ?? sessionTypeData['hasCancellationFee'] ?? true,
+          'cancellationTimeBefore': cancellationPolicy['cancellationTimeBefore'] ?? sessionTypeData['cancellationTimeBefore'] ?? 18,
+          'cancellationTimeUnit': cancellationPolicy['cancellationTimeUnit'] ?? sessionTypeData['cancellationTimeUnit'] ?? 'hours',
+          'cancellationFeeAmount': cancellationPolicy['cancellationFeeAmount'] ?? sessionTypeData['cancellationFeeAmount'] ?? 100,
+          'cancellationFeeType': cancellationPolicy['cancellationFeeType'] ?? sessionTypeData['cancellationFeeType'] ?? '%',
+        };
+        
+        print('📋 Final cancellation policy: $policy');
+        return policy;
+      }
+
+      return null;
+    } catch (e) {
+      print('Error getting cancellation policy: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _getSessionTypeData(dynamic booking) async {
+    try {
+      print('🔍 Getting session type data for booking: ${booking.id}');
+      
+      // First, get the bookable session to find session type IDs
+      final bookableSessionId = booking.bookableSessionId as String?;
+      if (bookableSessionId == null) {
+        print('❌ Bookable session ID is null');
+        return null;
+      }
+      
+      print('🔍 Loading bookable session: $bookableSessionId');
+      final bookableSessionDoc = await FirestoreCollections.bookableSession(bookableSessionId).get();
+      
+      if (!bookableSessionDoc.exists) {
+        print('❌ Bookable session document does not exist');
+        return null;
+      }
+      
+      final bookableSessionData = bookableSessionDoc.data() as Map<String, dynamic>;
+      final sessionTypeIds = List<String>.from(bookableSessionData['sessionTypeIds'] ?? []);
+      
+      if (sessionTypeIds.isEmpty) {
+        print('❌ No session type IDs found in bookable session');
+        return null;
+      }
+      
+      // Get the first session type (bookable sessions can have multiple, but we'll use the first)
+      final sessionTypeId = sessionTypeIds.first;
+      print('🔍 Loading session type: $sessionTypeId');
+      
+      final sessionTypeDoc = await FirestoreCollections.sessionType(sessionTypeId).get();
+      if (sessionTypeDoc.exists) {
+        final data = sessionTypeDoc.data() as Map<String, dynamic>;
+        print('✅ Session type data loaded: ${data.keys}');
+        return data;
+      } else {
+        print('❌ Session type document does not exist');
+      }
+      return null;
+    } catch (e) {
+      print('❌ Error getting session type data: $e');
+      return null;
+    }
+  }
+
+  void _proceedWithReschedule(dynamic booking) {
+    try {
+      if (booking.bookableSessionId.isEmpty || booking.instructorId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to reschedule: Session information not available'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      context.go('/client/calendar/${booking.bookableSessionId}/${booking.instructorId}?reschedule=${booking.id}');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unable to reschedule: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _proceedWithCancellation(dynamic booking) {
+    try {
+      final bookingBloc = context.read<BookingBloc>();
+      bookingBloc.add(CancelBookingEvent(id: booking.id, cancelledBy: 'client'));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Booking cancelled')),
+      );
+    } catch (e) {
+      print('Error cancelling booking: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error cancelling booking: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showSimpleRescheduleDialog(dynamic booking) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reschedule Booking'),
+        content: const Text('Select a new time for your booking?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _proceedWithReschedule(booking);
+            },
+            child: const Text('Choose New Time'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSimpleCancelDialog(dynamic booking) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel Booking'),
+        content: const Text('Are you sure you want to cancel this booking?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _proceedWithCancellation(booking);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
   }
 }

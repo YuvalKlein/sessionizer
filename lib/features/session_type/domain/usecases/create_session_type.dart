@@ -12,7 +12,21 @@ class CreateSessionType implements UseCase<SessionTypeEntity, CreateSessionTypeP
 
   @override
   Future<Either<Failure, SessionTypeEntity>> call(CreateSessionTypeParams params) async {
-    return await _repository.createSessionType(params.sessionType);
+    print('🔧 CreateSessionType use case: Calling repository with session type:');
+    print('  hasCancellationFee: ${params.sessionType.hasCancellationFee}');
+    print('  cancellationTimeBefore: ${params.sessionType.cancellationTimeBefore}');
+    print('  cancellationTimeUnit: ${params.sessionType.cancellationTimeUnit}');
+    print('  cancellationFeeAmount: ${params.sessionType.cancellationFeeAmount}');
+    print('  cancellationFeeType: ${params.sessionType.cancellationFeeType}');
+    
+    final result = await _repository.createSessionType(params.sessionType);
+    
+    result.fold(
+      (failure) => print('❌ CreateSessionType use case failed: ${failure.message}'),
+      (sessionType) => print('✅ CreateSessionType use case succeeded'),
+    );
+    
+    return result;
   }
 }
 

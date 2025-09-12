@@ -31,12 +31,23 @@ class SessionTypeRepositoryImpl implements SessionTypeRepository {
   @override
   Future<Either<Failure, SessionTypeEntity>> createSessionType(SessionTypeEntity sessionType) async {
     try {
+      print('🔧 SessionTypeRepositoryImpl: Converting entity to model');
       final sessionTypeModel = SessionTypeModel.fromEntity(sessionType);
+      print('🔧 SessionTypeRepositoryImpl: Model created, calling data source');
+      print('  hasCancellationFee: ${sessionTypeModel.hasCancellationFee}');
+      print('  cancellationTimeBefore: ${sessionTypeModel.cancellationTimeBefore}');
+      print('  cancellationTimeUnit: ${sessionTypeModel.cancellationTimeUnit}');
+      print('  cancellationFeeAmount: ${sessionTypeModel.cancellationFeeAmount}');
+      print('  cancellationFeeType: ${sessionTypeModel.cancellationFeeType}');
+      
       final createdSessionType = await _remoteDataSource.createSessionType(sessionTypeModel);
+      print('🔧 SessionTypeRepositoryImpl: Data source call completed');
       return Right(createdSessionType);
     } on ServerException catch (e) {
+      print('❌ SessionTypeRepositoryImpl: ServerException: ${e.message}');
       return Left(ServerFailure(e.message));
     } catch (e) {
+      print('❌ SessionTypeRepositoryImpl: Unexpected error: $e');
       return Left(ServerFailure('Unexpected error: $e'));
     }
   }

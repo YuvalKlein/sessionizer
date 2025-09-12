@@ -10,6 +10,15 @@ class BookableSessionEntity extends Equatable {
   final int bookingLeadTimeInMinutes; // Minimum advance booking time
   final int futureBookingLimitInDays; // How far in advance bookings can be made
   final int? durationOverride; // Optional duration override
+  
+  // Cancellation Policy Override
+  final bool? cancellationPolicyOverride; // null = use sessionType default, true = override enabled, false = override disabled
+  final bool? hasCancellationFeeOverride; // Override whether cancellation fee is enabled
+  final int? cancellationTimeBeforeOverride; // Override cancellation time
+  final String? cancellationTimeUnitOverride; // Override cancellation time unit
+  final int? cancellationFeeAmountOverride; // Override cancellation fee amount
+  final String? cancellationFeeTypeOverride; // Override cancellation fee type
+  
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -23,6 +32,12 @@ class BookableSessionEntity extends Equatable {
     this.bookingLeadTimeInMinutes = 30,
     this.futureBookingLimitInDays = 7,
     this.durationOverride,
+    this.cancellationPolicyOverride,
+    this.hasCancellationFeeOverride,
+    this.cancellationTimeBeforeOverride,
+    this.cancellationTimeUnitOverride,
+    this.cancellationFeeAmountOverride,
+    this.cancellationFeeTypeOverride,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -38,6 +53,12 @@ class BookableSessionEntity extends Equatable {
         bookingLeadTimeInMinutes,
         futureBookingLimitInDays,
         durationOverride,
+        cancellationPolicyOverride,
+        hasCancellationFeeOverride,
+        cancellationTimeBeforeOverride,
+        cancellationTimeUnitOverride,
+        cancellationFeeAmountOverride,
+        cancellationFeeTypeOverride,
         createdAt,
         updatedAt,
       ];

@@ -15,9 +15,17 @@ class SessionTypeModel extends SessionTypeEntity {
     super.showParticipants = true,
     super.category = '',
     required super.price,
+    super.hasCancellationFee = true,
+    super.cancellationTimeBefore = 18,
+    super.cancellationTimeUnit = 'hours',
+    super.cancellationFeeAmount = 100,
+    super.cancellationFeeType = '%',
   });
 
   factory SessionTypeModel.fromMap(Map<String, dynamic> map) {
+    // Handle both old format (separate fields) and new format (cancellationPolicy map)
+    Map<String, dynamic> cancellationPolicy = map['cancellationPolicy'] as Map<String, dynamic>? ?? {};
+    
     return SessionTypeModel(
       id: map['id'],
       title: map['title'] ?? '',
@@ -32,12 +40,25 @@ class SessionTypeModel extends SessionTypeEntity {
       showParticipants: map['showParticipants'] ?? false,
       category: map['category'] ?? '',
       price: map['price'] ?? 0,
+      // Support both formats: new format (cancellationPolicy map) and old format (separate fields)
+      hasCancellationFee: cancellationPolicy['hasCancellationFee'] ?? map['hasCancellationFee'] ?? true,
+      cancellationTimeBefore: cancellationPolicy['cancellationTimeBefore'] ?? map['cancellationTimeBefore'] ?? 18,
+      cancellationTimeUnit: cancellationPolicy['cancellationTimeUnit'] ?? map['cancellationTimeUnit'] ?? 'hours',
+      cancellationFeeAmount: cancellationPolicy['cancellationFeeAmount'] ?? map['cancellationFeeAmount'] ?? 100,
+      cancellationFeeType: cancellationPolicy['cancellationFeeType'] ?? map['cancellationFeeType'] ?? '%',
     );
   }
 
 
   Map<String, dynamic> toMap() {
-    return {
+    print('🔧 SessionTypeModel.toMap(): Creating map with cancellation policy:');
+    print('  hasCancellationFee: $hasCancellationFee');
+    print('  cancellationTimeBefore: $cancellationTimeBefore');
+    print('  cancellationTimeUnit: $cancellationTimeUnit');
+    print('  cancellationFeeAmount: $cancellationFeeAmount');
+    print('  cancellationFeeType: $cancellationFeeType');
+    
+    final map = {
       'title': title,
       'notifyCancelation': notifyCancelation,
       'createdTime': createdTime,
@@ -50,7 +71,17 @@ class SessionTypeModel extends SessionTypeEntity {
       'showParticipants': showParticipants,
       'category': category,
       'price': price,
+      'cancellationPolicy': {
+        'hasCancellationFee': hasCancellationFee,
+        'cancellationTimeBefore': cancellationTimeBefore,
+        'cancellationTimeUnit': cancellationTimeUnit,
+        'cancellationFeeAmount': cancellationFeeAmount,
+        'cancellationFeeType': cancellationFeeType,
+      },
     };
+    
+    print('🔧 SessionTypeModel.toMap(): Final map: $map');
+    return map;
   }
 
   factory SessionTypeModel.fromEntity(SessionTypeEntity entity) {
@@ -68,6 +99,11 @@ class SessionTypeModel extends SessionTypeEntity {
       showParticipants: entity.showParticipants,
       category: entity.category,
       price: entity.price,
+      hasCancellationFee: entity.hasCancellationFee,
+      cancellationTimeBefore: entity.cancellationTimeBefore,
+      cancellationTimeUnit: entity.cancellationTimeUnit,
+      cancellationFeeAmount: entity.cancellationFeeAmount,
+      cancellationFeeType: entity.cancellationFeeType,
     );
   }
 
@@ -85,6 +121,11 @@ class SessionTypeModel extends SessionTypeEntity {
     bool? showParticipants,
     String? category,
     int? price,
+    bool? hasCancellationFee,
+    int? cancellationTimeBefore,
+    String? cancellationTimeUnit,
+    int? cancellationFeeAmount,
+    String? cancellationFeeType,
   }) {
     return SessionTypeModel(
       id: id ?? this.id,
@@ -100,6 +141,11 @@ class SessionTypeModel extends SessionTypeEntity {
       showParticipants: showParticipants ?? this.showParticipants,
       category: category ?? this.category,
       price: price ?? this.price,
+      hasCancellationFee: hasCancellationFee ?? this.hasCancellationFee,
+      cancellationTimeBefore: cancellationTimeBefore ?? this.cancellationTimeBefore,
+      cancellationTimeUnit: cancellationTimeUnit ?? this.cancellationTimeUnit,
+      cancellationFeeAmount: cancellationFeeAmount ?? this.cancellationFeeAmount,
+      cancellationFeeType: cancellationFeeType ?? this.cancellationFeeType,
     );
   }
 }

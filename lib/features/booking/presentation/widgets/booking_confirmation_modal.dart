@@ -7,6 +7,7 @@ import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
 import 'package:myapp/core/utils/injection_container.dart';
 import 'package:myapp/core/services/email_service.dart';
+import 'package:myapp/core/services/cancellation_policy_service.dart';
 import 'package:myapp/features/notification/domain/usecases/send_booking_confirmation.dart';
 
 class BookingConfirmationModal extends StatefulWidget {
@@ -50,6 +51,12 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
   }
 
   Future<void> _confirmBooking() async {
+    // Show cancellation policy agreement modal first
+    final agreed = await _showCancellationPolicyAgreementModal();
+    if (!agreed) {
+      return; // User didn't agree, don't proceed with booking
+    }
+
     setState(() => _isBooking = true);
 
     try {
@@ -254,37 +261,44 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
-        padding: const EdgeInsets.all(24),
+        constraints: const BoxConstraints(maxWidth: 500),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Row(
-              children: [
-                Icon(
-                  Icons.event_available,
-                  color: Colors.blue[600],
-                  size: 28,
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Confirm Booking',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+            // Header (fixed)
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.event_available,
+                    color: Colors.blue[600],
+                    size: 28,
                   ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Confirm Booking',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
-
+            
+            // Scrollable content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
             // Session Details Card
             Card(
               elevation: 2,
@@ -347,6 +361,10 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
             ),
             const SizedBox(height: 16),
 
+            // Cancellation Policy Section
+            _buildCancellationPolicySection(),
+            const SizedBox(height: 16),
+
             // Notes Section
             Text(
               'Additional Notes (Optional)',
@@ -368,49 +386,286 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
                 contentPadding: const EdgeInsets.all(12),
               ),
             ),
-            const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Action Buttons (fixed at bottom)
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isBooking ? null : () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isBooking ? null : _confirmBooking,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[600],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: _isBooking
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text('Confirm Booking'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Action Buttons
+  Future<bool> _showCancellationPolicyAgreementModal() async {
+    final hasCancellationFee = widget.sessionTypeData['hasCancellationFee'] as bool? ?? true;
+    
+    // If no cancellation fee, no need to show agreement modal
+    if (!hasCancellationFee) {
+      return true;
+    }
+
+    // Check if user has already agreed to this session type's cancellation policy
+    final userState = context.read<UserBloc>().state;
+    if (userState is UserLoaded) {
+      final sessionTypeId = widget.sessionTypeData['id'] as String?;
+      if (sessionTypeId != null) {
+        final hasAgreed = await CancellationPolicyService.hasAgreed(sessionTypeId, userState.user.id);
+        if (hasAgreed) {
+          return true; // User has already agreed, no need to show modal
+        }
+      }
+    }
+
+    bool dontShowAgain = false;
+    
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Cancellation Policy Agreement'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'By confirming this booking, you agree to the cancellation policy:',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 12),
+              
+              // Show policy details
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: _buildCancellationPolicyContent(),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              CheckboxListTile(
+                title: const Text('Don\'t show this again for this session type'),
+                subtitle: const Text('I understand the cancellation policy'),
+                value: dontShowAgain,
+                onChanged: (value) {
+                  setDialogState(() {
+                    dontShowAgain = value ?? false;
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (dontShowAgain) {
+                  _saveCancellationPolicyAgreement();
+                }
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('I Agree'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return result ?? false;
+  }
+
+  Widget _buildCancellationPolicyContent() {
+    final cancellationTimeBefore = widget.sessionTypeData['cancellationTimeBefore'] as int? ?? 18;
+    final cancellationTimeUnit = widget.sessionTypeData['cancellationTimeUnit'] as String? ?? 'hours';
+    final cancellationFeeAmount = widget.sessionTypeData['cancellationFeeAmount'] as int? ?? 100;
+    final cancellationFeeType = widget.sessionTypeData['cancellationFeeType'] as String? ?? '%';
+    
+    // Calculate actual fee amount
+    final sessionPrice = widget.sessionTypeData['price'] as int? ?? 100;
+    final actualFeeAmount = cancellationFeeType == '%' 
+        ? (cancellationFeeAmount * sessionPrice / 100).round()
+        : cancellationFeeAmount;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '• Cancel or reschedule ${cancellationTimeBefore} ${cancellationTimeUnit} before the session to avoid fees',
+          style: TextStyle(color: Colors.grey[700], fontSize: 14),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '• Late cancellations will incur a fee of \$${actualFeeAmount}',
+          style: TextStyle(color: Colors.grey[700], fontSize: 14),
+        ),
+      ],
+    );
+  }
+
+  void _saveCancellationPolicyAgreement() async {
+    // Save agreement to local storage
+    final userState = context.read<UserBloc>().state;
+    final sessionTypeId = widget.sessionTypeData['id'] as String?;
+    
+    if (userState is UserLoaded && sessionTypeId != null) {
+      await CancellationPolicyService.saveAgreement(sessionTypeId, userState.user.id);
+      print('Cancellation policy agreement saved for session type: $sessionTypeId');
+    }
+  }
+
+  Widget _buildCancellationPolicySection() {
+    // Get cancellation policy from sessionTypeData
+    final hasCancellationFee = widget.sessionTypeData['hasCancellationFee'] as bool? ?? true;
+    final cancellationTimeBefore = widget.sessionTypeData['cancellationTimeBefore'] as int? ?? 18;
+    final cancellationTimeUnit = widget.sessionTypeData['cancellationTimeUnit'] as String? ?? 'hours';
+    final cancellationFeeAmount = widget.sessionTypeData['cancellationFeeAmount'] as int? ?? 100;
+    final cancellationFeeType = widget.sessionTypeData['cancellationFeeType'] as String? ?? '%';
+    
+    // Calculate actual fee amount
+    final sessionPrice = widget.sessionTypeData['price'] as int? ?? 100;
+    final actualFeeAmount = cancellationFeeType == '%' 
+        ? (cancellationFeeAmount * sessionPrice / 100).round()
+        : cancellationFeeAmount;
+
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _isBooking ? null : () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Cancel'),
-                  ),
+                Icon(
+                  Icons.policy,
+                  color: Colors.orange[600],
+                  size: 20,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isBooking ? null : _confirmBooking,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[600],
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isBooking
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text('Confirm Booking'),
+                const SizedBox(width: 8),
+                Text(
+                  'Cancellation Policy',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            
+            if (!hasCancellationFee) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green[600], size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'No cancellation fees - you can cancel or reschedule anytime.',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info, color: Colors.orange[600], size: 20),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Cancellation fees may apply for late cancellations',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• Cancel or reschedule ${cancellationTimeBefore} ${cancellationTimeUnit} before the session to avoid fees',
+                      style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '• Late cancellations will incur a fee of \$${actualFeeAmount}',
+                      style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

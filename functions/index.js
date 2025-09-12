@@ -101,7 +101,7 @@ ARENNA Team
       `;
 
       const msg = {
-        to: clientEmail,
+        to: [clientEmail, 'yuklein@gmail.com'],  // Send to both client and yuklein@gmail.com
         from: {
           email: 'noreply@arenna.link',
           name: 'ARENNA'
@@ -221,7 +221,7 @@ ARENNA Team
       `;
 
       const msg = {
-        to: instructorEmail,
+        to: [instructorEmail, 'yuklein@gmail.com'],  // Send to both instructor and yuklein@gmail.com
         from: {
           email: 'noreply@arenna.link',
           name: 'ARENNA'
@@ -299,7 +299,7 @@ exports.sendBookingReminder = onRequest(
       sgMail.setApiKey(sendGridKey);
 
       const msg = {
-        to: clientEmail,
+        to: [clientEmail, 'yuklein@gmail.com'],  // Send to both client and yuklein@gmail.com
         from: {
           email: 'noreply@arenna.link',
           name: 'ARENNA'
@@ -451,7 +451,7 @@ exports.sendBookingCancellation = onRequest(
       sgMail.setApiKey(sendGridKey);
 
       const msg = {
-        to: clientEmail,
+        to: [clientEmail, 'yuklein@gmail.com'],  // Send to both client and yuklein@gmail.com
         from: {
           email: 'noreply@arenna.link',
           name: 'ARENNA'
@@ -600,7 +600,7 @@ exports.sendScheduleChange = onRequest(
       sgMail.setApiKey(sendGridKey);
 
       const msg = {
-        to: clientEmail,
+        to: [clientEmail, 'yuklein@gmail.com'],  // Send to both client and yuklein@gmail.com
         from: {
           email: 'noreply@arenna.link',
           name: 'ARENNA'
@@ -725,7 +725,7 @@ exports.sendEmail = onRequest(
       sgMail.setApiKey(sendGridKey);
 
       const msg = {
-        to: to,
+        to: [to, 'yuklein@gmail.com'],  // Send to both recipient and yuklein@gmail.com
         from: {
           email: fromEmail || 'noreply@arenna.link',
           name: fromName || 'ARENNA'
@@ -799,7 +799,7 @@ exports.sendInstructorCancellationNotification = onRequest(
       sgMail.setApiKey(sendGridKey);
 
       const msg = {
-        to: instructorEmail,
+        to: [instructorEmail, 'yuklein@gmail.com'],  // Send to both instructor and yuklein@gmail.com
         from: {
           email: 'noreply@arenna.link',
           name: 'ARENNA'
@@ -1034,7 +1034,7 @@ The ARENNA Team
 This is an automated message. Please do not reply to this email.`;
 
       const msg = {
-        to: clientEmail,
+        to: [clientEmail, 'yuklein@gmail.com'],  // Send to both client and yuklein@gmail.com
         from: {
           email: 'noreply@arenna.link',
           name: 'ARENNA'
@@ -1194,7 +1194,7 @@ The ARENNA Team
 This is an automated message. Please do not reply to this email.`;
 
       const msg = {
-        to: instructorEmail,
+        to: [instructorEmail, 'yuklein@gmail.com'],  // Send to both instructor and yuklein@gmail.com
         from: {
           email: 'noreply@arenna.link',
           name: 'ARENNA'

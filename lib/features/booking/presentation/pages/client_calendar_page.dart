@@ -95,10 +95,19 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
           if (typeDoc.exists) {
             print('✅ Session type document found');
             final typeData = typeDoc.data() as Map<String, dynamic>;
+            // Handle both old format (separate fields) and new format (cancellationPolicy map)
+            final cancellationPolicy = typeData['cancellationPolicy'] as Map<String, dynamic>? ?? {};
+            
             _sessionTypeData = {
               'id': typeIds.first,
               'title': typeData['title'],
               'duration': typeData['duration'],
+              'price': typeData['price'],
+              'hasCancellationFee': cancellationPolicy['hasCancellationFee'] ?? typeData['hasCancellationFee'] ?? true,
+              'cancellationTimeBefore': cancellationPolicy['cancellationTimeBefore'] ?? typeData['cancellationTimeBefore'] ?? 18,
+              'cancellationTimeUnit': cancellationPolicy['cancellationTimeUnit'] ?? typeData['cancellationTimeUnit'] ?? 'hours',
+              'cancellationFeeAmount': cancellationPolicy['cancellationFeeAmount'] ?? typeData['cancellationFeeAmount'] ?? 100,
+              'cancellationFeeType': cancellationPolicy['cancellationFeeType'] ?? typeData['cancellationFeeType'] ?? '%',
             };
           } else {
             print('❌ Session type document not found');
@@ -266,8 +275,20 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
             final timeKey = '${slot.hour.toString().padLeft(2, '0')}:${slot.minute.toString().padLeft(2, '0')}';
             final isAvailable = !bookedTimesForDate.contains(timeKey);
             
+            // Check lead time requirement
+            final slotDateTime = DateTime(date.year, date.month, date.day, slot.hour, slot.minute);
+            final now = DateTime.now();
+            final timeDifference = slotDateTime.difference(now);
             
-            return isAvailable;
+            // Get booking lead time from session data
+            final minHoursAhead = _sessionData?['minHoursAhead'] as int? ?? 2;
+            final bookingLeadTimeInMinutes = minHoursAhead > 10 
+                ? minHoursAhead  // Already in minutes
+                : minHoursAhead * 60;  // Convert hours to minutes
+            
+            final meetsLeadTime = timeDifference.inMinutes >= bookingLeadTimeInMinutes;
+            
+            return isAvailable && meetsLeadTime;
           }).toList();
           
           
@@ -479,6 +500,36 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
           backgroundColor: Colors.orange,
         ),
       );
+      return;
+    }
+
+    // Validate booking lead time
+    final selectedDateTime = DateTime(
+      _selectedDay!.year,
+      _selectedDay!.month,
+      _selectedDay!.day,
+      time.hour,
+      time.minute,
+    );
+    
+    final now = DateTime.now();
+    final timeDifference = selectedDateTime.difference(now);
+    
+    // Get booking lead time from session data (try both field names)
+    final minHoursAhead = _sessionData?['minHoursAhead'] as int? ?? 
+                         _sessionData?['bookingLeadTimeInMinutes'] as int? ?? 2;
+    final bookingLeadTimeInMinutes = minHoursAhead > 10 
+        ? minHoursAhead  // Already in minutes
+        : minHoursAhead * 60;  // Convert hours to minutes
+    
+    print('🕐 Debug: Current time: ${now.toString()}');
+    print('🕐 Debug: Selected time: ${selectedDateTime.toString()}');
+    print('🕐 Debug: Time difference: ${timeDifference.inMinutes} minutes');
+    print('🕐 Debug: Required lead time: $bookingLeadTimeInMinutes minutes');
+    
+    // Check if booking is too close to current time - silently prevent booking
+    if (timeDifference.inMinutes < bookingLeadTimeInMinutes) {
+      print('🚫 Booking prevented: ${timeDifference.inMinutes} minutes < ${bookingLeadTimeInMinutes} minutes required');
       return;
     }
 
@@ -710,4 +761,5 @@ class _ClientCalendarPageState extends State<ClientCalendarPage> {
                 ),
     );
   }
+
 }

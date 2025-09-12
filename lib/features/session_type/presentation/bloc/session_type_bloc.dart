@@ -69,14 +69,25 @@ class SessionTypeBloc extends Bloc<SessionTypeEvent, SessionTypeState> {
     Emitter<SessionTypeState> emit,
   ) async {
     emit(SessionTypeLoading());
+    
+    print('🔧 SessionTypeBloc: Creating session type with data:');
+    print('  hasCancellationFee: ${event.sessionType.hasCancellationFee}');
+    print('  cancellationTimeBefore: ${event.sessionType.cancellationTimeBefore}');
+    print('  cancellationTimeUnit: ${event.sessionType.cancellationTimeUnit}');
+    print('  cancellationFeeAmount: ${event.sessionType.cancellationFeeAmount}');
+    print('  cancellationFeeType: ${event.sessionType.cancellationFeeType}');
 
     final result = await _createSessionType(CreateSessionTypeParams(
       sessionType: event.sessionType,
     ));
 
     result.fold(
-      (failure) => emit(SessionTypeError(message: failure.message)),
-      (_) {
+      (failure) {
+        print('❌ SessionTypeBloc: Create failed: ${failure.message}');
+        emit(SessionTypeError(message: failure.message));
+      },
+      (createdSessionType) {
+        print('✅ SessionTypeBloc: Session type created successfully');
         // Reload session types after creation
         add(LoadSessionTypes());
       },

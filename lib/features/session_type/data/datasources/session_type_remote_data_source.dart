@@ -54,9 +54,9 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
           final data = doc.data();
           // Convert old format to new format
           final convertedData = {
-                      'id': doc.id,
-          'title': data['title'] ?? data['name'] ?? '',
-          'notifyCancelation': data['notifyCancelation'] ?? false,
+            'id': doc.id,
+            'title': data['title'] ?? data['name'] ?? '',
+            'notifyCancelation': data['notifyCancelation'] ?? false,
             'createdTime': data['createdTime'] ?? DateTime.now().millisecondsSinceEpoch,
             'duration': data['duration'] ?? data['durationMinutes'] ?? 60,
             'durationUnit': data['durationUnit'] ?? 'minutes',
@@ -67,6 +67,14 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
             'showParticipants': data['showParticipants'] ?? true,
             'category': data['category'] ?? 'tennis',
             'price': data['price'] ?? 0,
+            // Cancellation Policy fields with defaults (new format as map)
+            'cancellationPolicy': {
+              'hasCancellationFee': data['hasCancellationFee'] ?? data['cancellationPolicy']?['hasCancellationFee'] ?? true,
+              'cancellationTimeBefore': data['cancellationTimeBefore'] ?? data['cancellationPolicy']?['cancellationTimeBefore'] ?? 18,
+              'cancellationTimeUnit': data['cancellationTimeUnit'] ?? data['cancellationPolicy']?['cancellationTimeUnit'] ?? 'hours',
+              'cancellationFeeAmount': data['cancellationFeeAmount'] ?? data['cancellationPolicy']?['cancellationFeeAmount'] ?? 100,
+              'cancellationFeeType': data['cancellationFeeType'] ?? data['cancellationPolicy']?['cancellationFeeType'] ?? '%',
+            },
           };
           allSessionTypes.add(SessionTypeModel.fromMap(convertedData));
         } catch (e) {
@@ -91,10 +99,24 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
 
   @override
   Future<SessionTypeModel> createSessionType(SessionTypeModel sessionType) async {
-    final docRef = await FirestoreCollections.sessionTypes.add(sessionType.toMap());
-    final createdSessionType = sessionType.copyWith(id: docRef.id);
-    await docRef.set(createdSessionType.toMap());
-    return createdSessionType;
+    try {
+      print('🔧 SessionTypeRemoteDataSource: Starting createSessionType');
+      final dataToSave = sessionType.toMap();
+      print('🔧 SessionTypeRemoteDataSource: Data to save: $dataToSave');
+      
+      print('🔧 SessionTypeRemoteDataSource: Calling FirestoreCollections.sessionTypes.add');
+      final docRef = await FirestoreCollections.sessionTypes.add(dataToSave);
+      print('🔧 SessionTypeRemoteDataSource: Firestore add completed, doc ID: ${docRef.id}');
+      
+      final createdSessionType = sessionType.copyWith(id: docRef.id);
+      print('🔧 SessionTypeRemoteDataSource: Created session type model with ID');
+      
+      return createdSessionType;
+    } catch (e, stackTrace) {
+      print('❌ SessionTypeRemoteDataSource: Error creating session type: $e');
+      print('❌ Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   @override
@@ -102,7 +124,13 @@ class SessionTypeRemoteDataSourceImpl implements SessionTypeRemoteDataSource {
     if (sessionType.id == null) {
       throw Exception('Session type ID is required for update');
     }
-    await FirestoreCollections.sessionType(sessionType.id!).update(sessionType.toMap());
+    
+    final dataToUpdate = sessionType.toMap();
+    AppLogger.info('Updating session type ${sessionType.id} with data: $dataToUpdate');
+    
+    await FirestoreCollections.sessionType(sessionType.id!).update(dataToUpdate);
+    AppLogger.info('Session type updated successfully');
+    
     return sessionType;
   }
 

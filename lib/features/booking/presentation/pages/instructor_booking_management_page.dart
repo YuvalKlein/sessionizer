@@ -8,6 +8,7 @@ import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
 import 'package:myapp/features/booking/domain/entities/booking_entity.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 class InstructorBookingManagementPage extends StatefulWidget {
   const InstructorBookingManagementPage({super.key});
@@ -631,6 +632,8 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
                                       _rescheduleBooking(booking);
                                     } else if (value == 'cancel') {
                                       _cancelBooking(booking);
+                                    } else if (value == 'cancellation_policy') {
+                                      _showCancellationPolicyDialog(booking);
                                     }
                                   },
                                   itemBuilder: (context) => [
@@ -641,6 +644,16 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
                                           Icon(Icons.schedule, color: Colors.blue),
                                           SizedBox(width: 8),
                                           Text('Reschedule'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'cancellation_policy',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.policy, color: Colors.orange),
+                                          SizedBox(width: 8),
+                                          Text('Change Cancellation Policy'),
                                         ],
                                       ),
                                     ),
@@ -680,5 +693,189 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
       selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
       checkmarkColor: Theme.of(context).primaryColor,
     );
+  }
+
+  Future<void> _showCancellationPolicyDialog(BookingEntity booking) async {
+    final TextEditingController timeController = TextEditingController(text: '18');
+    final TextEditingController feeController = TextEditingController(text: '100');
+    bool hasCancellationFee = true;
+    String selectedTimeUnit = 'hours';
+    String selectedFeeType = '%';
+    
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Change Cancellation Policy'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Modify the cancellation policy for this specific session.',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                
+                // Cancellation Fee Toggle
+                SwitchListTile(
+                  title: const Text('Cancellation Fee'),
+                  subtitle: const Text('Enable cancellation fees for late cancellations'),
+                  value: hasCancellationFee,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      hasCancellationFee = value;
+                    });
+                  },
+                ),
+                
+                // Cancellation Policy Details (shown when enabled)
+                if (hasCancellationFee) ...[
+                  const SizedBox(height: 16),
+                  
+                  // Time to Cancel
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          controller: timeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Time to Cancel',
+                            hintText: '18',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedTimeUnit,
+                          decoration: const InputDecoration(
+                            labelText: 'Unit',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: ['hours', 'minutes'].map((String unit) {
+                            return DropdownMenuItem<String>(
+                              value: unit,
+                              child: Text(unit[0].toUpperCase() + unit.substring(1)),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setDialogState(() {
+                              selectedTimeUnit = newValue!;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Cancellation Fee Amount
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          controller: feeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Cancellation Fee',
+                            hintText: '100',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedFeeType,
+                          decoration: const InputDecoration(
+                            labelText: 'Type',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: ['%', '\$'].map((String type) {
+                            return DropdownMenuItem<String>(
+                              value: type,
+                              child: Text(type),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setDialogState(() {
+                              selectedFeeType = newValue!;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop({
+                  'hasCancellationFee': hasCancellationFee,
+                  'cancellationTimeBefore': hasCancellationFee ? int.tryParse(timeController.text) ?? 18 : null,
+                  'cancellationTimeUnit': hasCancellationFee ? selectedTimeUnit : null,
+                  'cancellationFeeAmount': hasCancellationFee ? int.tryParse(feeController.text) ?? 100 : null,
+                  'cancellationFeeType': hasCancellationFee ? selectedFeeType : null,
+                });
+              },
+              child: const Text('Update Policy'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result != null) {
+      // Update the booking's cancellation policy
+      await _updateBookingCancellationPolicy(booking, result);
+    }
+  }
+
+  Future<void> _updateBookingCancellationPolicy(BookingEntity booking, Map<String, dynamic> policyData) async {
+    try {
+      // Update the booking document with the new cancellation policy using FirestoreCollections
+      await FirestoreCollections.booking(booking.id).update({
+        'cancellationPolicy': {
+          'hasCancellationFee': policyData['hasCancellationFee'],
+          'cancellationTimeBefore': policyData['cancellationTimeBefore'],
+          'cancellationTimeUnit': policyData['cancellationTimeUnit'],
+          'cancellationFeeAmount': policyData['cancellationFeeAmount'],
+          'cancellationFeeType': policyData['cancellationFeeType'],
+          'updatedAt': DateTime.now().millisecondsSinceEpoch,
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cancellation policy updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update cancellation policy: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

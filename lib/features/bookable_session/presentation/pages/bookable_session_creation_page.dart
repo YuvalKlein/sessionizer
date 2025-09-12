@@ -18,6 +18,14 @@ import 'package:myapp/features/schedule/presentation/bloc/schedule_state.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
 
+// String extension for capitalize method
+extension StringExtension on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1)}';
+  }
+}
+
 class BookableSessionCreationPage extends StatefulWidget {
   final BookableSessionEntity? existingSession;
   final bool isEdit;
@@ -38,6 +46,10 @@ class _BookableSessionCreationPageState extends State<BookableSessionCreationPag
   final _bookingLeadTimeController = TextEditingController();
   final _futureBookingLimitController = TextEditingController();
   final _durationOverrideController = TextEditingController();
+  
+  // Cancellation Policy Override Controllers
+  final _cancellationTimeController = TextEditingController(text: '18');
+  final _cancellationFeeController = TextEditingController(text: '100');
 
   List<String> _selectedTypeIds = [];
   List<String> _selectedLocationIds = [];
@@ -45,6 +57,14 @@ class _BookableSessionCreationPageState extends State<BookableSessionCreationPag
   List<SessionTypeEntity> _sessionTypes = [];
   final List<Map<String, dynamic>> _locations = [];
   final List<Map<String, dynamic>> _schedules = [];
+  
+  // Cancellation Policy Override State
+  bool _cancellationPolicyOverride = false;
+  String _selectedCancellationTimeUnit = 'hours';
+  String _selectedCancellationFeeType = '%';
+  
+  final List<String> _cancellationTimeUnits = ['hours', 'minutes'];
+  final List<String> _cancellationFeeTypes = ['%', '\$'];
 
   @override
   void initState() {
@@ -72,6 +92,15 @@ class _BookableSessionCreationPageState extends State<BookableSessionCreationPag
       _selectedTypeIds = List.from(session.sessionTypeIds);
       _selectedLocationIds = List.from(session.locationIds);
       _selectedAvailabilityIds = List.from(session.availabilityIds);
+      
+      // Populate cancellation policy override fields
+      _cancellationPolicyOverride = session.cancellationPolicyOverride ?? false;
+      if (_cancellationPolicyOverride) {
+        _cancellationTimeController.text = session.cancellationTimeBeforeOverride?.toString() ?? '18';
+        _selectedCancellationTimeUnit = session.cancellationTimeUnitOverride ?? 'hours';
+        _cancellationFeeController.text = session.cancellationFeeAmountOverride?.toString() ?? '100';
+        _selectedCancellationFeeType = session.cancellationFeeTypeOverride ?? '%';
+      }
     } else {
       _breakTimeController.text = '0';
       _bookingLeadTimeController.text = '30';
@@ -85,6 +114,8 @@ class _BookableSessionCreationPageState extends State<BookableSessionCreationPag
     _bookingLeadTimeController.dispose();
     _futureBookingLimitController.dispose();
     _durationOverrideController.dispose();
+    _cancellationTimeController.dispose();
+    _cancellationFeeController.dispose();
     super.dispose();
   }
 
@@ -155,6 +186,8 @@ class _BookableSessionCreationPageState extends State<BookableSessionCreationPag
                     _buildSchedulesSection(),
                     const SizedBox(height: 24),
                     _buildBookingRulesSection(),
+                    const SizedBox(height: 24),
+                    _buildCancellationPolicyOverrideSection(),
                     const SizedBox(height: 100), // Space for floating button
                   ],
                 ),
@@ -441,6 +474,152 @@ class _BookableSessionCreationPageState extends State<BookableSessionCreationPag
     );
   }
 
+  Widget _buildCancellationPolicyOverrideSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Cancellation Policy Override',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Cancellation Policy Override Toggle
+            SwitchListTile(
+              title: const Text('Change Cancellation Policy'),
+              subtitle: const Text('Override the default cancellation policy from session types'),
+              value: _cancellationPolicyOverride,
+              onChanged: (value) {
+                setState(() {
+                  _cancellationPolicyOverride = value;
+                });
+              },
+            ),
+            
+            // Cancellation Policy Details (shown when enabled)
+            if (_cancellationPolicyOverride) ...[
+              const SizedBox(height: 16),
+              
+              // Time to Cancel
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _cancellationTimeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Time to Cancel',
+                        hintText: '18',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (_cancellationPolicyOverride && (value == null || value.isEmpty)) {
+                          return 'Please enter cancellation time';
+                        }
+                        final time = int.tryParse(value ?? '');
+                        if (_cancellationPolicyOverride && (time == null || time <= 0)) {
+                          return 'Please enter a valid time';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedCancellationTimeUnit,
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _cancellationTimeUnits.map((String unit) {
+                        return DropdownMenuItem<String>(
+                          value: unit,
+                          child: Text(unit.capitalize()),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedCancellationTimeUnit = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: 'How much time before the session the client can cancel without a fee',
+                    child: Icon(
+                      Icons.info_outline,
+                      color: Colors.grey[600],
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Cancellation Fee Amount
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _cancellationFeeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Cancellation Fee',
+                        hintText: '100',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (_cancellationPolicyOverride && (value == null || value.isEmpty)) {
+                          return 'Please enter cancellation fee';
+                        }
+                        final fee = int.tryParse(value ?? '');
+                        if (_cancellationPolicyOverride && (fee == null || fee < 0)) {
+                          return 'Please enter a valid fee';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedCancellationFeeType,
+                      decoration: const InputDecoration(
+                        labelText: 'Type',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _cancellationFeeTypes.map((String type) {
+                        return DropdownMenuItem<String>(
+                          value: type,
+                          child: Text(type),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedCancellationFeeType = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   void _saveSession() {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -495,6 +674,19 @@ class _BookableSessionCreationPageState extends State<BookableSessionCreationPag
       futureBookingLimitInDays: int.parse(_futureBookingLimitController.text),
       durationOverride: _durationOverrideController.text.isNotEmpty 
           ? int.parse(_durationOverrideController.text) 
+          : null,
+      cancellationPolicyOverride: _cancellationPolicyOverride,
+      cancellationTimeBeforeOverride: _cancellationPolicyOverride 
+          ? int.parse(_cancellationTimeController.text)
+          : null,
+      cancellationTimeUnitOverride: _cancellationPolicyOverride 
+          ? _selectedCancellationTimeUnit
+          : null,
+      cancellationFeeAmountOverride: _cancellationPolicyOverride 
+          ? int.parse(_cancellationFeeController.text)
+          : null,
+      cancellationFeeTypeOverride: _cancellationPolicyOverride 
+          ? _selectedCancellationFeeType
           : null,
       createdAt: widget.isEdit ? widget.existingSession!.createdAt : DateTime.now(),
       updatedAt: DateTime.now(),

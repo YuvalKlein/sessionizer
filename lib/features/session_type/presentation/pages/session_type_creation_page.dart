@@ -626,6 +626,14 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
       currentUserId = authState.user.id;
     }
 
+    // Debug logging for cancellation policy values
+    print('🔧 Cancellation Policy Values:');
+    print('  hasCancellationFee: $_hasCancellationFee');
+    print('  cancellationTimeBefore: ${_cancellationTimeController.text}');
+    print('  cancellationTimeUnit: $_selectedCancellationTimeUnit');
+    print('  cancellationFeeAmount: ${_cancellationFeeController.text}');
+    print('  cancellationFeeType: $_selectedCancellationFeeType');
+
     final sessionType = SessionTypeEntity(
       id: widget.isEdit ? widget.existingSessionType!.id : null, // Keep existing ID for edit
       title: _titleController.text.trim(),
@@ -654,6 +662,13 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
           : 0,
       cancellationFeeType: _selectedCancellationFeeType,
     );
+
+    print('🔧 SessionTypeEntity created with cancellation policy:');
+    print('  hasCancellationFee: ${sessionType.hasCancellationFee}');
+    print('  cancellationTimeBefore: ${sessionType.cancellationTimeBefore}');
+    print('  cancellationTimeUnit: ${sessionType.cancellationTimeUnit}');
+    print('  cancellationFeeAmount: ${sessionType.cancellationFeeAmount}');
+    print('  cancellationFeeType: ${sessionType.cancellationFeeType}');
 
     if (widget.isEdit) {
       context.read<SessionTypeBloc>().add(UpdateSessionTypeEvent(sessionType: sessionType));
