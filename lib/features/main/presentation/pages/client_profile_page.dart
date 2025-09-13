@@ -3,9 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
+import 'package:myapp/features/user/presentation/bloc/user_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
+import 'package:myapp/core/services/google_calendar_service.dart';
+import 'package:myapp/core/config/firestore_collections.dart';
 
 class ClientProfilePage extends StatefulWidget {
   const ClientProfilePage({super.key});
@@ -37,6 +40,95 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  /// Handle Google Calendar sync toggle
+  Future<void> _handleGoogleCalendarSync(bool enabled, String userId) async {
+    try {
+      if (enabled) {
+        // Enable Google Calendar sync
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            title: Text('Connecting to Google Calendar'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Please authorize access to your Google Calendar...'),
+              ],
+            ),
+          ),
+        );
+
+        // Initialize Google Calendar service
+        final calendarService = GoogleCalendarService.instance;
+        final initialized = await calendarService.initialize();
+
+        Navigator.of(context).pop(); // Close loading dialog
+
+        if (initialized) {
+          // Save sync settings to user profile
+          await FirestoreCollections.user(userId).update({
+            'googleCalendarSync': {
+              'enabled': true,
+              'calendarId': 'primary',
+              'connectedAt': DateTime.now().toIso8601String(),
+            },
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Google Calendar sync enabled successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Refresh user data to update UI
+          context.read<UserBloc>().add(LoadUser(userId));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Failed to connect to Google Calendar. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } else {
+        // Disable Google Calendar sync
+        await FirestoreCollections.user(userId).update({
+          'googleCalendarSync': {
+            'enabled': false,
+            'calendarId': null,
+            'connectedAt': null,
+          },
+        });
+
+        // Disconnect from Google Calendar service
+        await GoogleCalendarService.instance.disconnect();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Google Calendar sync disabled'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+
+        // Refresh user data to update UI
+        context.read<UserBloc>().add(LoadUser(userId));
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Close any open dialogs
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating Google Calendar sync: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -492,6 +584,25 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
               onChanged: _isEditing ? (value) {
                 // Handle auto-booking preference change
               } : null,
+            ),
+            BlocBuilder<UserBloc, UserState>(
+              builder: (context, state) {
+                if (state is! UserLoaded) return const SizedBox.shrink();
+                
+                final userData = state.user.data;
+                final isCalendarSyncEnabled = GoogleCalendarService.isCalendarSyncEnabled(userData);
+                
+                return SwitchListTile(
+                  title: const Text('Google Calendar Sync'),
+                  subtitle: Text(
+                    isCalendarSyncEnabled 
+                      ? 'Bookings will sync to your Google Calendar'
+                      : 'Enable to sync bookings to Google Calendar'
+                  ),
+                  value: isCalendarSyncEnabled,
+                  onChanged: _isEditing ? (value) => _handleGoogleCalendarSync(value, state.user.id) : null,
+                );
+              },
             ),
           ],
         ),

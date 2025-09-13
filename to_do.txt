@@ -4,6 +4,12 @@
 4. When create or update sessin type, check that the max players isn't < min players, just max >= min.
 5. Change the why edit schedule work- when clicking on schedule, you can immediately chagne things on right away it updates on FS
 
+📅 Sync bookings to Google Calendar
+📱 Two-way calendar sync
+🔄 Import availability from Google Calendar
+📧 Calendar event notifications
+🕐 Automatic time slot blocking
+
 Option 2: Complete the Booking System
 Add: Booking management (view, cancel, reschedule bookings)
 Add: Email notifications for bookings

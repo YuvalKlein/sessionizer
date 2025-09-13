@@ -8,6 +8,7 @@ import 'package:myapp/features/user/presentation/bloc/user_state.dart';
 import 'package:myapp/core/utils/injection_container.dart';
 import 'package:myapp/core/services/email_service.dart';
 import 'package:myapp/core/services/cancellation_policy_service.dart';
+import 'package:myapp/core/services/google_calendar_service.dart';
 import 'package:myapp/features/notification/domain/usecases/send_booking_confirmation.dart';
 
 class BookingConfirmationModal extends StatefulWidget {
@@ -195,6 +196,9 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
         final docRef = await FirestoreCollections.bookings.add(bookingData);
         print('📝 Booking created with ID: ${docRef.id}');
 
+        // Create Google Calendar event
+        await _createGoogleCalendarEvent(docRef.id, bookingData, startTime, endTime);
+
         // Send email notification
         try {
           print('📧 Attempting to send booking confirmation email for booking: ${docRef.id}');
@@ -252,6 +256,103 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.hour < 12 ? 'AM' : 'PM';
     return '$hour:$minute $period';
+  }
+
+  /// Create Google Calendar event for the booking
+  Future<void> _createGoogleCalendarEvent(
+    String bookingId,
+    Map<String, dynamic> bookingData,
+    DateTime startTime,
+    DateTime endTime,
+  ) async {
+    try {
+      print('🗓️ Creating Google Calendar event for booking: $bookingId');
+
+      // Get client and instructor details
+      final clientId = bookingData['clientId'] as String;
+      final instructorId = bookingData['instructorId'] as String;
+
+      // Fetch user details
+      final clientDoc = await FirestoreCollections.user(clientId).get();
+      final instructorDoc = await FirestoreCollections.user(instructorId).get();
+
+      final clientData = clientDoc.data() as Map<String, dynamic>?;
+      final instructorData = instructorDoc.data() as Map<String, dynamic>?;
+
+      if (clientData == null || instructorData == null) {
+        print('❌ Could not fetch user details for calendar event');
+        return;
+      }
+
+      final clientName = clientData['name'] as String? ?? 'Client';
+      final clientEmail = clientData['email'] as String? ?? '';
+      final instructorName = instructorData['name'] as String? ?? 'Instructor';
+      final instructorEmail = instructorData['email'] as String? ?? '';
+
+      // Check if either user has Google Calendar sync enabled
+      final clientHasCalendarSync = GoogleCalendarService.isCalendarSyncEnabled(clientData);
+      final instructorHasCalendarSync = GoogleCalendarService.isCalendarSyncEnabled(instructorData);
+
+      if (!clientHasCalendarSync && !instructorHasCalendarSync) {
+        print('ℹ️ No users have Google Calendar sync enabled, skipping calendar event creation');
+        return;
+      }
+
+      // Create event title and description
+      final sessionTypeName = widget.sessionTypeData['name'] as String? ?? 'Session';
+      final locationName = widget.locationData['name'] as String? ?? 'Location';
+      final notes = bookingData['notes'] as String? ?? '';
+
+      final title = '$sessionTypeName with $instructorName';
+      final description = '''
+Session Details:
+• Type: $sessionTypeName
+• Instructor: $instructorName
+• Client: $clientName
+• Location: $locationName
+${notes.isNotEmpty ? '• Notes: $notes' : ''}
+
+Booking ID: $bookingId
+''';
+
+      // Initialize Google Calendar service
+      final calendarService = GoogleCalendarService.instance;
+      
+      // Try to initialize the service (this will handle authentication)
+      final initialized = await calendarService.initialize();
+      if (!initialized) {
+        print('❌ Could not initialize Google Calendar service');
+        return;
+      }
+
+      // Create the calendar event
+      final eventId = await calendarService.createBookingEvent(
+        title: title,
+        description: description,
+        startTime: startTime,
+        endTime: endTime,
+        clientEmail: clientEmail,
+        instructorEmail: instructorEmail,
+        clientName: clientName,
+        instructorName: instructorName,
+        location: locationName,
+      );
+
+      if (eventId != null) {
+        // Save the calendar event ID to the booking document
+        await FirestoreCollections.booking(bookingId).update({
+          'googleCalendarEventId': eventId,
+          'calendarSyncEnabled': true,
+        });
+        
+        print('✅ Google Calendar event created successfully: $eventId');
+      } else {
+        print('❌ Failed to create Google Calendar event');
+      }
+    } catch (e) {
+      // Don't fail the booking process if calendar sync fails
+      print('❌ Error creating Google Calendar event: $e');
+    }
   }
 
   @override

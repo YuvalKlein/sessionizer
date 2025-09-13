@@ -60,6 +60,10 @@ dependencies:
   # Local Storage
   shared_preferences: ^2.2.2
   
+  # Google Calendar integration
+  googleapis: ^13.2.0
+  googleapis_auth: ^1.6.0
+  
   # Logging - removed to fix DebugService errors
 
 dev_dependencies:
