@@ -73,14 +73,11 @@ class EnvironmentConfig {
     print('   - Real Email: ${shouldUseRealEmail ? 'Yes' : 'No'}');
   }
   
-  // Database configuration
+  // Database configuration - using same project for both environments
   static String get databaseId {
-    switch (current) {
-      case Environment.development:
-        return '(default)'; // Development database
-      case Environment.production:
-        return 'play'; // Production database
-    }
+    // Both development and production use the same apiclientapp project
+    // Separation is handled by collection prefixes (DevData/ProdData)
+    return '(default)';
   }
   
   // Collection prefix for environment separation
@@ -97,14 +94,10 @@ class EnvironmentConfig {
   static String get fromEmail => 'noreply@arenna.link';
   static String get fromName => 'ARENNA';
   
-  // Firebase Functions URLs
+  // Firebase Functions URLs - using same project for both environments
   static String get firebaseFunctionsUrl {
-    switch (current) {
-      case Environment.development:
-        return 'https://us-central1-play-e37a6.cloudfunctions.net';
-      case Environment.production:
-        return 'https://us-central1-play-e37a6.cloudfunctions.net';
-    }
+    // Both development and production use the same apiclientapp project
+    return 'https://us-central1-apiclientapp.cloudfunctions.net';
   }
   
   // Debug settings

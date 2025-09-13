@@ -19,6 +19,7 @@ class FirestoreCollections {
   static const String _sessionTypes = 'session_types';
   static const String _notifications = 'notifications';
   static const String _scheduledNotifications = 'scheduled_notifications';
+  static const String _feedback = 'feedback';
   static const String _mail = 'mail';
 
   /// Get the configured Firestore instance (play database)
@@ -58,6 +59,9 @@ class FirestoreCollections {
   /// Get the scheduled notifications collection reference
   static CollectionReference get scheduledNotifications => _getCollection(_scheduledNotifications);
 
+  /// Get the feedback collection reference
+  static CollectionReference get feedback => _getCollection(_feedback);
+
   /// Get the mail collection reference
   static CollectionReference get mail => _getCollection(_mail);
 
@@ -84,6 +88,9 @@ class FirestoreCollections {
 
   /// Get a specific scheduled notification document reference
   static DocumentReference scheduledNotification(String notificationId) => scheduledNotifications.doc(notificationId);
+
+  /// Get a specific feedback document reference
+  static DocumentReference feedbackDoc(String feedbackId) => feedback.doc(feedbackId);
 
   /// Get a specific mail document reference
   static DocumentReference mailDoc(String mailId) => mail.doc(mailId);

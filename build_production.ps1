@@ -10,9 +10,9 @@ $env:SENDGRID_FROM_EMAIL = "noreply@arenna.link"
 $env:SENDGRID_FROM_NAME = "ARENNA"
 
 Write-Host "Environment variables set for production" -ForegroundColor Yellow
-Write-Host "Using play-e37a6 Firebase project (existing, unchanged)" -ForegroundColor Yellow
-Write-Host "Using existing Firestore structure (unchanged)" -ForegroundColor Yellow
-Write-Host "Development uses apiclientapp project separately" -ForegroundColor Green
+Write-Host "Using apiclientapp Firebase project (same as development)" -ForegroundColor Yellow
+Write-Host "Using sessionizer/ProdData collections in Firestore" -ForegroundColor Yellow
+Write-Host "Local development uses sessionizer/DevData collections (isolated)" -ForegroundColor Green
 
 # Build the web app
 Write-Host "Building Flutter web app..." -ForegroundColor Blue
@@ -20,8 +20,9 @@ flutter build web --dart-define=ENVIRONMENT=production --dart-define=SENDGRID_FR
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Production build successful!" -ForegroundColor Green
-    Write-Host "Ready for deployment with play-e37a6 project" -ForegroundColor Green
-    Write-Host "Using sessionizer/ProdData collections" -ForegroundColor Green
+    Write-Host "Ready for deployment to https://apiclientapp.web.app/" -ForegroundColor Green
+    Write-Host "Beta users will use sessionizer/ProdData collections" -ForegroundColor Green
+    Write-Host "Local development remains isolated in sessionizer/DevData" -ForegroundColor Green
     Write-Host "Real emails will be sent via SendGrid" -ForegroundColor Green
 } else {
     Write-Host "Build failed!" -ForegroundColor Red

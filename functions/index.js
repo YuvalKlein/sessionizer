@@ -1220,3 +1220,150 @@ This is an automated message. Please do not reply to this email.`;
     }
   }
 );
+
+// Feedback notification function
+exports.sendFeedbackNotification = onRequest(
+  { secrets: [sendGridApiKey] },
+  (req, res) => {
+    // Set CORS headers
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    if (req.method === 'OPTIONS') {
+      res.status(200).send('');
+      return;
+    }
+
+    try {
+      console.log('sendFeedbackNotification called');
+      console.log('Raw request body:', req.body);
+      console.log('Request body type:', typeof req.body);
+      
+      const { 
+        feedbackId,
+        userEmail,
+        userName,
+        feedbackType,
+        feedbackText,
+        pageUrl,
+        pageContext,
+        hasPageContext
+      } = req.body;
+
+      console.log('Feedback data:', { feedbackId, userEmail, userName, feedbackType, feedbackText, pageUrl, hasPageContext });
+      console.log('feedbackText length:', feedbackText ? feedbackText.length : 'undefined');
+      console.log('feedbackText value:', feedbackText);
+      console.log('Page context available:', hasPageContext);
+
+      // Validate required fields
+      if (!feedbackId || !feedbackText) {
+        console.log('Missing required fields');
+        res.status(400).json({ error: 'Missing required feedback fields' });
+        return;
+      }
+
+      // Get the secret value at runtime
+      const sendGridKey = sendGridApiKey.value();
+      console.log('SendGrid key available:', !!sendGridKey);
+      
+      if (!sendGridKey) {
+        console.log('SendGrid API key not available');
+        res.status(500).json({ error: 'SendGrid API key not configured' });
+        return;
+      }
+
+      // Configure SendGrid
+      sgMail.setApiKey(sendGridKey);
+
+      // Get feedback type emoji and color
+      const typeInfo = {
+        'bug': { emoji: '🐛', label: 'Bug Report', color: '#dc3545' },
+        'feature': { emoji: '💡', label: 'Feature Request', color: '#007bff' },
+        'improvement': { emoji: '⚡', label: 'Improvement', color: '#fd7e14' },
+        'general': { emoji: '💬', label: 'General Feedback', color: '#28a745' },
+        'other': { emoji: '📝', label: 'Other', color: '#6c757d' }
+      }[feedbackType] || { emoji: '📝', label: 'Feedback', color: '#6c757d' };
+
+      const msg = {
+        to: ['yuklein@gmail.com'],
+        from: {
+          email: 'noreply@arenna.link',
+          name: 'ARENNA Feedback System'
+        },
+        subject: `${typeInfo.emoji} New ${typeInfo.label} - ARENNA`,
+        text: `New feedback received!
+
+Feedback Type: ${typeInfo.label}
+User: ${userName} (${userEmail})
+Page: ${pageUrl}
+Time: ${new Date().toISOString()}
+
+Feedback:
+${feedbackText}
+
+Page Context: ${hasPageContext === 'true' ? 'Available (see HTML email)' : 'Not available'}
+
+Feedback ID: ${feedbackId}
+
+ARENNA Feedback System`,
+        html: `<html>
+<body style="font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <h2 style="color: ${typeInfo.color}; text-align: center; margin-bottom: 30px;">${typeInfo.emoji} New ${typeInfo.label}</h2>
+    <p>Hi <strong>Yuval</strong>,</p>
+    <p>New feedback has been received from a user!</p>
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0;">
+      <p><strong>User:</strong> ${userName} (${userEmail})</p>
+      <p><strong>Type:</strong> ${typeInfo.label}</p>
+      <p><strong>Page:</strong> ${pageUrl}</p>
+      <p><strong>Time:</strong> ${new Date().toISOString()}</p>
+    </div>
+    <div style="background: #e3f2fd; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid ${typeInfo.color};">
+      <p><strong>Feedback:</strong></p>
+      <p>${feedbackText}</p>
+    </div>
+    ${hasPageContext === 'true' && pageContext ? `
+    <div style="background: #f0f8ff; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #007bff;">
+      <p><strong>📍 Page Context:</strong></p>
+      ${(() => {
+        try {
+          const context = JSON.parse(pageContext);
+          return `
+          <p><strong>📱 Page:</strong> ${context.pageContext || 'Unknown'}</p>
+          <p><strong>📄 Page Title:</strong> ${context.pageTitle || 'Unknown'}</p>
+          <p><strong>🔗 Full URL:</strong> <a href="${context.pageUrl}" target="_blank">${context.pageUrl}</a></p>
+          <p><strong>🛣️ Path:</strong> ${context.currentPath || 'N/A'}</p>
+          <p><strong>#️⃣ Hash:</strong> ${context.currentHash || 'N/A'}</p>
+          <p><strong>📏 Viewport:</strong> ${context.viewportWidth}x${context.viewportHeight}</p>
+          <p><strong>📜 Scroll Position:</strong> X:${context.scrollX}, Y:${context.scrollY}</p>
+          <p><strong>⏰ Timestamp:</strong> ${context.timestamp}</p>
+          `;
+        } catch (e) {
+          return '<p>Page context data available but parsing failed</p>';
+        }
+      })()}
+    </div>` : '<p><em>📍 Page context: Not available</em></p>'}
+    <p><strong>Feedback ID:</strong> ${feedbackId}</p>
+    <p style="color: #666; font-size: 14px; margin-top: 30px;">ARENNA Feedback System</p>
+  </div>
+</body>
+</html>`
+      };
+
+      console.log('Sending feedback notification to yuklein@gmail.com');
+
+      sgMail.send(msg).then(() => {
+        console.log('Feedback notification email sent successfully');
+        res.status(200).json({ success: true, message: 'Feedback notification email sent successfully' });
+      }).catch((error) => {
+        console.error('Error sending feedback notification email:', error);
+        res.status(500).json({ error: 'Failed to send feedback notification email: ' + error.message });
+      });
+
+    } catch (error) {
+      console.error('Error in sendFeedbackNotification:', error);
+      res.status(500).json({ error: 'Failed to send feedback notification email: ' + error.message });
+    }
+  }
+);
