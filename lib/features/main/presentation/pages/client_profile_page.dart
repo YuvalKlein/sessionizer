@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
-import 'package:myapp/features/user/presentation/bloc/user_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
@@ -23,6 +22,7 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   bool _isEditing = false;
+  Map<String, dynamic>? _userData;
 
   @override
   void initState() {
@@ -31,6 +31,21 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
     final userState = context.read<UserBloc>().state;
     if (userState is UserLoaded) {
       context.read<BookingBloc>().add(LoadBookings(userId: userState.user.id));
+      _loadUserData(userState.user.id);
+    }
+  }
+
+  /// Load additional user data from Firestore (including Google Calendar sync settings)
+  Future<void> _loadUserData(String userId) async {
+    try {
+      final userDoc = await FirestoreCollections.user(userId).get();
+      if (userDoc.exists && mounted) {
+        setState(() {
+          _userData = userDoc.data() as Map<String, dynamic>?;
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
     }
   }
 
@@ -87,7 +102,7 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
           );
 
           // Refresh user data to update UI
-          context.read<UserBloc>().add(LoadUser(userId));
+          await _loadUserData(userId);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -117,7 +132,7 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
         );
 
         // Refresh user data to update UI
-        context.read<UserBloc>().add(LoadUser(userId));
+        await _loadUserData(userId);
       }
     } catch (e) {
       Navigator.of(context).pop(); // Close any open dialogs
@@ -589,8 +604,7 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
               builder: (context, state) {
                 if (state is! UserLoaded) return const SizedBox.shrink();
                 
-                final userData = state.user.data;
-                final isCalendarSyncEnabled = GoogleCalendarService.isCalendarSyncEnabled(userData);
+                final isCalendarSyncEnabled = GoogleCalendarService.isCalendarSyncEnabled(_userData);
                 
                 return SwitchListTile(
                   title: const Text('Google Calendar Sync'),
