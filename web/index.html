@@ -89,45 +89,73 @@
 </head>
 <body>
   <script>
-    // iOS Safari compatibility fixes
-    window.addEventListener('load', function(ev) {
-      // Check if we're on iOS Safari or Chrome on iOS
-      const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const isChromeIOS = /CriOS/.test(navigator.userAgent);
-      const isIOS = isIOSSafari || isChromeIOS;
+    // Detect iOS devices (Safari and Chrome)
+    const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isChromeIOS = /CriOS/.test(navigator.userAgent);
+    const isIOS = isIOSSafari || isChromeIOS;
+    
+    console.log('Device detection:', { isIOSSafari, isChromeIOS, isIOS, userAgent: navigator.userAgent });
+    
+    // iOS-specific initialization
+    if (isIOS) {
+      // Show immediate loading screen for iOS
+      document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fa;"><div style="text-align: center; max-width: 300px;"><div style="width: 50px; height: 50px; border: 4px solid #e3e3e3; border-top: 4px solid #0175C2; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div><h3 style="color: #0175C2; margin: 20px 0;">ARENNA</h3><p style="color: #666;">Loading your session management app...</p><p style="font-size: 12px; color: #999; margin-top: 15px;">This may take a moment on iOS devices</p></div></div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>';
       
-      console.log('Device detection:', { isIOSSafari, isChromeIOS, isIOS, userAgent: navigator.userAgent });
+      // Set timeout for iOS loading
+      const loadingTimeout = setTimeout(function() {
+        console.error('Flutter loading timeout on iOS');
+        document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; padding: 20px; background: #f8f9fa;"><div style="max-width: 350px;"><h2 style="color: #0175C2; margin-bottom: 20px;">ARENNA</h2><p style="margin: 20px 0; color: #666;">The app is taking longer than expected to load on your iOS device.</p><div style="margin: 30px 0;"><button onclick="location.reload()" style="background: #0175C2; color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 8px; width: 200px;">Refresh Page</button><br><button onclick="window.open(window.location.href, \'_blank\')" style="background: #28a745; color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 8px; width: 200px;">Open in New Tab</button><br><button onclick="navigator.share ? navigator.share({title: \'ARENNA\', url: window.location.href}) : alert(\'Please bookmark this page and try again later\')" style="background: #666; color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 8px; width: 200px;">Share/Bookmark</button></div><p style="font-size: 14px; color: #999;">Try: Safari Private mode, clearing cache, or using a different browser</p></div></div>';
+      }, 20000); // 20 second timeout
       
-      // Add loading indicator for iOS
-      if (isIOS) {
-        document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif;"><div style="text-align: center;"><div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0175C2; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div><p>Loading ARENNA...</p></div></div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>';
-      }
-      
-      // Download main.dart.js with iOS-specific configuration
-      const config = {
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        // iOS specific settings (both Safari and Chrome)
-        ...(isIOS && {
-          canvasKitBaseUrl: 'canvaskit/',
-          renderer: 'html',
-          // Force HTML renderer on iOS for better compatibility
-          hostElement: document.body
-        })
-      };
-      
-      _flutter.loader.loadEntrypoint(config).then(function(engineInitializer) {
-        return engineInitializer.initializeEngine();
-      }).then(function(appRunner) {
-        return appRunner.runApp();
-      }).catch(function(error) {
-        console.error('Flutter initialization error:', error);
-        if (isIOS) {
-          document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; padding: 20px;"><div><h2 style="color: #0175C2;">ARENNA</h2><p style="margin: 20px 0;">Having trouble loading? This might help:</p><button onclick="location.reload()" style="background: #0175C2; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px;">Refresh Page</button><br><button onclick="window.location.href=window.location.href.split(\'?\')[0]" style="background: #666; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px;">Clear Cache & Reload</button><p style="font-size: 14px; color: #666; margin-top: 20px;">iOS users: Try refreshing or clearing your browser cache</p></div></div>';
-        }
+      // iOS-specific Flutter loading
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          try {
+            _flutter.loader.load({
+              config: {
+                renderer: "html",
+                canvasKitBaseUrl: "canvaskit/",
+              },
+              onEntrypointLoaded: function(engineInitializer) {
+                engineInitializer.initializeEngine({
+                  renderer: "html"
+                }).then(function(appRunner) {
+                  clearTimeout(loadingTimeout);
+                  console.log('iOS Flutter app starting...');
+                  return appRunner.runApp();
+                }).catch(function(error) {
+                  console.error('iOS Flutter engine initialization error:', error);
+                  clearTimeout(loadingTimeout);
+                  document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; padding: 20px; background: #f8f9fa;"><div><h2 style="color: #dc3545;">Unable to Load</h2><p style="margin: 20px 0;">ARENNA cannot run on this iOS device/browser combination.</p><button onclick="location.reload()" style="background: #0175C2; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px;">Try Again</button><p style="font-size: 14px; color: #666; margin-top: 20px;">Consider using a desktop computer or Android device</p></div></div>';
+                });
+              }
+            });
+          } catch (error) {
+            console.error('iOS Flutter loader error:', error);
+            clearTimeout(loadingTimeout);
+            document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; padding: 20px; background: #f8f9fa;"><div><h2 style="color: #dc3545;">Compatibility Issue</h2><p style="margin: 20px 0;">This iOS device/browser cannot run ARENNA.</p><p style="font-size: 14px; color: #666;">Please use a desktop computer or Android device for the best experience.</p></div></div>';
+          }
+        }, 1000); // Small delay to ensure Flutter loader is ready
       });
-    });
+    } else {
+      // Standard initialization for non-iOS devices
+      window.addEventListener('load', function(ev) {
+        const config = {
+          serviceWorker: {
+            serviceWorkerVersion: serviceWorkerVersion,
+          }
+        };
+        
+        _flutter.loader.loadEntrypoint(config).then(function(engineInitializer) {
+          return engineInitializer.initializeEngine();
+        }).then(function(appRunner) {
+          return appRunner.runApp();
+        }).catch(function(error) {
+          console.error('Flutter initialization error:', error);
+          document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif; text-align: center; padding: 20px;"><div><h2>Loading Error</h2><p>Please refresh the page or try again later.</p><button onclick="location.reload()" style="background: #0175C2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Refresh</button></div></div>';
+        });
+      });
+    }
   </script>
 </body>
 </html>
