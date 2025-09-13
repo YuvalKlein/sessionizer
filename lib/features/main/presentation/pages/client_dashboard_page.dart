@@ -815,7 +815,9 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
   void _showCalendarDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => BlocProvider.value(
+        value: context.read<BookableSessionBloc>(),
+        child: AlertDialog(
         title: const Text('Calendar View'),
         content: SizedBox(
           width: double.maxFinite,
@@ -878,6 +880,7 @@ class _ClientDashboardPageState extends State<ClientDashboardPage> {
           ),
         ],
       ),
+        ),
     );
   }
 

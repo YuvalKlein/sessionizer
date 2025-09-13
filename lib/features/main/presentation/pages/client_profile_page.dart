@@ -8,6 +8,9 @@ import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
 import 'package:myapp/core/services/google_calendar_service.dart';
 import 'package:myapp/core/config/firestore_collections.dart';
+import 'package:myapp/core/config/google_config.dart';
+import 'dart:html' as html;
+import 'dart:convert';
 
 class ClientProfilePage extends StatefulWidget {
   const ClientProfilePage({super.key});
@@ -32,6 +35,9 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
     if (userState is UserLoaded) {
       context.read<BookingBloc>().add(LoadBookings(userId: userState.user.id));
       _loadUserData(userState.user.id);
+      
+      // Check for OAuth callback result
+      _checkForOAuthResult(userState.user.id);
     }
   }
 
@@ -49,6 +55,110 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
     }
   }
 
+  /// Check for OAuth callback result from localStorage
+  Future<void> _checkForOAuthResult(String userId) async {
+    try {
+      print('🔍 Checking for OAuth result in localStorage...');
+      
+      final oauthResult = html.window.localStorage['oauth_result'];
+      if (oauthResult != null) {
+        print('🔍 Found OAuth result in localStorage: $oauthResult');
+        
+        final result = jsonDecode(oauthResult);
+        final code = result['code'] as String?;
+        final state = result['state'] as String?;
+        final success = result['success'] as bool? ?? false;
+        
+        print('🔍 OAuth result details:');
+        print('   Code: ${code?.substring(0, 10)}...');
+        print('   State: $state');
+        print('   Success: $success');
+        
+        // Clean up localStorage
+        html.window.localStorage.remove('oauth_result');
+        
+        if (success && code != null && state != null) {
+          print('✅ Processing OAuth success from callback');
+          
+          // Complete the OAuth flow
+          await _completeOAuthFlow(code, state, userId);
+        } else {
+          print('❌ OAuth callback was not successful');
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('❌ Google Calendar authorization failed'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } else {
+        print('🔍 No OAuth result found in localStorage');
+      }
+    } catch (e) {
+      print('❌ Error checking OAuth result: $e');
+    }
+  }
+
+  /// Complete OAuth flow with authorization code
+  Future<void> _completeOAuthFlow(String code, String state, String userId) async {
+    try {
+      print('🔄 Completing OAuth flow with authorization code');
+      
+      // Exchange code for tokens
+      final redirectUri = html.window.location.origin + '/oauth/callback';
+      final clientId = GoogleConfig.clientId;
+      
+      final success = await GoogleCalendarService.instance.exchangeCodeForTokens(code, redirectUri, clientId);
+      
+      if (success) {
+        // Update user profile with sync settings
+        await FirestoreCollections.user(userId).update({
+          'googleCalendarSync': {
+            'enabled': true,
+            'calendarId': 'primary',
+            'connectedAt': DateTime.now().toIso8601String(),
+          },
+        });
+        
+        // Refresh user data
+        await _loadUserData(userId);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Google Calendar connected successfully!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Failed to complete Google Calendar connection'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Error completing OAuth flow: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error completing Google Calendar connection: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -61,7 +171,8 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
   Future<void> _handleGoogleCalendarSync(bool enabled, String userId) async {
     try {
       if (enabled) {
-        // Enable Google Calendar sync
+        // Always trigger OAuth flow when enabling (even if already enabled)
+        // This allows users to re-authenticate or connect for the first time
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -73,12 +184,17 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
                 Text('Please authorize access to your Google Calendar...'),
+                SizedBox(height: 8),
+                Text(
+                  'A popup window will open for authorization.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
           ),
         );
 
-        // Initialize Google Calendar service
+        // Initialize Google Calendar service (this will trigger OAuth flow)
         final calendarService = GoogleCalendarService.instance;
         final initialized = await calendarService.initialize();
 
@@ -96,7 +212,7 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('✅ Google Calendar sync enabled successfully!'),
+              content: Text('✅ Google Calendar sync connected successfully!'),
               backgroundColor: Colors.green,
             ),
           );
@@ -140,6 +256,79 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error updating Google Calendar sync: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Test Google Calendar connection (triggers OAuth flow)
+  Future<void> _testGoogleCalendarConnection(String userId) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          title: Text('Testing Google Calendar Connection'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Opening Google authorization...'),
+              SizedBox(height: 8),
+              Text(
+                'Please complete the authorization in the popup window.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      // Force a fresh OAuth flow by disconnecting first
+      await GoogleCalendarService.instance.disconnect();
+      
+      // Initialize Google Calendar service (this will trigger OAuth flow)
+      final calendarService = GoogleCalendarService.instance;
+      final initialized = await calendarService.initialize();
+
+      Navigator.of(context).pop(); // Close loading dialog
+
+      if (initialized) {
+        // Update connection timestamp
+        await FirestoreCollections.user(userId).update({
+          'googleCalendarSync': {
+            'enabled': true,
+            'calendarId': 'primary',
+            'connectedAt': DateTime.now().toIso8601String(),
+          },
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Google Calendar connected successfully! Try creating a booking to test.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
+          ),
+        );
+
+        // Refresh user data
+        await _loadUserData(userId);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Failed to connect to Google Calendar. Check console for details.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Close any open dialogs
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error testing Google Calendar connection: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -213,8 +402,8 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
               radius: 40,
               backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
               child: Text(
-                user.name?.isNotEmpty == true 
-                    ? user.name![0].toUpperCase()
+                user.displayName.isNotEmpty 
+                    ? user.displayName[0].toUpperCase()
                     : 'U',
                 style: TextStyle(
                   fontSize: 32,
@@ -229,7 +418,7 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    user.name ?? 'No Name',
+                    user.displayName.isNotEmpty ? user.displayName : 'No Name',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -606,15 +795,35 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
                 
                 final isCalendarSyncEnabled = GoogleCalendarService.isCalendarSyncEnabled(_userData);
                 
-                return SwitchListTile(
-                  title: const Text('Google Calendar Sync'),
-                  subtitle: Text(
-                    isCalendarSyncEnabled 
-                      ? 'Bookings will sync to your Google Calendar'
-                      : 'Enable to sync bookings to Google Calendar'
-                  ),
-                  value: isCalendarSyncEnabled,
-                  onChanged: _isEditing ? (value) => _handleGoogleCalendarSync(value, state.user.id) : null,
+                return Column(
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Google Calendar Sync'),
+                      subtitle: Text(
+                        isCalendarSyncEnabled 
+                          ? 'Bookings will sync to your Google Calendar'
+                          : 'Enable to sync bookings to Google Calendar'
+                      ),
+                      value: isCalendarSyncEnabled,
+                      onChanged: _isEditing ? (value) => _handleGoogleCalendarSync(value, state.user.id) : null,
+                    ),
+                    if (isCalendarSyncEnabled && _isEditing)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _testGoogleCalendarConnection(state.user.id),
+                            icon: const Icon(Icons.calendar_today),
+                            label: const Text('Connect to Google Calendar'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blue,
+                              side: const BorderSide(color: Colors.blue),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 );
               },
             ),
@@ -625,8 +834,8 @@ class _ClientProfilePageState extends State<ClientProfilePage> {
   }
 
   void _populateForm(user) {
-    _nameController.text = user.name ?? '';
-    _emailController.text = user.email ?? '';
+    _nameController.text = user.displayName;
+    _emailController.text = user.email;
     _phoneController.text = user.phone ?? '';
   }
 

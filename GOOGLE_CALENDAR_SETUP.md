@@ -36,9 +36,13 @@ This guide explains how to set up Google Calendar integration for the Sessionize
    - Authorized JavaScript origins:
      - `https://apiclientapp.web.app`
      - `http://localhost:8080` (for development)
+     - `http://localhost:8081` (for development)
+     - `http://localhost:8082` (for development)
    - Authorized redirect URIs:
-     - `https://apiclientapp.web.app`
-     - `http://localhost:8080` (for development)
+     - `https://apiclientapp.web.app/oauth/callback`
+     - `http://localhost:8080/oauth/callback` (for development)
+     - `http://localhost:8081/oauth/callback` (for development)
+     - `http://localhost:8082/oauth/callback` (for development)
 
 ### Step 3: Client ID Configuration
 

@@ -271,6 +271,7 @@ class _MainScreenState extends State<MainScreen> {
           context.go('/instructor-dashboard');
           break;
         case 1:
+          // Instructor profile - for now use the old profile, can be updated later
           context.go('/profile');
           break;
       }
@@ -283,7 +284,8 @@ class _MainScreenState extends State<MainScreen> {
           context.go('/client/bookings');
           break;
         case 2:
-          context.go('/profile');
+          // Client profile - use the new client profile with Google Calendar sync
+          context.go('/client/profile');
           break;
       }
     }

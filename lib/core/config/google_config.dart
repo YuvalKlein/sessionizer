@@ -23,6 +23,8 @@ class GoogleConfig {
     if (EnvironmentConfig.isDevelopment) {
       return [
         'http://localhost:8080',
+        'http://localhost:8081', 
+        'http://localhost:8082',
         'https://apiclientapp.web.app',
       ];
     } else {

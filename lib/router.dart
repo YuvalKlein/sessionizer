@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,6 +43,75 @@ import 'package:myapp/features/notification/presentation/bloc/notification_bloc.
 import 'package:myapp/core/utils/injection_container.dart';
 import 'package:myapp/core/utils/logger.dart';
 
+/// Handle OAuth callback from Google
+void _handleOAuthCallback(String? code, String? state, String? error, BuildContext context) {
+  print('🔄 OAuth callback received:');
+  print('   Code: ${code?.substring(0, 10)}...');
+  print('   State: $state');
+  print('   Error: $error');
+  
+  // Get the stored state and return URL
+  final storedState = html.window.localStorage['oauth_state'];
+  final returnUrl = html.window.localStorage['oauth_return_url'];
+  
+  if (error != null) {
+    print('❌ OAuth error: $error');
+    // Redirect back to return URL with error
+    Timer(const Duration(seconds: 2), () {
+      if (returnUrl != null) {
+        html.window.location.href = returnUrl;
+      } else {
+        context.go('/client/profile');
+      }
+    });
+    return;
+  }
+  
+  if (code != null && state != null && state == storedState) {
+    print('✅ OAuth success - processing authentication');
+    
+    // Store the OAuth result for the app to process
+    final result = {
+      'code': code,
+      'state': state,
+      'success': true,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    };
+    
+    try {
+      html.window.localStorage['oauth_result'] = jsonEncode(result);
+      print('✅ OAuth result stored for processing');
+    } catch (e) {
+      print('❌ Could not store OAuth result: $e');
+    }
+    
+    // Clean up temporary storage
+    html.window.localStorage.remove('oauth_state');
+    html.window.localStorage.remove('oauth_return_url');
+    
+    // Redirect back to the return URL after a short delay
+    Timer(const Duration(seconds: 1), () {
+      if (returnUrl != null) {
+        // Go back to the original page
+        html.window.location.href = returnUrl;
+      } else {
+        // Default to appropriate dashboard based on user type
+        html.window.location.href = html.window.location.origin + '/#/instructor-dashboard';
+      }
+    });
+  } else {
+    print('❌ Invalid OAuth callback - state mismatch or missing code');
+    // Redirect back to return URL
+    Timer(const Duration(seconds: 2), () {
+      if (returnUrl != null) {
+        html.window.location.href = returnUrl;
+      } else {
+        context.go('/client/profile');
+      }
+    });
+  }
+}
+
 // Stream to listen to auth state changes
 Stream<AuthState> get _authStateStream {
   final authBloc = sl<AuthBloc>();
@@ -64,13 +135,131 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
+/// Handle authentication redirects for all routes except OAuth callback
+String? _handleAuthRedirect(BuildContext context, GoRouterState state) {
+  final authBloc = sl<AuthBloc>();
+  final authState = authBloc.state;
+  
+  print('🔄 Router redirect: path=${state.matchedLocation}, authState=${authState.runtimeType}');
+  
+  if (authState is AuthLoading || authState is AuthInitial) {
+    print('⏳ Router: Auth loading - no redirect');
+    return null;
+  }
+  
+  if (authState is AuthUnauthenticated) {
+    print('❌ Router: User not authenticated');
+    if (state.matchedLocation == '/login' || state.matchedLocation == '/register') {
+      print('✅ Router: Allowing access to ${state.matchedLocation}');
+      return null;
+    }
+    return '/login';
+  }
+  
+  if (authState is AuthAuthenticated) {
+    print('✅ Router: User authenticated');
+    
+    // Get user from the auth state
+    final user = authState.user;
+    
+    if (state.matchedLocation == '/login') {
+      if (user.isInstructor) {
+        print('🔄 Router: Redirecting instructor to /instructor-dashboard');
+        return '/instructor-dashboard';
+      } else {
+        print('🔄 Router: Redirecting client to /client-dashboard');
+        return '/client-dashboard?instructorId=1ftCSRo1JBQR23NpQy5digDt1tm2';
+      }
+    }
+    
+    print('✅ Router: No redirect needed - user can access current route');
+    return null;
+  }
+  
+  print('❓ Router: Unknown auth state - no redirect');
+  return null;
+}
+
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/login',
     refreshListenable: GoRouterRefreshStream(
       stream: _authStateStream,
     ),
+    redirect: (context, state) {
+      // IMPORTANT: Allow OAuth callback route to bypass all redirects
+      if (state.matchedLocation == '/oauth/callback') {
+        print('🔄 Allowing OAuth callback route to bypass auth redirects');
+        return null; // No redirect, allow the route to proceed
+      }
+      
+      // Normal auth redirect logic for other routes
+      return _handleAuthRedirect(context, state);
+    },
     routes: [
+      // OAuth callback route - MUST be first to catch OAuth redirects
+      GoRoute(
+        path: '/oauth/callback',
+        builder: (context, state) {
+          print('🔄 OAuth callback route hit!');
+          print('🔍 Current URI: ${state.uri}');
+          print('🔍 Query parameters: ${state.uri.queryParameters}');
+          
+          // Handle OAuth callback and close the popup
+          final code = state.uri.queryParameters['code'];
+          final stateParam = state.uri.queryParameters['state'];
+          final error = state.uri.queryParameters['error'];
+          
+          print('🔍 OAuth callback parameters:');
+          print('   Code: ${code?.substring(0, 10)}...');
+          print('   State: $stateParam');
+          print('   Error: $error');
+          
+          // Use a simple HTML page that handles the callback
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('OAuth Callback'),
+              automaticallyImplyLeading: false,
+            ),
+            body: Builder(
+              builder: (context) {
+                // Execute callback handling after build
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _handleOAuthCallback(code, stateParam, error, context);
+                });
+                
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.green, size: 64),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Google Calendar Authorization Complete!',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text('Code: ${code?.substring(0, 20)}...'),
+                      const SizedBox(height: 8),
+                      const Text('Redirecting back to your profile...'),
+                      const SizedBox(height: 16),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Manual redirect if automatic doesn't work
+                          html.window.location.href = html.window.location.origin + '/#/profile';
+                        },
+                        child: const Text('Continue to Profile'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginPage(),
@@ -345,69 +534,6 @@ class AppRouter {
         },
       ),
     ],
-    redirect: (context, state) {
-      try {
-        final authBloc = context.read<AuthBloc>();
-        final authState = authBloc.state;
-        
-        final isLoggingIn = state.uri.path == '/login';
-        final isRegistering = state.uri.path == '/register';
-        
-        print('🔄 Router redirect: path=${state.uri.path}, authState=${authState.runtimeType}');
-        
-        // Only redirect if auth state is not loading
-        if (authState is AuthLoading) {
-          print('⏳ Router: Auth loading - no redirect');
-          return null; // Let the loading state show
-        }
-        
-        // If authenticated, redirect based on user role
-        if (authState is AuthAuthenticated) {
-          print('✅ Router: User authenticated');
-          final user = authState.user;
-          if (isLoggingIn || isRegistering) {
-            // Redirect instructors to their dashboard, clients to instructor selection
-            if (user.isInstructor) {
-              print('🔄 Router: Redirecting instructor to /instructor-dashboard');
-              return '/instructor-dashboard';
-            } else {
-              print('🔄 Router: Redirecting client to specific instructor dashboard');
-              return '/client-dashboard?instructorId=1ftCSRo1JBQR23NpQy5digDt1tm2';
-            }
-          }
-          // Also redirect from root path based on role
-          if (state.uri.path == '/') {
-            if (user.isInstructor) {
-              print('🔄 Router: Redirecting instructor from root to /instructor-dashboard');
-              return '/instructor-dashboard';
-            } else {
-              print('🔄 Router: Redirecting client from root to specific instructor dashboard');
-              return '/client-dashboard?instructorId=1ftCSRo1JBQR23NpQy5digDt1tm2';
-            }
-          }
-          print('✅ Router: No redirect needed - user can access current route');
-          return null; // Allow navigation to other routes
-        }
-        
-        // If not authenticated, redirect to login (except for login/register pages)
-        if (authState is AuthUnauthenticated) {
-          print('❌ Router: User not authenticated');
-          if (!isLoggingIn && !isRegistering) {
-            print('🔄 Router: Redirecting to /login');
-            return '/login';
-          }
-          print('✅ Router: Allowing access to ${state.uri.path}');
-          return null; // Allow login/register
-        }
-        
-        print('❓ Router: Unknown auth state - no redirect');
-        return null;
-      } catch (e) {
-        // If there's an error reading the auth state, don't redirect
-        AppLogger.error('⚠️ Error in router redirect: $e');
-        return null;
-      }
-    },
   );
 }
 
