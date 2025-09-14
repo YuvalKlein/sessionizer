@@ -98,8 +98,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final clientData = clientDoc.data() as Map<String, dynamic>;
       final clientName = clientData['displayName'] ?? 'Client';
-      // Always use test email for now - will be replaced with real emails later
-      final clientEmail = 'yuklein@gmail.com';
+      final clientEmail = clientData['email'] as String? ?? 'unknown@example.com';
       
       AppLogger.info('📧 Client email: $clientEmail');
       AppLogger.info('📧 Client name: $clientName');
@@ -235,14 +234,14 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
         
         print('📧 Instructor document exists: ${instructorDoc.exists}');
         
-        // Always use test email for now - will be replaced with real emails later
-        final instructorEmail = 'yuklein@gmail.com';
-        
-        // Get instructor name from document if it exists, otherwise use fallback
+        // Get instructor name and email from document if it exists, otherwise use fallback
         String finalInstructorName = instructorName;
+        String instructorEmail = 'unknown@example.com';
+        
         if (instructorDoc.exists) {
           final instructorData = instructorDoc.data()! as Map<String, dynamic>;
           finalInstructorName = instructorData['displayName'] ?? instructorName;
+          instructorEmail = instructorData['email'] as String? ?? 'unknown@example.com';
         } else {
           print('⚠️ Instructor document does not exist, using fallback name');
           finalInstructorName = 'Instructor';
@@ -303,8 +302,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final clientData = clientDoc.data() as Map<String, dynamic>;
       final clientName = clientData['displayName'] ?? 'Client';
-      // Always use test email for now - will be replaced with real emails later
-      final clientEmail = 'yuklein@gmail.com';
+      final clientEmail = clientData['email'] as String? ?? 'unknown@example.com';
 
       // Get instructor details
       final instructorId = bookingData['instructorId'] as String?;
@@ -447,8 +445,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final clientData = clientDoc.data() as Map<String, dynamic>;
       final clientName = clientData['displayName'] ?? 'Client';
-      // Always use test email for now - will be replaced with real emails later
-      final clientEmail = 'yuklein@gmail.com';
+      final clientEmail = clientData['email'] as String? ?? 'unknown@example.com';
 
       // Get instructor details
       final instructorId = bookingData['instructorId'] as String?;
@@ -589,8 +586,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final instructorData = instructorDoc.data() as Map<String, dynamic>;
       final instructorName = instructorData['displayName'] ?? 'Instructor';
-      // Always use test email for now - will be replaced with real emails later
-      final instructorEmail = 'yuklein@gmail.com';
+      final instructorEmail = instructorData['email'] as String? ?? 'unknown@example.com';
 
       // Get client details
       final clientId = bookingData['clientId'] as String?;
@@ -676,8 +672,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
           if (clientDoc.exists) {
             final clientData = clientDoc.data() as Map<String, dynamic>;
             final clientName = clientData['displayName'] ?? 'Client';
-            // Always use test email for now - will be replaced with real emails later
-      final clientEmail = 'yuklein@gmail.com';
+            final clientEmail = clientData['email'] as String? ?? 'unknown@example.com';
 
             // Get instructor details
             String instructorName = 'Your Instructor';
@@ -916,8 +911,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final instructorData = instructorDoc.data() as Map<String, dynamic>;
       final instructorName = instructorData['displayName'] ?? 'Instructor';
-      // Always use test email for now - will be replaced with real emails later
-      final instructorEmail = 'yuklein@gmail.com';
+      final instructorEmail = instructorData['email'] as String? ?? 'unknown@example.com';
 
       // Get client details
       final clientId = bookingData['clientId'] as String?;
@@ -995,8 +989,7 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
 
       final clientData = clientDoc.data() as Map<String, dynamic>;
       final clientName = clientData['displayName'] ?? 'Client';
-      // Always use test email for now - will be replaced with real emails later
-      final clientEmail = 'yuklein@gmail.com';
+      final clientEmail = clientData['email'] as String? ?? 'unknown@example.com';
 
       // Get instructor details
       final instructorId = bookingData['instructorId'] as String?;

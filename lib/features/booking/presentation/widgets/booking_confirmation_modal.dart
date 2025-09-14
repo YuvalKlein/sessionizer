@@ -9,6 +9,7 @@ import 'package:myapp/core/utils/injection_container.dart';
 import 'package:myapp/core/services/email_service.dart';
 import 'package:myapp/core/services/cancellation_policy_service.dart';
 import 'package:myapp/features/notification/domain/usecases/send_booking_confirmation.dart';
+import 'package:myapp/core/services/google_calendar_service.dart';
 
 class BookingConfirmationModal extends StatefulWidget {
   final String sessionId;
@@ -48,6 +49,81 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
   void dispose() {
     _notesController.dispose();
     super.dispose();
+  }
+
+  /// Create a Google Calendar event for the booking
+  Future<void> _createGoogleCalendarEvent(String bookingId, Map<String, dynamic> bookingData) async {
+    try {
+      print('🗓️ Creating Google Calendar event for booking: $bookingId');
+
+      final calendarService = GoogleCalendarService.instance;
+      
+      // Get user data for email addresses
+      final userState = context.read<UserBloc>().state;
+      if (userState is! UserLoaded) {
+        print('⚠️ User not loaded - skipping calendar event creation');
+        return;
+      }
+
+      // Get instructor data
+      final instructorDoc = await FirestoreCollections.user(widget.instructorId).get();
+      if (!instructorDoc.exists) {
+        print('⚠️ Instructor not found - skipping calendar event creation');
+        return;
+      }
+      final instructorData = instructorDoc.data() as Map<String, dynamic>;
+
+      // Prepare event details
+      final sessionTitle = widget.sessionData['title'] ?? 'Session';
+      final sessionType = widget.sessionTypeData['name'] ?? 'Session';
+      final locationName = widget.locationData['name'] ?? 'Location';
+      final locationAddress = widget.locationData['address'] ?? '';
+      
+      final startTime = DateTime(
+        widget.selectedDate.year,
+        widget.selectedDate.month,
+        widget.selectedDate.day,
+        widget.selectedTime.hour,
+        widget.selectedTime.minute,
+      );
+      
+      final duration = widget.sessionTypeData['duration'] ?? 60;
+      final endTime = startTime.add(Duration(minutes: duration));
+
+      final title = '$sessionType - $sessionTitle';
+      final description = '''
+Session Details:
+• Type: $sessionType
+• Duration: ${duration}min
+• Location: $locationName
+• Notes: ${_notesController.text.isEmpty ? 'No additional notes' : _notesController.text}
+
+Booking ID: $bookingId
+''';
+
+      final location = locationAddress.isEmpty ? locationName : '$locationName, $locationAddress';
+      final clientEmail = userState.user.email;
+      final instructorEmail = instructorData['email'] ?? '';
+
+      // Create the calendar event
+      final eventId = await calendarService.createBookingEvent(
+        bookingId: bookingId,
+        title: title,
+        description: description,
+        startTime: startTime,
+        endTime: endTime,
+        location: location,
+        clientEmail: clientEmail,
+        instructorEmail: instructorEmail,
+      );
+
+      if (eventId != null) {
+        print('✅ Google Calendar event created: $eventId');
+      }
+    } catch (e) {
+      print('❌ Error creating Google Calendar event: $e');
+      // Don't throw - calendar integration shouldn't break the booking process
+    }
   }
 
   Future<void> _confirmBooking() async {
@@ -194,6 +270,9 @@ class _BookingConfirmationModalState extends State<BookingConfirmationModal> {
         
         final docRef = await FirestoreCollections.bookings.add(bookingData);
         print('📝 Booking created with ID: ${docRef.id}');
+
+        // Create Google Calendar event
+        await _createGoogleCalendarEvent(docRef.id, bookingData);
 
         // Send email notification
         try {

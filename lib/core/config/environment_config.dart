@@ -101,9 +101,9 @@ class EnvironmentConfig {
   static String get firebaseFunctionsUrl {
     switch (current) {
       case Environment.development:
-        return 'https://us-central1-play-e37a6.cloudfunctions.net';
+        return 'https://us-central1-apiclientapp.cloudfunctions.net';
       case Environment.production:
-        return 'https://us-central1-play-e37a6.cloudfunctions.net';
+        return 'https://us-central1-apiclientapp.cloudfunctions.net';
     }
   }
   

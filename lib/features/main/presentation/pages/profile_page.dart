@@ -4,6 +4,7 @@ import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_event.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
+import 'package:myapp/core/services/google_calendar_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -298,6 +299,7 @@ class _ProfilePageState extends State<ProfilePage> {
               subtitle: 'Manage your privacy settings',
               onTap: () => _showPrivacySettings(),
             ),
+            _buildCalendarSyncTile(),
             _buildSettingTile(
               icon: Icons.help_outline,
               title: 'Help & Support',
@@ -331,6 +333,40 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCalendarSyncTile() {
+    final calendarService = GoogleCalendarService.instance;
+    
+    return ListTile(
+      leading: Icon(Icons.calendar_today, color: Colors.blue.shade600),
+      title: const Text('Google Calendar Sync'),
+      subtitle: Text(
+        calendarService.isConnected 
+          ? 'Bookings will sync to your Google Calendar'
+          : 'Connect to sync bookings to Google Calendar'
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Switch(
+            value: calendarService.isCalendarSyncEnabled(),
+            onChanged: (value) => _handleGoogleCalendarSync(value),
+          ),
+          if (!calendarService.isConnected) ...[
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
+              onPressed: _connectGoogleCalendar,
+              icon: const Icon(Icons.link, size: 16),
+              label: const Text('Connect'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -520,6 +556,76 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
     );
+  }
+
+  /// Handle Google Calendar sync toggle
+  void _handleGoogleCalendarSync(bool enabled) {
+    final calendarService = GoogleCalendarService.instance;
+    
+    if (enabled && !calendarService.isConnected) {
+      // Need to connect first
+      _connectGoogleCalendar();
+    } else {
+      // Toggle sync setting
+      setState(() {
+        calendarService.setCalendarSyncEnabled(enabled);
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            enabled 
+              ? '✅ Google Calendar sync enabled'
+              : '⏸️ Google Calendar sync disabled'
+          ),
+          backgroundColor: enabled ? Colors.green : Colors.orange,
+        ),
+      );
+    }
+  }
+
+  /// Connect to Google Calendar
+  Future<void> _connectGoogleCalendar() async {
+    try {
+      final calendarService = GoogleCalendarService.instance;
+      
+      // Show loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🔗 Connecting to Google Calendar...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      final success = await calendarService.connect();
+      
+      if (success) {
+        setState(() {
+          calendarService.setCalendarSyncEnabled(true);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Google Calendar connected successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Failed to connect to Google Calendar'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error connecting to Google Calendar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
 }
