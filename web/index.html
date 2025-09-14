@@ -79,37 +79,89 @@
 </head>
 <body>
   <script>
-    // iOS Safari compatibility fixes
+    // Enhanced iOS Safari compatibility
     window.addEventListener('load', function(ev) {
-      // Check if we're on iOS Safari
-      const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      // Comprehensive device detection
+      const userAgent = navigator.userAgent;
+      const isIOSSafari = /iPad|iPhone|iPod/.test(userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(userAgent);
+      const isIOS = /iPad|iPhone|iPod/.test(userAgent);
       
-      // Add loading indicator for iOS
-      if (isIOSSafari) {
-        document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif;"><div style="text-align: center;"><div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0175C2; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div><p>Loading ARENNA...</p></div></div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>';
+      console.log('Device detection:', {
+        isIOSSafari: isIOSSafari,
+        isIOS: isIOS,
+        userAgent: userAgent
+      });
+      
+      // Enhanced loading screen for iOS devices
+      if (isIOS) {
+        document.body.innerHTML = `
+          <div id="ios-loading" style="
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, #0175C2 0%, #4A90E2 100%);
+            display: flex; justify-content: center; align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            z-index: 9999; color: white; text-align: center;
+          ">
+            <div style="max-width: 300px; padding: 20px;">
+              <div style="
+                width: 50px; height: 50px; margin: 0 auto 20px;
+                border: 3px solid rgba(255,255,255,0.3);
+                border-top: 3px solid white; border-radius: 50%;
+                animation: spin 1s linear infinite;
+              "></div>
+              <h1 style="margin: 0 0 10px 0; font-size: 24px; font-weight: 300;">ARENNA</h1>
+              <p style="margin: 0; opacity: 0.9; font-size: 16px;">Loading your fitness sessions...</p>
+            </div>
+          </div>
+          <style>
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            body { margin: 0; padding: 0; overflow: hidden; }
+          </style>
+        `;
       }
       
-      // Download main.dart.js with iOS-specific configuration
-      const config = {
+      // Flutter initialization with iOS optimizations
+      const loadConfig = {
         serviceWorker: {
           serviceWorkerVersion: serviceWorkerVersion,
-        },
-        // iOS Safari specific settings
-        ...(isIOSSafari && {
-          canvasKitBaseUrl: 'canvaskit/',
-          renderer: 'html'
-        })
+        }
       };
       
-      _flutter.loader.loadEntrypoint(config).then(function(engineInitializer) {
-        return engineInitializer.initializeEngine();
+      _flutter.loader.loadEntrypoint(loadConfig).then(function(engineInitializer) {
+        const engineConfig = {
+          renderer: isIOSSafari ? 'html' : 'auto'
+        };
+        return engineInitializer.initializeEngine(engineConfig);
       }).then(function(appRunner) {
+        // Hide loading screen
+        const loadingEl = document.getElementById('ios-loading');
+        if (loadingEl) {
+          loadingEl.style.opacity = '0';
+          loadingEl.style.transition = 'opacity 0.3s ease';
+          setTimeout(() => loadingEl.remove(), 300);
+        }
         return appRunner.runApp();
       }).catch(function(error) {
         console.error('Flutter initialization error:', error);
-        if (isIOSSafari) {
-          document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; padding: 20px;"><div><h2>Loading Error</h2><p>Please refresh the page or try again later.</p><button onclick="location.reload()" style="background: #0175C2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Refresh</button></div></div>';
-        }
+        document.body.innerHTML = `
+          <div style="
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #f8f9fa; display: flex; justify-content: center; align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center;
+          ">
+            <div style="max-width: 350px; padding: 20px;">
+              <h2 style="color: #dc3545; margin-bottom: 15px;">Unable to Load App</h2>
+              <p style="color: #6c757d; margin-bottom: 20px; line-height: 1.4;">
+                ${isIOS ? 'Please try refreshing the page. For best experience on iOS, use Chrome or Safari.' : 'Please refresh the page or try again later.'}
+              </p>
+              <button onclick="location.reload()" style="
+                background: #0175C2; color: white; border: none; padding: 12px 24px;
+                border-radius: 6px; font-size: 16px; cursor: pointer;
+                font-family: inherit;
+              ">Refresh Page</button>
+            </div>
+          </div>
+        `;
       });
     });
   </script>

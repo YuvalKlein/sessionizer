@@ -166,7 +166,16 @@ class _MainScreenState extends State<MainScreen> {
                   final user = userState.user;
                   final isInstructor = user.isInstructor;
                   String title;
-                  if (isInstructor) {
+                  // Determine title based on current route
+                  final currentLocation = GoRouterState.of(context).uri.path;
+                  
+                  if (currentLocation == '/client/bookings') {
+                    title = 'My Bookings';
+                  } else if (currentLocation == '/client/profile') {
+                    title = 'Profile';
+                  } else if (currentLocation == '/profile') {
+                    title = 'Profile';
+                  } else if (isInstructor) {
                     title = 'Instructor Dashboard';
                   } else if (widget.instructorId != null && _instructorName != null) {
                     title = 'Dashboard - $_instructorName';

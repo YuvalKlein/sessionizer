@@ -79,7 +79,7 @@ class EnvironmentConfig {
       case Environment.development:
         return '(default)'; // Development database
       case Environment.production:
-        return 'play'; // Production database
+        return '(default)'; // Production also uses default database with ProdData collection
     }
   }
   

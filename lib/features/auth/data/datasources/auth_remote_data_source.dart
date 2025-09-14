@@ -103,9 +103,41 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       
       return UserModel.fromFirestore(userDoc);
     } on FirebaseAuthException catch (e) {
-      throw AuthException('Sign in failed: ${e.message}');
+      print('❌ FirebaseAuthException: ${e.code} - ${e.message}');
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No account found with this email address.';
+          break;
+        case 'wrong-password':
+          message = 'Incorrect password. Please try again.';
+          break;
+        case 'invalid-email':
+          message = 'Please enter a valid email address.';
+          break;
+        case 'user-disabled':
+          message = 'This account has been disabled. Please contact support.';
+          break;
+        case 'too-many-requests':
+          message = 'Too many failed attempts. Please try again later.';
+          break;
+        case 'network-request-failed':
+          message = 'Network error. Please check your connection and try again.';
+          break;
+        case 'invalid-credential':
+          message = 'Invalid email or password. Please check your credentials.';
+          break;
+        default:
+          message = 'Sign in failed: ${e.message ?? 'Unknown error'}';
+      }
+      throw AuthException(message);
     } catch (e) {
-      throw ServerException('Unexpected error: $e');
+      print('❌ General exception during sign in: $e');
+      // Check if it's a user profile not found error
+      if (e.toString().contains('User profile not found')) {
+        throw const AuthException('No account found with this email address.');
+      }
+      throw ServerException('Connection error. Please try again.');
     }
   }
 
@@ -190,10 +222,30 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return newUser;
     } on FirebaseAuthException catch (e) {
       print('❌ Firebase Auth error: ${e.message}');
-      throw AuthException('Sign up failed: ${e.message}');
+      String message;
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = 'An account with this email already exists. Please sign in instead.';
+          break;
+        case 'weak-password':
+          message = 'Password is too weak. Please choose a stronger password.';
+          break;
+        case 'invalid-email':
+          message = 'Please enter a valid email address.';
+          break;
+        case 'operation-not-allowed':
+          message = 'Email/password accounts are not enabled. Please contact support.';
+          break;
+        case 'network-request-failed':
+          message = 'Network error. Please check your connection and try again.';
+          break;
+        default:
+          message = 'Sign up failed: ${e.message}';
+      }
+      throw AuthException(message);
     } catch (e) {
       print('❌ Unexpected error: $e');
-      throw ServerException('Unexpected error: $e');
+      throw ServerException('Connection error. Please try again.');
     }
   }
 
