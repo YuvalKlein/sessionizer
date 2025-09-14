@@ -100,8 +100,14 @@ We look forward to seeing you!
 ARENNA Team
       `;
 
+      // Create unique recipient list (avoid duplicates)
+      const recipients = [clientEmail];
+      if (clientEmail !== 'yuklein@gmail.com') {
+        recipients.push('yuklein@gmail.com');
+      }
+
       const msg = {
-        to: [clientEmail, 'yuklein@gmail.com'],  // Send to both client and yuklein@gmail.com
+        to: recipients,
         from: {
           email: 'noreply@arenna.link',
           name: 'ARENNA'
@@ -119,7 +125,11 @@ ARENNA Team
         res.status(200).json({ success: true, message: 'Booking confirmation email sent successfully' });
       }).catch((error) => {
         console.error('Error sending booking confirmation email:', error);
-        res.status(500).json({ error: 'Failed to send booking confirmation email: ' + error.message });
+        console.error('SendGrid error details:', error.response?.body);
+        res.status(500).json({ 
+          error: 'Failed to send booking confirmation email: ' + error.message,
+          details: error.response?.body 
+        });
       });
 
     } catch (error) {

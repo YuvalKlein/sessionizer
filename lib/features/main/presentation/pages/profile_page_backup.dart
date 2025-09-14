@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_event.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
-import 'package:myapp/features/user/presentation/bloc/user_state.dart';
+import 'package:myapp/features/user/presentation/bloc/user_state.dart';\nimport 'package:myapp/core/services/google_calendar_service.dart';
 import 'package:myapp/core/services/google_calendar_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -608,6 +608,7 @@ class _ProfilePageState extends State<ProfilePage> {
           const SnackBar(
             content: Text('✅ Google Calendar connected successfully!'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 4), // Show longer
           ),
         );
       } else {

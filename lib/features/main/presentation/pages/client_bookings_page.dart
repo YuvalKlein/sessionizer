@@ -90,51 +90,65 @@ class _ClientBookingsPageState extends State<ClientBookingsPage> with TickerProv
         }
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: const Text('My Bookings'),
-        backgroundColor: Colors.blue.shade600,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          onPressed: () => context.go('/client-dashboard'),
-          icon: const Icon(Icons.arrow_back),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () => _showFilterDialog(),
-            icon: const Icon(Icons.filter_list),
-          ),
-          IconButton(
-            onPressed: () => _refreshBookings(),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          tabs: const [
-            Tab(text: 'Upcoming'),
-            Tab(text: 'Past'),
-            Tab(text: 'Cancelled'),
+        body: Column(
+          children: [
+            // Tab bar and actions at the top
+            Container(
+              color: Colors.blue.shade600,
+              child: Column(
+                children: [
+                  // Actions row
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          onPressed: () => _showFilterDialog(),
+                          icon: const Icon(Icons.filter_list, color: Colors.white),
+                        ),
+                        IconButton(
+                          onPressed: () => _refreshBookings(),
+                          icon: const Icon(Icons.refresh, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Tab bar
+                  TabBar(
+                    controller: _tabController,
+                    indicatorColor: Colors.white,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white70,
+                    tabs: const [
+                      Tab(text: 'Upcoming'),
+                      Tab(text: 'Past'),
+                      Tab(text: 'Cancelled'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Expanded(
+              child: Column(
+                children: [
+                  _buildSearchBar(),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildBookingsList('upcoming'),
+                        _buildBookingsList('past'),
+                        _buildBookingsList('cancelled'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-      ),
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildBookingsList('upcoming'),
-                _buildBookingsList('past'),
-                _buildBookingsList('cancelled'),
-              ],
-            ),
-          ),
-        ],
-      ),
     ),
     );
   }
