@@ -1,214 +1,273 @@
-# Sessionizer App Testing Guide
+# 🧪 ARENNA Testing Guide
 
-## Manual Testing Checklist
+## 🎯 **Testing Strategy**
 
-### 1. Authentication Flow Testing ✅
-- [ ] **Login Page**
-  - [ ] Email/password login works
-  - [ ] Google Sign-In works
-  - [ ] Error handling for invalid credentials
-  - [ ] Loading states display properly
-  - [ ] Form validation works
+This project follows a comprehensive testing strategy to prevent breaking changes and ensure code quality.
 
-- [ ] **Signup Page**
-  - [ ] Email/password signup works
-  - [ ] Google Sign-In signup works
-  - [ ] Error handling for existing accounts
-  - [ ] Loading states display properly
-  - [ ] Form validation works
+### **📊 Current Test Coverage: 68 Tests**
 
-- [ ] **Sign-out**
-  - [ ] Sign-out button works
-  - [ ] Redirects to login page
-  - [ ] No endless loader
-  - [ ] Clears user session
+- ✅ **Unit Tests**: 68 tests covering critical business logic
+- ✅ **Widget Tests**: Coming soon
+- ✅ **Integration Tests**: Coming soon
+- ✅ **CI/CD Pipeline**: Automated testing on every commit
 
-- [ ] **Role-based Redirects**
-  - [ ] Client users redirect to `/client-dashboard`
-  - [ ] Instructor users redirect to `/instructor-dashboard`
-  - [ ] Unauthenticated users redirect to `/login`
+## 🧪 **Test Categories**
 
-### 2. Navigation Testing ✅
-- [ ] **Client Dashboard**
-  - [ ] Loads without flashing
-  - [ ] Displays user avatar and name
-  - [ ] Navigation bar works
-  - [ ] All widgets load properly
+### **1. Unit Tests (68 tests)**
 
-- [ ] **Instructor Dashboard**
-  - [ ] Loads without flashing
-  - [ ] Displays instructor data
-  - [ ] Navigation bar works
-  - [ ] All widgets load properly
+**📋 Cancellation Policy Tests (11 tests)**
+```bash
+flutter test test/features/session_type/domain/entities/
+flutter test test/core/services/cancellation_policy_service_test.dart
+```
+- Fee calculations (percentage vs fixed dollar)
+- Time conversions (hours, minutes, days)
+- Policy agreement storage and retrieval
+- Edge cases and boundary testing
 
-- [ ] **Profile Page**
-  - [ ] Displays user information
-  - [ ] Sign-out button works
-  - [ ] No "Danger Zone" section
-  - [ ] Only sign-out option available
+**🔒 Booking Validation Tests (13 tests)**
+```bash
+flutter test test/core/utils/booking_validator_test.dart
+```
+- Minimum hours ahead validation
+- Maximum days ahead constraints
+- Cancellation window detection
+- Past booking prevention
 
-- [ ] **Sessions Page**
-  - [ ] Displays available sessions
-  - [ ] Booking functionality works
-  - [ ] Instructor information displays
+**🔐 Authentication Tests (14 tests)**
+```bash
+flutter test test/features/auth/domain/usecases/
+```
+- Sign in/sign up use case testing
+- Error handling validation
+- Parameter validation
+- Role-based user creation
 
-- [ ] **Bookings Page**
-  - [ ] Displays user bookings
-  - [ ] Session details show correctly
-  - [ ] Instructor name and avatar display
+**⚙️ Service Integration Tests (30 tests)**
+```bash
+flutter test test/core/services/
+flutter test test/core/config/
+```
+- Google Calendar service behavior
+- Email service interface validation
+- Environment configuration testing
+- Critical production bug prevention
 
-### 3. UI Stability Testing ✅
-- [ ] **No Flashing**
-  - [ ] Smooth transitions between screens
-  - [ ] No rapid widget disposal/recreation
-  - [ ] Stable loading states
+## 🚀 **Running Tests**
 
-- [ ] **Loading States**
-  - [ ] Proper loading indicators
-  - [ ] No endless loaders
-  - [ ] Error states display correctly
+### **Run All Tests**
+```bash
+flutter test
+```
 
-- [ ] **Error Handling**
-  - [ ] Network errors handled gracefully
-  - [ ] Invalid data doesn't crash app
-  - [ ] User-friendly error messages
+### **Run Specific Test Categories**
+```bash
+# Unit tests only
+flutter test test/features/ test/core/
 
-### 4. Booking Flow Testing ✅
-- [ ] **Create Booking**
-  - [ ] Select session type
-  - [ ] Choose time slot
-  - [ ] Confirm booking
-  - [ ] Success feedback
+# Specific feature tests
+flutter test test/features/session_type/
+flutter test test/features/auth/
 
-- [ ] **View Bookings**
-  - [ ] List displays correctly
-  - [ ] Session details accurate
-  - [ ] Instructor information shows
+# Service tests
+flutter test test/core/services/
+```
 
-- [ ] **Cancel Booking**
-  - [ ] Cancel button works
-  - [ ] Confirmation dialog
-  - [ ] Booking removed from list
+### **Run Tests with Coverage**
+```bash
+flutter test --coverage
+```
 
-### 5. Session Management Testing (Instructor) ✅
-- [ ] **Create Session**
-  - [ ] Form validation
-  - [ ] Save functionality
-  - [ ] Success feedback
+### **Pre-Commit Testing (Recommended)**
+```bash
+# Windows
+.\scripts\pre-commit-tests.ps1
 
-- [ ] **Edit Session**
-  - [ ] Load existing data
-  - [ ] Update functionality
-  - [ ] Success feedback
+# Linux/Mac
+./scripts/pre-commit-tests.sh
+```
 
-- [ ] **Delete Session**
-  - [ ] Confirmation dialog
-  - [ ] Remove from list
-  - [ ] Success feedback
+## 🛡️ **Critical Business Logic Protected**
 
-### 6. Responsive Design Testing ✅
-- [ ] **Desktop (1920x1080)**
-  - [ ] All elements visible
-  - [ ] Proper spacing
-  - [ ] Navigation works
+### **Cancellation Fee Calculations**
+```dart
+// ✅ Protected by tests:
+sessionType.getActualCancellationFee()
+// - Percentage calculations (50% of $120 = $60)
+// - Fixed dollar amounts ($25 regardless of price)
+// - Edge cases (0%, 100%, rounding)
+```
 
-- [ ] **Tablet (768x1024)**
-  - [ ] Responsive layout
-  - [ ] Touch targets appropriate
-  - [ ] Navigation works
+### **Booking Validation**
+```dart
+// ✅ Protected by tests:
+BookingValidator.validateBooking()
+// - Time constraints (min/max hours ahead)
+// - Past booking prevention
+// - Cancellation window detection
+```
 
-- [ ] **Mobile (375x667)**
-  - [ ] Mobile-friendly layout
-  - [ ] Touch targets large enough
-  - [ ] Navigation works
+### **Environment Configuration**
+```dart
+// ✅ Protected by tests:
+EnvironmentConfig.databaseId // Must be '(default)' for both dev/prod
+EnvironmentConfig.collectionPrefix // 'DevData' vs 'ProdData'
+// - Prevents production database connection errors
+// - Ensures proper environment separation
+```
 
-### 7. Performance Testing ✅
-- [ ] **Loading Times**
-  - [ ] Initial app load < 3 seconds
-  - [ ] Screen transitions < 1 second
-  - [ ] Data loading < 2 seconds
+## 🔄 **Continuous Integration**
 
-- [ ] **Memory Usage**
-  - [ ] No memory leaks
-  - [ ] Proper cleanup on navigation
-  - [ ] Stable memory usage
+### **GitHub Actions Workflow**
+- ✅ **Automated testing** on every push/PR
+- ✅ **Build verification** for both dev and production
+- ✅ **Code analysis** to catch style issues
+- ✅ **Security checks** for secrets and hardcoded data
+- ✅ **Coverage reporting** to track test coverage
 
-- [ ] **Smooth Animations**
-  - [ ] No janky transitions
-  - [ ] Smooth scrolling
-  - [ ] Responsive interactions
+### **Branch Protection**
+- Tests must pass before merging to main branches
+- Code analysis must pass
+- Build must succeed
 
-## Automated Testing Strategy
+## 📝 **Writing New Tests**
 
-### Unit Tests
-- [ ] BLoC state management
-- [ ] Use case logic
-- [ ] Repository implementations
-- [ ] Utility functions
+### **Unit Test Template**
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:myapp/path/to/your/class.dart';
 
-### Widget Tests
-- [ ] Individual widget rendering
-- [ ] User interactions
-- [ ] State changes
-- [ ] Error states
+void main() {
+  group('YourClass', () {
+    test('should do something when condition is met', () {
+      // Arrange
+      final instance = YourClass();
+      
+      // Act
+      final result = instance.doSomething();
+      
+      // Assert
+      expect(result, equals(expectedValue));
+    });
+  });
+}
+```
 
-### Integration Tests
-- [ ] Complete user flows
-- [ ] Authentication flow
-- [ ] Booking flow
-- [ ] Navigation flow
+### **Mock-based Test Template**
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 
-### Performance Tests
-- [ ] Load time benchmarks
-- [ ] Memory usage monitoring
-- [ ] Animation performance
-- [ ] Network request optimization
+@GenerateMocks([YourDependency])
+void main() {
+  late YourClass instance;
+  late MockYourDependency mockDependency;
 
-## Test Data Setup
+  setUp(() {
+    mockDependency = MockYourDependency();
+    instance = YourClass(mockDependency);
+  });
 
-### Test Users
-- **Client User**: test@client.com / password123
-- **Instructor User**: instructor@test.com / password123
+  test('should call dependency correctly', () async {
+    // Arrange
+    when(mockDependency.method()).thenAnswer((_) async => 'result');
+    
+    // Act
+    final result = await instance.useMethod();
+    
+    // Assert
+    verify(mockDependency.method()).called(1);
+    expect(result, equals('expected'));
+  });
+}
+```
 
-### Test Data
-- Sample session types
-- Sample bookings
-- Sample schedules
-- Sample locations
+## 🚨 **Test-Driven Development Workflow**
 
-## Bug Tracking
+### **For New Features:**
+1. **Write failing test** first (Red)
+2. **Write minimal code** to make it pass (Green)
+3. **Refactor** while keeping tests green (Refactor)
+4. **Repeat** for each requirement
 
-### Critical Issues
-- [ ] App crashes
-- [ ] Data loss
-- [ ] Security vulnerabilities
-- [ ] Performance issues
+### **For Bug Fixes:**
+1. **Write test** that reproduces the bug
+2. **Verify test fails** (confirms bug exists)
+3. **Fix the bug** until test passes
+4. **Verify** all other tests still pass
 
-### High Priority Issues
-- [ ] UI/UX problems
-- [ ] Navigation issues
-- [ ] Error handling
-- [ ] Responsive design
+## 📊 **Test Quality Guidelines**
 
-### Medium Priority Issues
-- [ ] Minor UI inconsistencies
-- [ ] Performance optimizations
-- [ ] Code improvements
-- [ ] Documentation updates
+### **Good Tests Are:**
+- ✅ **Fast**: Run in seconds, not minutes
+- ✅ **Isolated**: Don't depend on external services
+- ✅ **Deterministic**: Same input always gives same output
+- ✅ **Readable**: Clear arrange/act/assert structure
+- ✅ **Focused**: Test one thing at a time
 
-## Test Environment
+### **Test Naming Convention:**
+```dart
+test('should [expected behavior] when [condition]', () {
+  // Example:
+  // 'should return 60 when calculating 50% of $120'
+  // 'should reject booking when time is in the past'
+});
+```
 
-### Development
-- Local Firebase emulator
-- Test data setup
-- Debug logging enabled
+## 🔧 **Troubleshooting Tests**
 
-### Staging
-- Firebase test project
-- Production-like data
-- Performance monitoring
+### **Common Issues:**
 
-### Production
-- Live Firebase project
-- Real user data
-- Error tracking
+**Tests fail after dependency changes:**
+```bash
+flutter packages pub run build_runner build --delete-conflicting-outputs
+```
+
+**Mock generation issues:**
+```bash
+flutter packages pub run build_runner build
+```
+
+**Test compilation errors:**
+```bash
+flutter clean
+flutter pub get
+flutter test
+```
+
+## 📈 **Benefits Achieved**
+
+### **Before Testing:**
+- ❌ Changes broke existing features
+- ❌ Manual regression testing required
+- ❌ Production bugs from environment issues
+- ❌ No confidence in code changes
+
+### **After Testing (68 tests):**
+- ✅ **Immediate feedback** on breaking changes
+- ✅ **Automated regression testing**
+- ✅ **Production bug prevention**
+- ✅ **Confidence** to make changes safely
+- ✅ **Faster development** (no manual testing loops)
+
+## 🎯 **Success Metrics**
+
+- **68 tests passing** ✅
+- **Critical business logic protected** ✅
+- **Environment configuration validated** ✅
+- **Authentication flows tested** ✅
+- **Service interfaces verified** ✅
+
+## 🚀 **Next Steps**
+
+1. **Widget Tests**: Test critical UI components
+2. **Integration Tests**: Test complete user flows
+3. **Performance Tests**: Ensure app remains fast
+4. **Accessibility Tests**: Ensure app is accessible
+
+---
+
+*This testing strategy solves the core problem: "Each time we make changes, something else breaks"*
+
+**Now we have 68 tests that will catch breaking changes immediately!** 🛡️
