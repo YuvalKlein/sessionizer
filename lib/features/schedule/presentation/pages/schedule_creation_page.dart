@@ -7,6 +7,7 @@ import 'package:myapp/features/schedule/presentation/bloc/schedule_state.dart';
 import 'package:myapp/features/schedule/domain/entities/schedule_entity.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
+import 'package:myapp/features/schedule/presentation/widgets/calendly_time_picker.dart';
 import 'package:myapp/core/utils/logger.dart';
 
 class ScheduleCreationPage extends StatefulWidget {
@@ -311,7 +312,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
               ),
             ),
             const SizedBox(height: 16),
-            ..._weeklyAvailability.keys.map((day) => _buildDayAvailability(day)).toList(),
+            ..._weeklyAvailability.keys.map((day) => _buildDayAvailability(day)),
           ],
         ),
       ),
@@ -321,7 +322,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
   Widget _buildDayAvailability(String day) {
     final dayRanges = _weeklyAvailability[day]!;
     final dayLetter = _getDayLetter(day);
-    final dayName = _capitalizeFirst(day);
+    final hasAnyTimes = dayRanges.any((range) => range['startTime'] != null && range['endTime'] != null);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -349,86 +350,113 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                 ),
               ),
               const SizedBox(width: 12),
-              // Day name
+              // Time ranges or unavailable message
               Expanded(
-                flex: 2,
-                child: Text(
-                  dayName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              // Time ranges
-              Expanded(
-                flex: 4,
-                child: Column(
-                  children: dayRanges.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final range = entry.value;
-                    final isEnabled = range['startTime'] != null && range['endTime'] != null;
-                    final isFirstSlot = index == 0;
-                    
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 4),
-                      child: Row(
+                child: hasAnyTimes
+                    ? Column(
+                        children: dayRanges.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final range = entry.value;
+                          final isFirstSlot = index == 0;
+                          final unavailableStartTimes = _getUnavailableTimesForDay(day, index, true);
+                          final unavailableEndTimes = _getUnavailableTimesForDay(day, index, false);
+                          
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              children: [
+                                // Time range picker
+                                Expanded(
+                                  child: CalendlyTimeRangePicker(
+                                    startTime: range['startTime'],
+                                    endTime: range['endTime'],
+                                    unavailableStartTimes: unavailableStartTimes,
+                                    unavailableEndTimes: unavailableEndTimes,
+                                    onTimeRangeChanged: (start, end) {
+                                      setState(() {
+                                        range['startTime'] = start;
+                                        range['endTime'] = end;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Action icons
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Remove button
+                                    IconButton(
+                                      onPressed: () => _removeTimeRange(day, index),
+                                      icon: const Icon(Icons.close, size: 16, color: Colors.red),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    // Add button (only on first slot)
+                                    if (isFirstSlot)
+                                      IconButton(
+                                        onPressed: () => _addTimeRange(day),
+                                        icon: const Icon(Icons.add, size: 16),
+                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                    // Duplicate icon (only on first slot)
+                                    if (isFirstSlot)
+                                      IconButton(
+                                        onPressed: () => _showDuplicateDialog(day),
+                                        icon: const Icon(Icons.copy, size: 16),
+                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                        padding: EdgeInsets.zero,
+                                        tooltip: 'Duplicate all times for this day',
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      )
+                    : Row(
                         children: [
-                          // Time range display (clickable for editing)
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => _editTimeRange(day, index),
+                              onTap: () => _editTimeRange(day, 0),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.grey[300]!),
                                   borderRadius: BorderRadius.circular(4),
-                                  color: isEnabled ? Colors.white : Colors.grey[50],
+                                  color: Colors.grey[50],
                                 ),
-                                child: isEnabled
-                                    ? Text(
-                                        '${_formatTimeOfDay(range['startTime']!)} - ${_formatTimeOfDay(range['endTime']!)}',
-                                        style: const TextStyle(fontSize: 14),
-                                      )
-                                    : const Text(
-                                        'Click to set times',
-                                        style: TextStyle(
-                                          color: Colors.grey,
-                                          fontStyle: FontStyle.italic,
-                                          fontSize: 14,
-                                        ),
-                                      ),
+                                child: const Text(
+                                  'Unavailable',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 14,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          // Action icons in order: X, +, duplicate
-                          IconButton(
-                            onPressed: () => _removeTimeRange(day, index),
-                            icon: const Icon(Icons.close, size: 16, color: Colors.red),
-                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                            padding: EdgeInsets.zero,
-                          ),
+                          // Only show + button when unavailable
                           IconButton(
                             onPressed: () => _addTimeRange(day),
                             icon: const Icon(Icons.add, size: 16),
                             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                             padding: EdgeInsets.zero,
                           ),
-                          // Duplicate icon only on the first time slot
-                          if (isFirstSlot)
-                            IconButton(
-                              onPressed: () => _showDuplicateDialog(day),
-                              icon: const Icon(Icons.copy, size: 16),
-                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                              padding: EdgeInsets.zero,
-                              tooltip: 'Duplicate all times for this day',
-                            ),
+                          // Duplicate icon
+                          IconButton(
+                            onPressed: () => _showDuplicateDialog(day),
+                            icon: const Icon(Icons.copy, size: 16),
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            padding: EdgeInsets.zero,
+                            tooltip: 'Duplicate all times for this day',
+                          ),
                         ],
                       ),
-                    );
-                  }).toList(),
-                ),
               ),
             ],
           ),
@@ -523,7 +551,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
             else
               ..._specificDateAvailability.entries.map((entry) => 
                 _buildSpecificDateCard(entry.key, entry.value)
-              ).toList(),
+              ),
           ],
         ),
       ),
@@ -647,7 +675,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                 ),
               )
             else
-              ..._holidays.entries.map((entry) => _buildHolidayCard(entry.key, entry.value)).toList(),
+              ..._holidays.entries.map((entry) => _buildHolidayCard(entry.key, entry.value)),
           ],
         ),
       ),
@@ -768,87 +796,50 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     });
   }
 
-  void _editTimeRange(String day, int index) async {
+  void _editTimeRange(String day, int index) {
+    // This method is now handled by the CalendlyTimeRangePicker widget
+    // The time selection happens directly in the widget
+    // If we need to add a time slot when clicking on "Unavailable", we add one
     final range = _weeklyAvailability[day]![index];
-    
-    // Show start time picker
-    final startTime = await showTimePicker(
-      context: context,
-      initialTime: range['startTime'] ?? const TimeOfDay(hour: 9, minute: 0),
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-          child: child!,
-        );
-      },
-    );
-    
-    if (startTime != null && mounted) {
-      // Show end time picker
-      final endTime = await showTimePicker(
-        context: context,
-        initialTime: range['endTime'] ?? const TimeOfDay(hour: 17, minute: 0),
-        builder: (context, child) {
-          return MediaQuery(
-            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-            child: child!,
-          );
-        },
-      );
-      
-      if (endTime != null) {
-        // Check for overlaps with other time ranges on the same day
-        if (_hasTimeOverlap(day, index, startTime, endTime)) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Time ranges cannot overlap on the same day'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
-        
-        setState(() {
-          range['startTime'] = startTime;
-          range['endTime'] = endTime;
-        });
-      }
+    if (range['startTime'] == null && range['endTime'] == null) {
+      setState(() {
+        range['startTime'] = const TimeOfDay(hour: 9, minute: 0);
+        range['endTime'] = const TimeOfDay(hour: 17, minute: 0);
+      });
     }
   }
 
-  bool _hasTimeOverlap(String day, int currentIndex, TimeOfDay startTime, TimeOfDay endTime) {
+  List<TimeOfDay> _getUnavailableTimesForDay(String day, int currentIndex, bool isStartTime) {
+    final unavailable = <TimeOfDay>[];
     final dayRanges = _weeklyAvailability[day]!;
     
+    // Get all existing time ranges for this day (except current one)
     for (int i = 0; i < dayRanges.length; i++) {
-      if (i == currentIndex) continue; // Skip the current range being edited
+      if (i == currentIndex) continue;
       
       final range = dayRanges[i];
-      final existingStart = range['startTime'];
-      final existingEnd = range['endTime'];
+      final startTime = range['startTime'];
+      final endTime = range['endTime'];
       
-      if (existingStart != null && existingEnd != null) {
-        // Check if the new time range overlaps with this existing range
-        if (_timeRangesOverlap(startTime, endTime, existingStart, existingEnd)) {
-          return true;
+      if (startTime != null && endTime != null) {
+        // Add all times in this range as unavailable
+        final startMinutes = startTime.hour * 60 + startTime.minute;
+        final endMinutes = endTime.hour * 60 + endTime.minute;
+        
+        for (int hour = 6; hour <= 23; hour++) {
+          for (int minute = 0; minute < 60; minute += 15) {
+            final timeMinutes = hour * 60 + minute;
+            if (timeMinutes >= startMinutes && timeMinutes < endMinutes) {
+              unavailable.add(TimeOfDay(hour: hour, minute: minute));
+            }
+          }
         }
       }
     }
     
-    return false;
+    return unavailable;
   }
 
-  bool _timeRangesOverlap(TimeOfDay start1, TimeOfDay end1, TimeOfDay start2, TimeOfDay end2) {
-    // Convert to minutes for easier comparison
-    final start1Minutes = start1.hour * 60 + start1.minute;
-    final end1Minutes = end1.hour * 60 + end1.minute;
-    final start2Minutes = start2.hour * 60 + start2.minute;
-    final end2Minutes = end2.hour * 60 + end2.minute;
-    
-    // Two ranges overlap if one starts before the other ends
-    return start1Minutes < end2Minutes && start2Minutes < end1Minutes;
-  }
 
   void _showDuplicateDialog(String sourceDay) {
     final selectedDays = <String>{sourceDay};
@@ -914,8 +905,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
           // Copy all time ranges from source day
           for (final range in sourceRanges) {
             _weeklyAvailability[targetDay]!.add(<String, TimeOfDay?>{
-              'startTime': range['startTime'] as TimeOfDay?,
-              'endTime': range['endTime'] as TimeOfDay?,
+              'startTime': range['startTime'],
+              'endTime': range['endTime'],
             });
           }
         }
@@ -1049,39 +1040,24 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                       children: times.asMap().entries.map((entry) {
                         final index = entry.key;
                         final timeRange = entry.value;
-                        final isEnabled = timeRange['startTime'] != null && timeRange['endTime'] != null;
                         
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: Row(
                             children: [
-                              // Time range display (clickable for editing)
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => _editSpecificDateTimeRange(times, index, setDialogState),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey[300]!),
-                                      borderRadius: BorderRadius.circular(4),
-                                      color: isEnabled ? Colors.white : Colors.grey[50],
-                                    ),
-                                    child: isEnabled
-                                        ? Text(
-                                            '${_formatTimeOfDay(timeRange['startTime']!)} - ${_formatTimeOfDay(timeRange['endTime']!)}',
-                                            style: const TextStyle(fontSize: 14),
-                                          )
-                                        : const Text(
-                                            'Click to set times',
-                                            style: TextStyle(
-                                              color: Colors.grey,
-                                              fontStyle: FontStyle.italic,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                              ),
+                          // Time range picker
+                          Expanded(
+                            child: CalendlyTimeRangePicker(
+                              startTime: timeRange['startTime'],
+                              endTime: timeRange['endTime'],
+                              onTimeRangeChanged: (start, end) {
+                                setDialogState(() {
+                                  timeRange['startTime'] = start;
+                                  timeRange['endTime'] = end;
+                                });
+                              },
+                            ),
+                          ),
                               const SizedBox(width: 8),
                               // Action icons - only show + on first row
                               if (index == 0)
@@ -1138,25 +1114,6 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
     );
   }
 
-  void _editSpecificDateTimeRange(List<Map<String, TimeOfDay?>> times, int index, StateSetter setDialogState) async {
-    final timeRange = times[index];
-    final startTime = await showTimePicker(
-      context: context,
-      initialTime: timeRange['startTime'] ?? const TimeOfDay(hour: 9, minute: 0),
-    );
-    if (startTime != null && mounted) {
-      final endTime = await showTimePicker(
-        context: context,
-        initialTime: timeRange['endTime'] ?? const TimeOfDay(hour: 17, minute: 0),
-      );
-      if (endTime != null) {
-        setDialogState(() {
-          timeRange['startTime'] = startTime;
-          timeRange['endTime'] = endTime;
-        });
-      }
-    }
-  }
 
   void _addSpecificDateTimeRange(List<Map<String, TimeOfDay?>> times, StateSetter setDialogState) {
     setDialogState(() {
