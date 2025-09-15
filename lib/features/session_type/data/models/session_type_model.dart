@@ -23,9 +23,6 @@ class SessionTypeModel extends SessionTypeEntity {
   });
 
   factory SessionTypeModel.fromMap(Map<String, dynamic> map) {
-    // Handle both old format (separate fields) and new format (cancellationPolicy map)
-    Map<String, dynamic> cancellationPolicy = map['cancellationPolicy'] as Map<String, dynamic>? ?? {};
-    
     return SessionTypeModel(
       id: map['id'],
       title: map['title'] ?? '',
@@ -40,25 +37,17 @@ class SessionTypeModel extends SessionTypeEntity {
       showParticipants: map['showParticipants'] ?? false,
       category: map['category'] ?? '',
       price: map['price'] ?? 0,
-      // Support both formats: new format (cancellationPolicy map) and old format (separate fields)
-      hasCancellationFee: cancellationPolicy['hasCancellationFee'] ?? map['hasCancellationFee'] ?? true,
-      cancellationTimeBefore: cancellationPolicy['cancellationTimeBefore'] ?? map['cancellationTimeBefore'] ?? 18,
-      cancellationTimeUnit: cancellationPolicy['cancellationTimeUnit'] ?? map['cancellationTimeUnit'] ?? 'hours',
-      cancellationFeeAmount: cancellationPolicy['cancellationFeeAmount'] ?? map['cancellationFeeAmount'] ?? 100,
-      cancellationFeeType: cancellationPolicy['cancellationFeeType'] ?? map['cancellationFeeType'] ?? '%',
+      hasCancellationFee: map['hasCancellationFee'] ?? true,
+      cancellationTimeBefore: map['cancellationTimeBefore'] ?? 18,
+      cancellationTimeUnit: map['cancellationTimeUnit'] ?? 'hours',
+      cancellationFeeAmount: map['cancellationFeeAmount'] ?? 100,
+      cancellationFeeType: map['cancellationFeeType'] ?? '%',
     );
   }
 
 
   Map<String, dynamic> toMap() {
-    print('🔧 SessionTypeModel.toMap(): Creating map with cancellation policy:');
-    print('  hasCancellationFee: $hasCancellationFee');
-    print('  cancellationTimeBefore: $cancellationTimeBefore');
-    print('  cancellationTimeUnit: $cancellationTimeUnit');
-    print('  cancellationFeeAmount: $cancellationFeeAmount');
-    print('  cancellationFeeType: $cancellationFeeType');
-    
-    final map = {
+    return {
       'title': title,
       'notifyCancelation': notifyCancelation,
       'createdTime': createdTime,
@@ -71,17 +60,12 @@ class SessionTypeModel extends SessionTypeEntity {
       'showParticipants': showParticipants,
       'category': category,
       'price': price,
-      'cancellationPolicy': {
-        'hasCancellationFee': hasCancellationFee,
-        'cancellationTimeBefore': cancellationTimeBefore,
-        'cancellationTimeUnit': cancellationTimeUnit,
-        'cancellationFeeAmount': cancellationFeeAmount,
-        'cancellationFeeType': cancellationFeeType,
-      },
+      'hasCancellationFee': hasCancellationFee,
+      'cancellationTimeBefore': cancellationTimeBefore,
+      'cancellationTimeUnit': cancellationTimeUnit,
+      'cancellationFeeAmount': cancellationFeeAmount,
+      'cancellationFeeType': cancellationFeeType,
     };
-    
-    print('🔧 SessionTypeModel.toMap(): Final map: $map');
-    return map;
   }
 
   factory SessionTypeModel.fromEntity(SessionTypeEntity entity) {

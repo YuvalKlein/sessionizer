@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flutter Initialization Test</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .pass { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .fail { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .loading { background-color: #f8f9fa; color: #495057; border: 1px solid #dee2e6; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Flutter Web Initialization Test Suite</h1>
+    <div id="test-results"></div>
+    
+    <script>
+        class FlutterInitTest {
+            constructor() {
+                this.results = [];
+                this.testContainer = document.getElementById('test-results');
+            }
+            
+            log(message, type = 'info') {
+                const result = { message, type, timestamp: new Date().toISOString() };
+                this.results.push(result);
+                this.updateDisplay();
+                console.log(`[${type.toUpperCase()}] ${message}`);
+            }
+            
+            updateDisplay() {
+                this.testContainer.innerHTML = this.results.map(result => 
+                    `<div class="test-result ${result.type}">
+                        <strong>${result.timestamp}</strong>: ${result.message}
+                    </div>`
+                ).join('');
+            }
+            
+            async runTests() {
+                this.log('🚀 Starting Flutter Web Initialization Tests', 'info');
+                
+                await this.testFlutterLoaderExists();
+                await this.testIndexHtmlStructure();
+                await this.testServiceWorkerVersion();
+                await this.testFlutterJsLoading();
+                await this.testDeviceDetection();
+                await this.testInitializationFlow();
+                
+                this.log('✅ All tests completed', 'info');
+                this.generateReport();
+            }
+            
+            async testFlutterLoaderExists() {
+                this.log('Testing if _flutter.loader exists...', 'loading');
+                
+                try {
+                    if (typeof _flutter !== 'undefined' && _flutter.loader) {
+                        this.log('✅ _flutter.loader exists', 'pass');
+                        
+                        // Test available methods
+                        if (typeof _flutter.loader.loadEntrypoint === 'function') {
+                            this.log('✅ _flutter.loader.loadEntrypoint method exists', 'pass');
+                        } else {
+                            this.log('❌ _flutter.loader.loadEntrypoint method missing', 'fail');
+                        }
+                        
+                        if (typeof _flutter.loader.load === 'function') {
+                            this.log('ℹ️ _flutter.loader.load method exists (new API)', 'info');
+                        } else {
+                            this.log('⚠️ _flutter.loader.load method missing (new API)', 'warning');
+                        }
+                    } else {
+                        this.log('❌ _flutter.loader not found', 'fail');
+                    }
+                } catch (error) {
+                    this.log(`❌ Error testing _flutter.loader: ${error.message}`, 'fail');
+                }
+            }
+            
+            async testIndexHtmlStructure() {
+                this.log('Testing index.html structure...', 'loading');
+                
+                // Test viewport meta tag
+                const viewport = document.querySelector('meta[name="viewport"]');
+                if (viewport) {
+                    this.log(`✅ Viewport meta tag found: ${viewport.content}`, 'pass');
+                } else {
+                    this.log('❌ Viewport meta tag missing', 'fail');
+                }
+                
+                // Test flutter.js script
+                const flutterScript = document.querySelector('script[src="flutter.js"]');
+                if (flutterScript) {
+                    this.log('✅ flutter.js script tag found', 'pass');
+                } else {
+                    this.log('❌ flutter.js script tag missing', 'fail');
+                }
+                
+                // Test service worker version
+                if (typeof serviceWorkerVersion !== 'undefined') {
+                    this.log(`✅ serviceWorkerVersion defined: ${serviceWorkerVersion}`, 'pass');
+                } else {
+                    this.log('❌ serviceWorkerVersion not defined', 'fail');
+                }
+            }
+            
+            async testServiceWorkerVersion() {
+                this.log('Testing service worker version handling...', 'loading');
+                
+                if (typeof serviceWorkerVersion !== 'undefined') {
+                    if (serviceWorkerVersion === null) {
+                        this.log('✅ serviceWorkerVersion is null (development mode)', 'pass');
+                    } else if (typeof serviceWorkerVersion === 'string') {
+                        this.log(`✅ serviceWorkerVersion is string: ${serviceWorkerVersion}`, 'pass');
+                    } else {
+                        this.log(`⚠️ serviceWorkerVersion has unexpected type: ${typeof serviceWorkerVersion}`, 'warning');
+                    }
+                } else {
+                    this.log('❌ serviceWorkerVersion is undefined', 'fail');
+                }
+            }
+            
+            async testFlutterJsLoading() {
+                this.log('Testing flutter.js loading...', 'loading');
+                
+                try {
+                    const response = await fetch('flutter.js');
+                    if (response.ok) {
+                        this.log('✅ flutter.js loads successfully', 'pass');
+                    } else {
+                        this.log(`❌ flutter.js failed to load: ${response.status}`, 'fail');
+                    }
+                } catch (error) {
+                    this.log(`❌ Error loading flutter.js: ${error.message}`, 'fail');
+                }
+            }
+            
+            async testDeviceDetection() {
+                this.log('Testing device detection logic...', 'loading');
+                
+                const userAgent = navigator.userAgent;
+                const isIOSSafari = /iPad|iPhone|iPod/.test(userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(userAgent);
+                const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+                
+                this.log(`ℹ️ User Agent: ${userAgent}`, 'info');
+                this.log(`ℹ️ Is iOS Safari: ${isIOSSafari}`, 'info');
+                this.log(`ℹ️ Is iOS: ${isIOS}`, 'info');
+                
+                if (isIOS) {
+                    this.log('📱 iOS device detected - iOS optimizations will be applied', 'info');
+                } else {
+                    this.log('💻 Non-iOS device - standard initialization will be used', 'info');
+                }
+            }
+            
+            async testInitializationFlow() {
+                this.log('Testing Flutter initialization flow...', 'loading');
+                
+                // Mock the initialization to test the flow
+                try {
+                    const mockEngineInitializer = {
+                        initializeEngine: (config) => {
+                            this.log(`ℹ️ Mock engine config: ${JSON.stringify(config)}`, 'info');
+                            return Promise.resolve({
+                                runApp: () => {
+                                    this.log('✅ Mock app.runApp() called successfully', 'pass');
+                                }
+                            });
+                        }
+                    };
+                    
+                    const mockLoader = {
+                        loadEntrypoint: (options) => {
+                            this.log('ℹ️ Mock loadEntrypoint called', 'info');
+                            if (options.onEntrypointLoaded) {
+                                setTimeout(() => options.onEntrypointLoaded(mockEngineInitializer), 100);
+                            }
+                        }
+                    };
+                    
+                    // Test the initialization flow
+                    mockLoader.loadEntrypoint({
+                        serviceWorker: { serviceWorkerVersion: null },
+                        onEntrypointLoaded: (engineInitializer) => {
+                            engineInitializer.initializeEngine({ renderer: 'auto' })
+                                .then(appRunner => {
+                                    appRunner.runApp();
+                                    this.log('✅ Initialization flow test completed', 'pass');
+                                });
+                        }
+                    });
+                    
+                } catch (error) {
+                    this.log(`❌ Initialization flow test failed: ${error.message}`, 'fail');
+                }
+            }
+            
+            generateReport() {
+                const passCount = this.results.filter(r => r.type === 'pass').length;
+                const failCount = this.results.filter(r => r.type === 'fail').length;
+                const warningCount = this.results.filter(r => r.type === 'warning').length;
+                
+                const report = `
+                    <div class="test-result info">
+                        <h3>📊 Test Summary</h3>
+                        <p>✅ Passed: ${passCount}</p>
+                        <p>❌ Failed: ${failCount}</p>
+                        <p>⚠️ Warnings: ${warningCount}</p>
+                        <p>Total Tests: ${this.results.length}</p>
+                    </div>
+                    <div class="test-result ${failCount > 0 ? 'fail' : 'pass'}">
+                        <h3>${failCount > 0 ? '❌ Tests Failed' : '✅ All Tests Passed'}</h3>
+                        <p>${failCount > 0 ? 'Please fix the failing tests before deployment.' : 'Flutter initialization should work correctly.'}</p>
+                    </div>
+                `;
+                
+                this.testContainer.innerHTML += report;
+                
+                // Log to console for CI/automated testing
+                console.log('=== FLUTTER INIT TEST REPORT ===');
+                console.log(`Passed: ${passCount}, Failed: ${failCount}, Warnings: ${warningCount}`);
+                if (failCount > 0) {
+                    console.error('TESTS FAILED - DO NOT DEPLOY');
+                } else {
+                    console.log('ALL TESTS PASSED - SAFE TO DEPLOY');
+                }
+            }
+        }
+        
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            const tester = new FlutterInitTest();
+            tester.runTests();
+        });
+    </script>
+</body>
+</html>
+
