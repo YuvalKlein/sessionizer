@@ -10,6 +10,7 @@
     "prefer_related_applications": false,
     "scope": "/",
     "lang": "en",
+    "categories": ["fitness", "sports", "health"],
     "icons": [
         {
             "src": "icons/Icon-192.png",

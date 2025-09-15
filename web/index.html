@@ -21,13 +21,19 @@
   <meta name="description" content="A new Flutter project.">
   
   <!-- Enhanced iOS Safari compatibility -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
   <meta name="format-detection" content="telephone=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-touch-fullscreen" content="yes">
   <meta name="apple-mobile-web-app-title" content="ARENNA">
+  
+  <!-- Additional iOS optimizations -->
+  <meta name="HandheldFriendly" content="true">
+  <meta name="MobileOptimized" content="width">
+  <meta name="apple-mobile-web-app-orientations" content="portrait">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
   <!-- iOS performance optimizations -->
   <meta name="theme-color" content="#0175C2">
@@ -52,20 +58,40 @@
       callback: 'handleGoogleSignIn',
       error_callback: 'handleGoogleSignInError',
       auto_select: false,
-      cancel_on_tap_outside: true
+      cancel_on_tap_outside: true,
+      // iOS Safari specific optimizations
+      use_fedcm_for_prompt: false,
+      itp_support: true
     };
     
-    // Global callbacks for Google Sign-In
+    // Global callbacks for Google Sign-In with iOS Safari optimizations
     window.handleGoogleSignIn = function(response) {
       console.log('Google Sign-In response received');
       // This will be handled by the Flutter app
       window.googleSignInResponse = response;
-      window.dispatchEvent(new CustomEvent('googleSignInSuccess', { detail: response }));
+      
+      // iOS Safari sometimes needs a slight delay
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('googleSignInSuccess', { detail: response }));
+        }, 100);
+      } else {
+        window.dispatchEvent(new CustomEvent('googleSignInSuccess', { detail: response }));
+      }
     };
     
     window.handleGoogleSignInError = function(error) {
       console.error('Google Sign-In error:', error);
       window.googleSignInError = error;
+      
+      // Enhanced error handling for iOS Safari
+      const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent);
+      if (isIOSSafari && error.type === 'popup_blocked_by_browser') {
+        console.warn('iOS Safari blocked popup - this is expected behavior');
+        // Try alternative sign-in method
+        error.ios_safari_workaround = true;
+      }
+      
       window.dispatchEvent(new CustomEvent('googleSignInError', { detail: error }));
     };
   </script>
@@ -102,8 +128,14 @@
         userAgent: userAgent
       });
       
-      // Enhanced loading screen for iOS devices
+      // Enhanced loading screen for iOS devices with performance optimizations
       if (isIOS) {
+        // Optimize for iOS Safari memory usage
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const loadingMessage = isIOSSafari && isSafari ? 
+          'Optimizing for Safari...' : 
+          'Loading your fitness sessions...';
+        
         document.body.innerHTML = `
           <div id="ios-loading" style="
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -111,6 +143,7 @@
             display: flex; justify-content: center; align-items: center;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             z-index: 9999; color: white; text-align: center;
+            will-change: opacity;
           ">
             <div style="max-width: 300px; padding: 20px;">
               <div style="
@@ -118,23 +151,70 @@
                 border: 3px solid rgba(255,255,255,0.3);
                 border-top: 3px solid white; border-radius: 50%;
                 animation: spin 1s linear infinite;
+                will-change: transform;
               "></div>
               <h1 style="margin: 0 0 10px 0; font-size: 24px; font-weight: 300;">ARENNA</h1>
-              <p style="margin: 0; opacity: 0.9; font-size: 16px;">Loading your fitness sessions...</p>
+              <p style="margin: 0; opacity: 0.9; font-size: 16px;">${loadingMessage}</p>
+              <div id="ios-progress" style="
+                width: 200px; height: 2px; background: rgba(255,255,255,0.3);
+                margin: 15px auto 0; border-radius: 1px; overflow: hidden;
+              ">
+                <div style="
+                  width: 0%; height: 100%; background: white;
+                  animation: progress 3s ease-in-out infinite;
+                "></div>
+              </div>
             </div>
           </div>
           <style>
-            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            @keyframes spin { 
+              0% { transform: rotate(0deg); } 
+              100% { transform: rotate(360deg); } 
+            }
+            @keyframes progress {
+              0% { width: 0%; }
+              50% { width: 70%; }
+              100% { width: 100%; }
+            }
             body { 
               margin: 0; padding: 0; overflow: hidden; 
               -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
               -webkit-touch-callout: none; /* Disable iOS callout */
               -webkit-user-select: none; /* Disable iOS text selection */
               -webkit-tap-highlight-color: transparent; /* Remove iOS tap highlight */
+              -webkit-font-smoothing: antialiased; /* Better font rendering on iOS */
+              -moz-osx-font-smoothing: grayscale;
+              touch-action: manipulation; /* Prevent zoom on double tap */
             }
-            /* iOS Safari specific fixes */
-            html, body { height: 100%; height: 100vh; height: -webkit-fill-available; }
-            #flutter-view { height: 100%; height: 100vh; height: -webkit-fill-available; }
+            /* Comprehensive iOS Safari specific fixes */
+            html, body { 
+              height: 100%; 
+              height: 100vh; 
+              height: -webkit-fill-available; 
+              position: fixed; 
+              width: 100%; 
+              left: 0; 
+              top: 0;
+            }
+            #flutter-view { 
+              height: 100%; 
+              height: 100vh; 
+              height: -webkit-fill-available; 
+              width: 100%;
+              position: absolute;
+              top: 0;
+              left: 0;
+            }
+            /* Fix iOS Safari viewport issues */
+            @supports (-webkit-touch-callout: none) {
+              html, body { height: -webkit-fill-available; }
+            }
+            /* Prevent iOS Safari bounce */
+            html { 
+              position: fixed; 
+              height: 100%; 
+              overflow: hidden; 
+            }
           </style>
         `;
       }
@@ -146,20 +226,45 @@
         },
         onEntrypointLoaded: function(engineInitializer) {
           const engineConfig = {
-            renderer: isIOSSafari ? 'html' : 'auto',
+            renderer: isIOSSafari ? 'html' : 'canvaskit',
+            // Force HTML renderer for iOS Safari for better compatibility
+            hostElement: document.body,
           };
           
           engineInitializer.initializeEngine(engineConfig).then(function(appRunner) {
-            // Hide loading screen
+            // iOS Safari specific initialization optimizations
+            if (isIOSSafari) {
+              // Force a repaint to prevent rendering issues
+              document.body.style.display = 'none';
+              document.body.offsetHeight; // Trigger reflow
+              document.body.style.display = '';
+            }
+            
+            // Hide loading screen with iOS optimizations
             const loadingEl = document.getElementById('ios-loading');
             if (loadingEl) {
               loadingEl.style.opacity = '0';
               loadingEl.style.transition = 'opacity 0.3s ease';
-              setTimeout(() => loadingEl.remove(), 300);
+              setTimeout(() => {
+                loadingEl.remove();
+                // iOS Safari memory cleanup
+                if (isIOSSafari && window.gc) {
+                  window.gc();
+                }
+              }, 300);
             }
+            
             return appRunner.runApp();
           }).catch(function(error) {
             console.error('Flutter initialization error:', error);
+            
+            // Enhanced iOS Safari error reporting
+            if (isIOSSafari) {
+              console.log('iOS Safari version:', navigator.userAgent);
+              console.log('Available memory:', navigator.deviceMemory || 'unknown');
+              console.log('Connection type:', navigator.connection?.effectiveType || 'unknown');
+            }
+            
             showErrorPage(error, isIOS);
           });
         }
@@ -176,7 +281,7 @@
             <div style="max-width: 350px; padding: 20px;">
               <h2 style="color: #dc3545; margin-bottom: 15px;">Loading Issue</h2>
               <p style="color: #6c757d; margin-bottom: 20px; line-height: 1.4;">
-                ${isIOSDevice ? 'Your device is taking longer than usual to load. This is common on iOS Safari.' : 'Please refresh the page or try again later.'}
+                ${isIOSDevice ? 'iOS Safari detected. If the app doesn\'t load, try switching to Chrome or refreshing the page. Some iOS Safari versions have compatibility issues with web apps.' : 'Please refresh the page or try again later.'}
               </p>
               <div style="margin-bottom: 20px;">
                 <button onclick="location.reload()" style="
@@ -185,11 +290,11 @@
                   font-family: inherit; margin-right: 10px;
                 ">Refresh Page</button>
                 ${isIOSDevice ? `
-                <button onclick="window.location.href='data:text/html,<h1>Please use Chrome or Safari</h1><p>For the best experience on iOS, please open this app in Chrome or Safari browser.</p><a href=&quot;${window.location.href}&quot;>Try Again</a>'" style="
+                <button onclick="navigator.share ? navigator.share({title: 'ARENNA', url: window.location.href}) : alert('Try opening this link in Chrome: ' + window.location.href)" style="
                   background: #6c757d; color: white; border: none; padding: 12px 24px;
                   border-radius: 6px; font-size: 16px; cursor: pointer;
                   font-family: inherit;
-                ">Browser Help</button>
+                ">Share to Chrome</button>
                 ` : ''}
               </div>
               <p style="color: #6c757d; font-size: 14px;">
