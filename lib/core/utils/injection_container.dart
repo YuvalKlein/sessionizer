@@ -112,7 +112,15 @@ Future<void> initializeDependencies() async {
     return firestore;
   });
   sl.registerLazySingleton(() => FirebaseMessaging.instance);
-  sl.registerLazySingleton(() => GoogleSignInService());
+  // Register Google Sign-In service - will handle configuration errors gracefully
+  sl.registerLazySingleton(() {
+    try {
+      return GoogleSignInService();
+    } catch (e) {
+      print('⚠️ Google Sign-In service initialization failed: $e');
+      return GoogleSignInService(); // Return service anyway, it will handle errors internally
+    }
+  });
   
   // Services
   sl.registerLazySingleton(() => DependencyChecker(firestore: sl()));

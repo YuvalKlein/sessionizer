@@ -26,6 +26,12 @@ class EnvironmentConfig {
     }
   }
   
+  /// Check if Google Sign-In is available
+  static bool get isGoogleSignInAvailable {
+    // For development, Google Sign-In is disabled
+    return isProduction;
+  }
+  
   /// Check if we're running on web
   static bool get isWeb {
     return kIsWeb;

@@ -20,13 +20,23 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
   
-  <!-- iOS Safari compatibility -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Enhanced iOS Safari compatibility -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="format-detection" content="telephone=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-touch-fullscreen" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ARENNA">
+  
+  <!-- iOS performance optimizations -->
+  <meta name="theme-color" content="#0175C2">
+  <meta name="msapplication-navbutton-color" content="#0175C2">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  
+  <!-- Preload critical resources for faster loading -->
+  <link rel="preload" href="flutter.js" as="script">
+  <link rel="preload" href="main.dart.js" as="script">
   
   <!-- Security headers for Google Sign-In -->
   <meta http-equiv="Cross-Origin-Opener-Policy" content="unsafe-none">
@@ -115,33 +125,47 @@
           </div>
           <style>
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            body { margin: 0; padding: 0; overflow: hidden; }
+            body { 
+              margin: 0; padding: 0; overflow: hidden; 
+              -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+              -webkit-touch-callout: none; /* Disable iOS callout */
+              -webkit-user-select: none; /* Disable iOS text selection */
+              -webkit-tap-highlight-color: transparent; /* Remove iOS tap highlight */
+            }
+            /* iOS Safari specific fixes */
+            html, body { height: 100%; height: 100vh; height: -webkit-fill-available; }
+            #flutter-view { height: 100%; height: 100vh; height: -webkit-fill-available; }
           </style>
         `;
       }
       
-      // Flutter initialization with iOS optimizations
-      const loadConfig = {
+      // Standard Flutter initialization that works reliably
+      _flutter.loader.loadEntrypoint({
         serviceWorker: {
           serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function(engineInitializer) {
+          const engineConfig = {
+            renderer: isIOSSafari ? 'html' : 'auto',
+          };
+          
+          engineInitializer.initializeEngine(engineConfig).then(function(appRunner) {
+            // Hide loading screen
+            const loadingEl = document.getElementById('ios-loading');
+            if (loadingEl) {
+              loadingEl.style.opacity = '0';
+              loadingEl.style.transition = 'opacity 0.3s ease';
+              setTimeout(() => loadingEl.remove(), 300);
+            }
+            return appRunner.runApp();
+          }).catch(function(error) {
+            console.error('Flutter initialization error:', error);
+            showErrorPage(error, isIOS);
+          });
         }
-      };
+      });
       
-      _flutter.loader.loadEntrypoint(loadConfig).then(function(engineInitializer) {
-        const engineConfig = {
-          renderer: isIOSSafari ? 'html' : 'auto'
-        };
-        return engineInitializer.initializeEngine(engineConfig);
-      }).then(function(appRunner) {
-        // Hide loading screen
-        const loadingEl = document.getElementById('ios-loading');
-        if (loadingEl) {
-          loadingEl.style.opacity = '0';
-          loadingEl.style.transition = 'opacity 0.3s ease';
-          setTimeout(() => loadingEl.remove(), 300);
-        }
-        return appRunner.runApp();
-      }).catch(function(error) {
+      function showErrorPage(error, isIOSDevice) {
         console.error('Flutter initialization error:', error);
         document.body.innerHTML = `
           <div style="
@@ -150,19 +174,31 @@
             font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center;
           ">
             <div style="max-width: 350px; padding: 20px;">
-              <h2 style="color: #dc3545; margin-bottom: 15px;">Unable to Load App</h2>
+              <h2 style="color: #dc3545; margin-bottom: 15px;">Loading Issue</h2>
               <p style="color: #6c757d; margin-bottom: 20px; line-height: 1.4;">
-                ${isIOS ? 'Please try refreshing the page. For best experience on iOS, use Chrome or Safari.' : 'Please refresh the page or try again later.'}
+                ${isIOSDevice ? 'Your device is taking longer than usual to load. This is common on iOS Safari.' : 'Please refresh the page or try again later.'}
               </p>
-              <button onclick="location.reload()" style="
-                background: #0175C2; color: white; border: none; padding: 12px 24px;
-                border-radius: 6px; font-size: 16px; cursor: pointer;
-                font-family: inherit;
-              ">Refresh Page</button>
+              <div style="margin-bottom: 20px;">
+                <button onclick="location.reload()" style="
+                  background: #0175C2; color: white; border: none; padding: 12px 24px;
+                  border-radius: 6px; font-size: 16px; cursor: pointer;
+                  font-family: inherit; margin-right: 10px;
+                ">Refresh Page</button>
+                ${isIOSDevice ? `
+                <button onclick="window.location.href='data:text/html,<h1>Please use Chrome or Safari</h1><p>For the best experience on iOS, please open this app in Chrome or Safari browser.</p><a href=&quot;${window.location.href}&quot;>Try Again</a>'" style="
+                  background: #6c757d; color: white; border: none; padding: 12px 24px;
+                  border-radius: 6px; font-size: 16px; cursor: pointer;
+                  font-family: inherit;
+                ">Browser Help</button>
+                ` : ''}
+              </div>
+              <p style="color: #6c757d; font-size: 14px;">
+                Error: ${error.message || 'Unknown error'}
+              </p>
             </div>
           </div>
         `;
-      });
+      }
     });
   </script>
 </body>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:myapp/core/config/environment_config.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_event.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';

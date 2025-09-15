@@ -146,12 +146,43 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required bool isInstructor,
   }) async {
     try {
-      // Always use the modern Google Sign-In service
       final result = await _googleSignInService.signInWithGoogle(isInstructor: isInstructor);
       if (result == null) {
         throw const AuthException('Google sign in cancelled');
       }
-      return result;
+      
+      // Create user document in Firestore if it doesn't exist
+      final user = result.user!;
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      
+      if (!userDoc.exists) {
+        final userData = {
+          'id': user.uid,
+          'email': user.email ?? '',
+          'displayName': user.displayName ?? '',
+          'firstName': user.displayName?.split(' ').first ?? '',
+          'lastName': user.displayName?.split(' ').skip(1).join(' ') ?? '',
+          'phoneNumber': user.phoneNumber ?? '',
+          'role': isInstructor ? 'instructor' : 'client',
+          'isInstructor': isInstructor,
+          'createdAt': FieldValue.serverTimestamp(),
+        };
+        
+        await _firestore.collection('users').doc(user.uid).set(userData);
+        
+        return UserModel(
+          id: user.uid,
+          email: user.email ?? '',
+          displayName: user.displayName ?? '',
+          firstName: user.displayName?.split(' ').first ?? '',
+          lastName: user.displayName?.split(' ').skip(1).join(' ') ?? '',
+          phoneNumber: user.phoneNumber ?? '',
+          role: isInstructor ? 'instructor' : 'client',
+          isInstructor: isInstructor,
+        );
+      } else {
+        return UserModel.fromFirestore(userDoc);
+      }
     } on FirebaseAuthException catch (e) {
       throw AuthException('Google sign in failed: ${e.message}');
     } catch (e) {

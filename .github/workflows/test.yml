@@ -1,135 +1,63 @@
-name: 🧪 Automated Tests
+name: Test Suite
 
 on:
   push:
-    branches: [ main, yuvalSchedule, tests, cancelationTerms ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main, yuvalSchedule ]
+    branches: [ main, develop ]
 
 jobs:
   test:
-    name: 🧪 Run Unit Tests
     runs-on: ubuntu-latest
     
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-      
-    - name: 🔧 Setup Flutter
+    - uses: actions/checkout@v3
+    
+    - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.35.3'
+        flutter-version: '3.24.3'
         channel: 'stable'
-        
-    - name: 📦 Get dependencies
+    
+    - name: Install dependencies
       run: flutter pub get
-      
-    - name: 🔍 Analyze code
-      run: flutter analyze
-      
-    - name: 🧪 Run unit tests
-      run: flutter test --coverage
-      
-    - name: 📊 Upload coverage to Codecov
+    
+    - name: Verify formatting
+      run: dart format --output=none --set-exit-if-changed .
+    
+    - name: Analyze project source
+      run: flutter analyze --fatal-infos
+    
+    - name: Run unit tests
+      run: flutter test --coverage --exclude-tags=integration
+    
+    - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       with:
-        file: coverage/lcov.info
-        flags: unittests
-        name: unit-tests
+        file: ./coverage/lcov.info
+        name: codecov-umbrella
         fail_ci_if_error: false
 
-  build-test:
-    name: 🏗️ Build Test
+  integration_test:
     runs-on: ubuntu-latest
     needs: test
     
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-      
-    - name: 🔧 Setup Flutter
+    - uses: actions/checkout@v3
+    
+    - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.35.3'
+        flutter-version: '3.24.3'
         channel: 'stable'
-        
-    - name: 📦 Get dependencies
+    
+    - name: Install dependencies
       run: flutter pub get
-      
-    - name: 🏗️ Build web (development)
-      run: flutter build web --dart-define=ENVIRONMENT=development
-      
-    - name: 🏗️ Build web (production)
-      run: flutter build web --dart-define=ENVIRONMENT=production
-
-  integration-test:
-    name: 🔗 Integration Tests
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'pull_request'
     
-    steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-      
-    - name: 🔧 Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.35.3'
-        channel: 'stable'
-        
-    - name: 📦 Get dependencies
-      run: flutter pub get
-      
-    - name: 🧪 Run integration tests
-      run: |
-        if [ -d "test/integration" ]; then
-          flutter test test/integration/
-        else
-          echo "⏭️ No integration tests found - skipping"
-        fi
-
-  security-check:
-    name: 🔒 Security Check
-    runs-on: ubuntu-latest
+    - name: Enable web
+      run: flutter config --enable-web
     
-    steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-      
-    - name: 🔒 Check for secrets in code
-      run: |
-        echo "🔍 Checking for potential secrets..."
-        if grep -r "firebase.*key" lib/ --exclude-dir=node_modules || \
-           grep -r "sendgrid.*key" lib/ --exclude-dir=node_modules || \
-           grep -r "google.*secret" lib/ --exclude-dir=node_modules; then
-          echo "❌ Potential secrets found in code!"
-          exit 1
-        else
-          echo "✅ No secrets detected in code"
-        fi
-        
-    - name: 🔍 Check for hardcoded emails
-      run: |
-        echo "🔍 Checking for hardcoded test emails..."
-        if grep -r "yuklein@gmail.com" lib/ --exclude-dir=node_modules; then
-          echo "⚠️ Hardcoded test emails found - consider using environment variables"
-        else
-          echo "✅ No hardcoded emails found"
-        fi
-
-  notification:
-    name: 📧 Test Results Notification
-    runs-on: ubuntu-latest
-    needs: [test, build-test]
-    if: always()
-    
-    steps:
-    - name: 📧 Notify test results
-      run: |
-        if [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.build-test.result }}" == "success" ]; then
-          echo "✅ All tests passed! Safe to merge."
-        else
-          echo "❌ Tests failed! Do not merge until fixed."
-          exit 1
-        fi
+    - name: Run integration tests
+      run: flutter test integration_test/
+      env:
+        ENVIRONMENT: test

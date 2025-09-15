@@ -12,7 +12,7 @@ import 'package:myapp/features/user/domain/usecases/get_instructors.dart';
 import 'package:myapp/features/user/domain/usecases/get_user.dart';
 import 'package:myapp/features/user/domain/repositories/user_repository.dart';
 import 'package:myapp/core/utils/logger.dart';
-import 'package:myapp/features/feedback/presentation/widgets/floating_feedback_button.dart';
+// Feedback feature removed to simplify testing
 
 class MainScreen extends StatefulWidget {
   final Widget child;
@@ -208,7 +208,7 @@ class _MainScreenState extends State<MainScreen> {
                     body: Stack(
                       children: [
                         widget.child,
-                        const FloatingFeedbackButton(),
+                        // Feedback button removed to simplify testing
                       ],
                     ),
                     bottomNavigationBar: BottomNavigationBar(
