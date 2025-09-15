@@ -8,7 +8,9 @@ import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_event.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_state.dart';
 import 'package:myapp/features/booking/domain/entities/booking_entity.dart';
+import 'package:myapp/features/user/domain/repositories/user_repository.dart';
 import 'package:myapp/core/config/firestore_collections.dart';
+import 'package:myapp/core/utils/injection_container.dart';
 
 class InstructorBookingManagementPage extends StatefulWidget {
   const InstructorBookingManagementPage({super.key});
@@ -96,19 +98,22 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
         clientIds.add(booking.clientId);
       }
 
-      // Load client data
+      // Load client data using the UserRepository through dependency injection
       for (final clientId in clientIds) {
-        final clientDoc = await FirebaseFirestore.instance
-            .collection('sessionizer')
-            .doc('users')
-            .collection('users')
-            .doc(clientId)
-            .get();
-        if (clientDoc.exists) {
-          _clients[clientId] = {
-            'id': clientId,
-            ...clientDoc.data() as Map<String, dynamic>
-          };
+        try {
+          final userRepository = sl<UserRepository>();
+          final result = await userRepository.getUserById(clientId);
+          result.fold(
+            (failure) => debugPrint('Failed to load client $clientId: ${failure.message}'),
+            (user) => _clients[clientId] = {
+              'id': clientId,
+              'displayName': user.displayName,
+              'email': user.email,
+              'isInstructor': user.isInstructor,
+            },
+          );
+        } catch (e) {
+          debugPrint('Error loading client $clientId: $e');
         }
       }
     } catch (e) {

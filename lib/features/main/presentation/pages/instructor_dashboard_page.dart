@@ -5,6 +5,7 @@ import 'package:myapp/core/utils/injection_container.dart';
 import 'package:myapp/core/utils/logger.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
+import 'package:myapp/features/auth/presentation/bloc/auth_event.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/user/presentation/bloc/user_event.dart';
 import 'package:myapp/features/user/presentation/bloc/user_state.dart';
@@ -260,6 +261,27 @@ class _InstructorDashboardPageState extends State<InstructorDashboardPage> {
     AppLogger.widgetBuild('DashboardContent', data: {'instructorName': instructorName});
     
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Instructor Dashboard'),
+        automaticallyImplyLeading: false, // Remove back button since this is a main page
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () => context.go('/notifications'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              if (mounted) {
+                AppLogger.debug('🔄 Logout button pressed - triggering sign out');
+                context.read<AuthBloc>().add(SignOutRequested());
+              } else {
+                AppLogger.warning('⚠️ Widget not mounted - skipping sign out');
+              }
+            },
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(

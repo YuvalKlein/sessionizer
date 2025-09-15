@@ -367,17 +367,20 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                               children: [
                                 // Time range picker
                                 Expanded(
-                                  child: CalendlyTimeRangePicker(
-                                    startTime: range['startTime'],
-                                    endTime: range['endTime'],
-                                    unavailableStartTimes: unavailableStartTimes,
-                                    unavailableEndTimes: unavailableEndTimes,
-                                    onTimeRangeChanged: (start, end) {
-                                      setState(() {
-                                        range['startTime'] = start;
-                                        range['endTime'] = end;
-                                      });
-                                    },
+                                  child: SizedBox(
+                                    height: 60, // Fixed height for consistency
+                                    child: CalendlyTimeRangePicker(
+                                      startTime: range['startTime'],
+                                      endTime: range['endTime'],
+                                      unavailableStartTimes: unavailableStartTimes,
+                                      unavailableEndTimes: unavailableEndTimes,
+                                      onTimeRangeChanged: (start, end) {
+                                        setState(() {
+                                          range['startTime'] = start;
+                                          range['endTime'] = end;
+                                        });
+                                      },
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -446,14 +449,6 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                             icon: const Icon(Icons.add, size: 16),
                             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                             padding: EdgeInsets.zero,
-                          ),
-                          // Duplicate icon
-                          IconButton(
-                            onPressed: () => _showDuplicateDialog(day),
-                            icon: const Icon(Icons.copy, size: 16),
-                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                            padding: EdgeInsets.zero,
-                            tooltip: 'Duplicate all times for this day',
                           ),
                         ],
                       ),

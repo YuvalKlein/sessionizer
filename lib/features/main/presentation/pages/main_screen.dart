@@ -184,8 +184,12 @@ class _MainScreenState extends State<MainScreen> {
                     title = 'Client Dashboard';
                   }
 
+                  // Check if current route is a dashboard page (which has its own AppBar)
+                  final isDashboardPage = currentLocation == '/instructor-dashboard' || 
+                                        currentLocation.startsWith('/client-dashboard');
+                  
                   return Scaffold(
-                    appBar: AppBar(
+                    appBar: isDashboardPage ? null : AppBar(
                       title: Text(title),
                       actions: [
                         IconButton(
