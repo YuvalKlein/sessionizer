@@ -48,18 +48,11 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
     _instructorId = user.uid;
     
     try {
-      // Load bookings using BLoC
-      context.read<BookingBloc>().add(LoadBookingsByInstructor(instructorId: _instructorId!));
-      
       // Load session types and locations for display
       await _loadRelatedData();
       
-      // Load client data
-      await _loadClients();
-      
-      setState(() {
-        _isLoading = false;
-      });
+      // Load bookings using BLoC (client data will be loaded when bookings are received)
+      context.read<BookingBloc>().add(LoadBookingsByInstructor(instructorId: _instructorId!));
     } catch (e) {
       setState(() {
         _error = 'Failed to load bookings: $e';
@@ -98,6 +91,8 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
         clientIds.add(booking.clientId);
       }
 
+      debugPrint('Loading ${clientIds.length} unique clients: $clientIds');
+
       // Load client data using the UserRepository through dependency injection
       for (final clientId in clientIds) {
         try {
@@ -105,17 +100,22 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
           final result = await userRepository.getUserById(clientId);
           result.fold(
             (failure) => debugPrint('Failed to load client $clientId: ${failure.message}'),
-            (user) => _clients[clientId] = {
-              'id': clientId,
-              'displayName': user.displayName,
-              'email': user.email,
-              'isInstructor': user.isInstructor,
+            (user) {
+              debugPrint('Successfully loaded client $clientId: ${user.displayName} (${user.email})');
+              _clients[clientId] = {
+                'id': clientId,
+                'displayName': user.displayName,
+                'email': user.email,
+                'isInstructor': user.isInstructor,
+              };
             },
           );
         } catch (e) {
           debugPrint('Error loading client $clientId: $e');
         }
       }
+      
+      debugPrint('Loaded ${_clients.length} clients total');
     } catch (e) {
       debugPrint('Error loading clients: $e');
     }
@@ -393,14 +393,16 @@ class _InstructorBookingManagementPageState extends State<InstructorBookingManag
   @override
   Widget build(BuildContext context) {
     return BlocListener<BookingBloc, BookingState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is BookingLoaded) {
           setState(() {
             _bookings = state.bookings;
+          });
+          // Load clients after bookings are loaded
+          await _loadClients();
+          setState(() {
             _isLoading = false;
           });
-          // Reload clients when bookings are updated
-          _loadClients();
         } else if (state is BookingCancelled) {
           // Reload bookings after cancellation
           _loadData();

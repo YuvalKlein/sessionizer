@@ -1,0 +1,22 @@
+repos:
+  - repo: local
+    hooks:
+      - id: flutter-test
+        name: Flutter Test
+        entry: flutter test --exclude-tags=integration
+        language: system
+        pass_filenames: false
+        always_run: true
+        
+      - id: flutter-analyze
+        name: Flutter Analyze
+        entry: flutter analyze --fatal-warnings
+        language: system
+        pass_filenames: false
+        always_run: true
+        
+      - id: dart-format
+        name: Dart Format
+        entry: dart format --set-exit-if-changed
+        language: system
+        files: \.dart$

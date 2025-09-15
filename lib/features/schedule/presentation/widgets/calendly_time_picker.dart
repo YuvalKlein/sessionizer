@@ -79,15 +79,6 @@ class _CalendlyTimePickerState extends State<CalendlyTimePicker> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-        Text(
-          widget.label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: widget.enabled ? Colors.black87 : Colors.grey,
-          ),
-        ),
-        const SizedBox(height: 8),
         GestureDetector(
           onTap: widget.enabled ? () => setState(() => _isExpanded = !_isExpanded) : null,
           child: Container(
@@ -137,46 +128,54 @@ class _CalendlyTimePickerState extends State<CalendlyTimePicker> {
             child: Material(
               elevation: 4,
               borderRadius: BorderRadius.circular(4),
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(4),
-                  color: Colors.white,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxHeight: 200,
+                  maxWidth: 200,
                 ),
-                child: ListView.builder(
-                  itemCount: _generateTimeSlots().length,
-                  itemBuilder: (context, index) {
-                    final time = _generateTimeSlots()[index];
-                    final isSelected = _selectedTime?.hour == time.hour && _selectedTime?.minute == time.minute;
-                    final isUnavailable = _isTimeUnavailable(time);
-                    
-                    return InkWell(
-                      onTap: isUnavailable ? null : () {
-                        setState(() {
-                          _selectedTime = time;
-                          _isExpanded = false;
-                        });
-                        widget.onTimeChanged(time);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        color: isSelected 
-                            ? Colors.blue.shade100 
-                            : (isUnavailable ? Colors.grey.shade100 : Colors.white),
-                        child: Text(
-                          _formatTimeOfDay(time),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isUnavailable 
-                                ? Colors.grey.shade400
-                                : (isSelected ? Colors.blue.shade700 : Colors.black87),
-                            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(4),
+                    color: Colors.white,
+                  ),
+                  child: Scrollbar(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _generateTimeSlots().length,
+                      itemBuilder: (context, index) {
+                        final time = _generateTimeSlots()[index];
+                        final isSelected = _selectedTime?.hour == time.hour && _selectedTime?.minute == time.minute;
+                        final isUnavailable = _isTimeUnavailable(time);
+                        
+                        return InkWell(
+                          onTap: isUnavailable ? null : () {
+                            setState(() {
+                              _selectedTime = time;
+                              _isExpanded = false;
+                            });
+                            widget.onTimeChanged(time);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            color: isSelected 
+                                ? Colors.blue.shade100 
+                                : (isUnavailable ? Colors.grey.shade100 : Colors.white),
+                            child: Text(
+                              _formatTimeOfDay(time),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isUnavailable 
+                                    ? Colors.grey.shade400
+                                    : (isSelected ? Colors.blue.shade700 : Colors.black87),
+                                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
