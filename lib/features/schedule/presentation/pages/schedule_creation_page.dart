@@ -384,35 +384,42 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                // Action icons
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Remove button
-                                    IconButton(
-                                      onPressed: () => _removeTimeRange(day, index),
-                                      icon: const Icon(Icons.close, size: 16, color: Colors.red),
-                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                      padding: EdgeInsets.zero,
-                                    ),
-                                    // Add button (only on first slot)
-                                    if (isFirstSlot)
+                                // Action icons - consistent width for all rows
+                                SizedBox(
+                                  width: 112, // Reduced width to prevent overflow
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      // Remove button
                                       IconButton(
-                                        onPressed: () => _addTimeRange(day),
-                                        icon: const Icon(Icons.add, size: 16),
-                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                        onPressed: () => _removeTimeRange(day, index),
+                                        icon: const Icon(Icons.close, size: 16, color: Colors.red),
+                                        constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
                                         padding: EdgeInsets.zero,
                                       ),
-                                    // Duplicate icon (only on first slot)
-                                    if (isFirstSlot)
-                                      IconButton(
-                                        onPressed: () => _showDuplicateDialog(day),
-                                        icon: const Icon(Icons.copy, size: 16),
-                                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                        padding: EdgeInsets.zero,
-                                        tooltip: 'Duplicate all times for this day',
-                                      ),
-                                  ],
+                                      // Add button (only on first slot)
+                                      if (isFirstSlot)
+                                        IconButton(
+                                          onPressed: () => _addTimeRange(day),
+                                          icon: const Icon(Icons.add, size: 16),
+                                          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                          padding: EdgeInsets.zero,
+                                        )
+                                      else
+                                        const SizedBox(width: 24), // Placeholder space
+                                      // Duplicate icon (only on first slot)
+                                      if (isFirstSlot)
+                                        IconButton(
+                                          onPressed: () => _showDuplicateDialog(day),
+                                          icon: const Icon(Icons.copy, size: 16),
+                                          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                          padding: EdgeInsets.zero,
+                                          tooltip: 'Duplicate all times for this day',
+                                        )
+                                      else
+                                        const SizedBox(width: 24), // Placeholder space
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -443,13 +450,8 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          // Only show + button when unavailable
-                          IconButton(
-                            onPressed: () => _addTimeRange(day),
-                            icon: const Icon(Icons.add, size: 16),
-                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                            padding: EdgeInsets.zero,
-                          ),
+                          // No + button when unavailable - just empty space to maintain layout
+                          const SizedBox(width: 112), // Same width as action icons area
                         ],
                       ),
               ),
@@ -792,9 +794,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
   }
 
   void _editTimeRange(String day, int index) {
-    // This method is now handled by the CalendlyTimeRangePicker widget
-    // The time selection happens directly in the widget
-    // If we need to add a time slot when clicking on "Unavailable", we add one
+    // When clicking on "Unavailable", add the first time slot
     final range = _weeklyAvailability[day]![index];
     if (range['startTime'] == null && range['endTime'] == null) {
       setState(() {

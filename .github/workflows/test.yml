@@ -2,7 +2,7 @@ name: Test Suite
 
 on:
   push:
-    branches: [ main, develop, fixSchedule ]
+    branches: [ main, develop, fixSchedule, feature/* ]  # Add pattern for feature branches
   pull_request:
     branches: [ main, develop ]
 

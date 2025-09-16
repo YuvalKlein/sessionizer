@@ -23,7 +23,6 @@ class CalendlyTimePicker extends StatefulWidget {
 
 class _CalendlyTimePickerState extends State<CalendlyTimePicker> {
   TimeOfDay? _selectedTime;
-  bool _isExpanded = false;
 
   @override
   void initState() {
@@ -71,116 +70,72 @@ class _CalendlyTimePickerState extends State<CalendlyTimePicker> {
       'label': widget.label,
       'enabled': widget.enabled,
       'hasTime': _selectedTime != null,
-      'isExpanded': _isExpanded,
     });
 
-    return Stack(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-        GestureDetector(
-          onTap: widget.enabled ? () => setState(() => _isExpanded = !_isExpanded) : null,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: widget.enabled 
-                    ? (_selectedTime != null ? Colors.blue : Colors.grey.shade300)
-                    : Colors.grey.shade300,
-              ),
-              borderRadius: BorderRadius.circular(4),
-              color: widget.enabled 
-                  ? (_selectedTime != null ? Colors.blue.shade50 : Colors.white)
-                  : Colors.grey.shade100,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _selectedTime != null
-                        ? _formatTimeOfDay(_selectedTime!)
-                        : 'Select time',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: widget.enabled 
-                          ? (_selectedTime != null ? Colors.blue.shade700 : Colors.grey)
-                          : Colors.grey,
-                    ),
-                  ),
-                ),
-                Icon(
-                  _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  color: widget.enabled ? Colors.grey.shade600 : Colors.grey,
-                  size: 20,
-                ),
-              ],
-            ),
+    return DropdownButtonFormField<TimeOfDay>(
+      value: _selectedTime,
+      decoration: InputDecoration(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(
+            color: widget.enabled 
+                ? (_selectedTime != null ? Colors.blue : Colors.grey.shade300)
+                : Colors.grey.shade300,
           ),
         ),
-          ],
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(
+            color: widget.enabled 
+                ? (_selectedTime != null ? Colors.blue : Colors.grey.shade300)
+                : Colors.grey.shade300,
+          ),
         ),
-        if (_isExpanded && widget.enabled)
-          Positioned(
-            top: 60, // Position below the input field
-            left: 0,
-            right: 0,
-            child: Material(
-              elevation: 4,
-              borderRadius: BorderRadius.circular(4),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxHeight: 200,
-                  maxWidth: 200,
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(4),
-                    color: Colors.white,
-                  ),
-                  child: Scrollbar(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: _generateTimeSlots().length,
-                      itemBuilder: (context, index) {
-                        final time = _generateTimeSlots()[index];
-                        final isSelected = _selectedTime?.hour == time.hour && _selectedTime?.minute == time.minute;
-                        final isUnavailable = _isTimeUnavailable(time);
-                        
-                        return InkWell(
-                          onTap: isUnavailable ? null : () {
-                            setState(() {
-                              _selectedTime = time;
-                              _isExpanded = false;
-                            });
-                            widget.onTimeChanged(time);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            color: isSelected 
-                                ? Colors.blue.shade100 
-                                : (isUnavailable ? Colors.grey.shade100 : Colors.white),
-                            child: Text(
-                              _formatTimeOfDay(time),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isUnavailable 
-                                    ? Colors.grey.shade400
-                                    : (isSelected ? Colors.blue.shade700 : Colors.black87),
-                                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(
+            color: widget.enabled ? Colors.blue : Colors.grey.shade300,
+          ),
+        ),
+        fillColor: widget.enabled 
+            ? (_selectedTime != null ? Colors.blue.shade50 : Colors.white)
+            : Colors.grey.shade100,
+        filled: true,
+      ),
+      hint: Text(
+        'Select time',
+        style: TextStyle(
+          fontSize: 14,
+          color: widget.enabled ? Colors.grey : Colors.grey.shade400,
+        ),
+      ),
+      items: widget.enabled ? _generateTimeSlots().where((time) {
+        // Filter out unavailable times completely
+        return !_isTimeUnavailable(time);
+      }).map((time) {
+        return DropdownMenuItem<TimeOfDay>(
+          value: time,
+          child: Text(
+            _formatTimeOfDay(time),
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
             ),
           ),
-      ],
+        );
+      }).toList() : null,
+      onChanged: widget.enabled ? (TimeOfDay? newValue) {
+        if (newValue != null) {
+          setState(() {
+            _selectedTime = newValue;
+          });
+          widget.onTimeChanged(newValue);
+        }
+      } : null,
+      isDense: true,
+      isExpanded: true,
+      menuMaxHeight: 200,
     );
   }
 }
@@ -249,6 +204,26 @@ class _CalendlyTimeRangePickerState extends State<CalendlyTimeRangePicker> {
     return unavailable;
   }
 
+  List<TimeOfDay> _getUnavailableStartTimes() {
+    final unavailable = List<TimeOfDay>.from(widget.unavailableStartTimes);
+    
+    // If end time is selected, make all times after or equal to end time unavailable
+    if (_endTime != null) {
+      final endMinutes = _endTime!.hour * 60 + _endTime!.minute;
+      
+      for (int hour = 6; hour <= 23; hour++) {
+        for (int minute = 0; minute < 60; minute += 15) {
+          final timeMinutes = hour * 60 + minute;
+          if (timeMinutes >= endMinutes) {
+            unavailable.add(TimeOfDay(hour: hour, minute: minute));
+          }
+        }
+      }
+    }
+    
+    return unavailable;
+  }
+
   @override
   Widget build(BuildContext context) {
     AppLogger.widgetBuild('CalendlyTimeRangePicker', data: {
@@ -264,7 +239,7 @@ class _CalendlyTimeRangePickerState extends State<CalendlyTimeRangePicker> {
             initialTime: _startTime,
             label: 'Start Time',
             enabled: widget.enabled,
-            unavailableTimes: widget.unavailableStartTimes,
+            unavailableTimes: _getUnavailableStartTimes(),
             onTimeChanged: (time) {
               setState(() {
                 _startTime = time;
