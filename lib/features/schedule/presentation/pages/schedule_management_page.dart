@@ -278,7 +278,7 @@ class _ScheduleManagementPageState extends State<ScheduleManagementPage> {
         ),
         onTap: () {
           AppLogger.navigation('schedule-management', 'schedule-edit');
-          context.go('/schedule/${schedule.id}/edit');
+          context.go('/schedule/create', extra: schedule);
         },
       ),
     );
@@ -288,7 +288,7 @@ class _ScheduleManagementPageState extends State<ScheduleManagementPage> {
     switch (action) {
       case 'edit':
         AppLogger.navigation('schedule-management', 'schedule-edit');
-        context.go('/schedule/${schedule.id}/edit');
+        context.go('/schedule/create', extra: schedule);
         break;
       case 'set_default':
         _setAsDefault(schedule);

@@ -82,15 +82,20 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         final dayRanges = entry.value;
         
         if (dayRanges != null && dayRanges is List && dayRanges.isNotEmpty) {
-          _weeklyAvailability[day] = dayRanges.map<Map<String, TimeOfDay?>>((range) {
+          final timeSlots = <Map<String, TimeOfDay?>>[];
+          for (final range in dayRanges) {
             if (range is Map) {
-              return {
-                'startTime': _parseTimeOfDay(range['startTime']),
-                'endTime': _parseTimeOfDay(range['endTime']),
-              };
+              final startTime = range['startTime'];
+              final endTime = range['endTime'];
+              timeSlots.add({
+                'startTime': startTime is String ? _parseTimeOfDay(startTime) : startTime,
+                'endTime': endTime is String ? _parseTimeOfDay(endTime) : endTime,
+              });
+            } else {
+              timeSlots.add(<String, TimeOfDay?>{'startTime': null, 'endTime': null});
             }
-            return <String, TimeOfDay?>{'startTime': null, 'endTime': null};
-          }).toList();
+          }
+          _weeklyAvailability[day] = timeSlots;
         }
       }
     }
@@ -105,11 +110,17 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
           _specificDateAvailability[date] = {'unavailable': true};
         } else if (dayData['timeSlots'] != null && dayData['timeSlots'] is List) {
           // Handle new structure with multiple time slots
+          final timeSlots = <Map<String, TimeOfDay?>>[];
+          for (final slot in (dayData['timeSlots'] as List)) {
+            if (slot is Map) {
+              timeSlots.add({
+                'startTime': _parseTimeOfDay(slot['startTime']),
+                'endTime': _parseTimeOfDay(slot['endTime']),
+              });
+            }
+          }
           _specificDateAvailability[date] = {
-            'timeSlots': (dayData['timeSlots'] as List).map((slot) => {
-              'startTime': _parseTimeOfDay(slot['startTime']),
-              'endTime': _parseTimeOfDay(slot['endTime']),
-            }).toList(),
+            'timeSlots': timeSlots,
           };
         } else if (dayData['startTime'] != null && dayData['endTime'] != null) {
           // Handle old structure with single time slot
@@ -557,9 +568,30 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
 
   Widget _buildSpecificDateCard(String date, Map<String, dynamic> dayData) {
     final isUnavailable = dayData['unavailable'] == true;
-    final timeSlots = dayData['timeSlots'] as List<Map<String, TimeOfDay?>>?;
-    final startTime = dayData['startTime'] as TimeOfDay?;
-    final endTime = dayData['endTime'] as TimeOfDay?;
+    
+    // Safely handle timeSlots - could be TimeOfDay objects or strings from Firestore
+    List<Map<String, TimeOfDay?>>? timeSlots;
+    if (dayData['timeSlots'] != null && dayData['timeSlots'] is List) {
+      final rawSlots = dayData['timeSlots'] as List;
+      timeSlots = rawSlots.map<Map<String, TimeOfDay?>>((slot) {
+        if (slot is Map) {
+          final startTime = slot['startTime'];
+          final endTime = slot['endTime'];
+          return {
+            'startTime': startTime is String ? _parseTimeOfDay(startTime) : startTime,
+            'endTime': endTime is String ? _parseTimeOfDay(endTime) : endTime,
+          };
+        }
+        return <String, TimeOfDay?>{'startTime': null, 'endTime': null};
+      }).toList();
+    }
+    
+    final startTime = dayData['startTime'] is String 
+        ? _parseTimeOfDay(dayData['startTime']) 
+        : dayData['startTime'] as TimeOfDay?;
+    final endTime = dayData['endTime'] is String 
+        ? _parseTimeOfDay(dayData['endTime']) 
+        : dayData['endTime'] as TimeOfDay?;
     
     String timeString;
     Color timeColor;
@@ -931,17 +963,21 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
         final timeSlots = existingData['timeSlots'] as List;
         for (final slot in timeSlots) {
           if (slot is Map) {
+            final startTime = slot['startTime'];
+            final endTime = slot['endTime'];
             prePopulatedTimes.add({
-              'startTime': _parseTimeOfDay(slot['startTime']),
-              'endTime': _parseTimeOfDay(slot['endTime']),
+              'startTime': startTime is String ? _parseTimeOfDay(startTime) : startTime,
+              'endTime': endTime is String ? _parseTimeOfDay(endTime) : endTime,
             });
           }
         }
       } else if (existingData != null && existingData['startTime'] != null && existingData['endTime'] != null) {
         // Load old format single time slot
+        final startTime = existingData['startTime'];
+        final endTime = existingData['endTime'];
         prePopulatedTimes.add({
-          'startTime': existingData['startTime'],
-          'endTime': existingData['endTime'],
+          'startTime': startTime is String ? _parseTimeOfDay(startTime) : startTime,
+          'endTime': endTime is String ? _parseTimeOfDay(endTime) : endTime,
         });
       } else {
         // Get weekly hours for this day of the week
@@ -967,6 +1003,7 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       _showSpecificDateDialog(dateString, prePopulatedTimes);
     }
   }
+
 
   void _removeSpecificDate(String date) {
     setState(() {
@@ -1355,9 +1392,28 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       final validRanges = <Map<String, String>>[];
       for (final range in dayRanges) {
         if (range['startTime'] != null && range['endTime'] != null) {
+          final startTime = range['startTime'];
+          final endTime = range['endTime'];
+          
+          // Safe conversion to string format
+          String startTimeString;
+          String endTimeString;
+          
+          if (startTime is TimeOfDay) {
+            startTimeString = '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
+          } else {
+            startTimeString = startTime.toString();
+          }
+          
+          if (endTime is TimeOfDay) {
+            endTimeString = '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}';
+          } else {
+            endTimeString = endTime.toString();
+          }
+          
           validRanges.add({
-            'startTime': '${range['startTime']!.hour.toString().padLeft(2, '0')}:${range['startTime']!.minute.toString().padLeft(2, '0')}',
-            'endTime': '${range['endTime']!.hour.toString().padLeft(2, '0')}:${range['endTime']!.minute.toString().padLeft(2, '0')}',
+            'startTime': startTimeString,
+            'endTime': endTimeString,
           });
         }
       }
@@ -1376,28 +1432,20 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
       if (dayData['unavailable'] == true) {
         // Mark as unavailable
         specificDateAvailability[date] = {'unavailable': true};
-      } else if (dayData['timeSlots'] != null && dayData['timeSlots'] is List) {
-        // Handle new structure with multiple time slots
-        final timeSlots = dayData['timeSlots'] as List<Map<String, TimeOfDay?>>;
-        final validSlots = <Map<String, String>>[];
-        
-        for (final slot in timeSlots) {
-          if (slot['startTime'] != null && slot['endTime'] != null) {
-            validSlots.add({
-              'startTime': _timeOfDayToString(slot['startTime']),
-              'endTime': _timeOfDayToString(slot['endTime']),
-            });
-          }
-        }
+      } else if (dayData['timeSlots'] != null) {
+        // Handle new structure with multiple time slots using safe helper
+        final validSlots = _extractValidTimeSlots(dayData['timeSlots']);
         
         if (validSlots.isNotEmpty) {
           specificDateAvailability[date] = {'timeSlots': validSlots};
         }
       } else if (dayData['startTime'] != null && dayData['endTime'] != null) {
         // Handle old structure with single time slot
+        final startTime = dayData['startTime'];
+        final endTime = dayData['endTime'];
         specificDateAvailability[date] = {
-          'startTime': _timeOfDayToString(dayData['startTime']),
-          'endTime': _timeOfDayToString(dayData['endTime']),
+          'startTime': startTime is TimeOfDay ? _timeOfDayToString(startTime) : startTime.toString(),
+          'endTime': endTime is TimeOfDay ? _timeOfDayToString(endTime) : endTime.toString(),
         };
       }
     }
@@ -1441,5 +1489,36 @@ class _ScheduleCreationPageState extends State<ScheduleCreationPage> {
   String _capitalizeFirst(String text) {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1);
+  }
+
+  // Helper method to safely extract time slots from mixed data types
+  List<Map<String, String>> _extractValidTimeSlots(dynamic timeSlotsData) {
+    final validSlots = <Map<String, String>>[];
+    
+    if (timeSlotsData is! List) return validSlots;
+    
+    for (final slot in timeSlotsData) {
+      if (slot is! Map) continue;
+      
+      final startTime = slot['startTime'];
+      final endTime = slot['endTime'];
+      
+      if (startTime == null || endTime == null) continue;
+      
+      // Convert TimeOfDay to string, or use string as-is
+      final startTimeString = startTime is TimeOfDay 
+          ? _timeOfDayToString(startTime)
+          : startTime.toString();
+      final endTimeString = endTime is TimeOfDay 
+          ? _timeOfDayToString(endTime) 
+          : endTime.toString();
+          
+      validSlots.add({
+        'startTime': startTimeString,
+        'endTime': endTimeString,
+      });
+    }
+    
+    return validSlots;
   }
 }

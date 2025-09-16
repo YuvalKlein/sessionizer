@@ -45,3 +45,4 @@ Write-Host "`nLocal Test Complete!" -ForegroundColor Green
 Write-Host "If all tests show Green, the local environment is working." -ForegroundColor Cyan
 Write-Host "Open http://localhost:8080 in your browser to test manually." -ForegroundColor Cyan
 
+

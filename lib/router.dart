@@ -25,8 +25,8 @@ import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
 import 'package:myapp/features/schedule/presentation/pages/schedule_management_page.dart';
 import 'package:myapp/features/schedule/presentation/pages/schedule_creation_page.dart';
 import 'package:myapp/features/schedule/presentation/pages/schedule_detail_page.dart';
-import 'package:myapp/features/schedule/presentation/pages/schedule_edit_page.dart';
 import 'package:myapp/features/schedule/presentation/bloc/schedule_bloc.dart';
+import 'package:myapp/features/schedule/domain/entities/schedule_entity.dart';
 import 'package:myapp/features/session_type/presentation/pages/session_type_management_page.dart';
 import 'package:myapp/features/session_type/presentation/pages/session_type_creation_page.dart';
 import 'package:myapp/features/session_type/presentation/bloc/session_type_bloc.dart';
@@ -229,10 +229,18 @@ class AppRouter {
       ),
       GoRoute(
         path: '/schedule/create',
-        builder: (context, state) => BlocProvider.value(
-          value: sl<ScheduleBloc>(),
-          child: const MainScreen(child: ScheduleCreationPage()),
-        ),
+        builder: (context, state) {
+          final existingSchedule = state.extra as ScheduleEntity?;
+          return BlocProvider.value(
+            value: sl<ScheduleBloc>(),
+            child: MainScreen(
+              child: ScheduleCreationPage(
+                existingSchedule: existingSchedule,
+                isEdit: existingSchedule != null,
+              ),
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/schedule/:scheduleId',
@@ -241,16 +249,6 @@ class AppRouter {
           return BlocProvider.value(
             value: sl<ScheduleBloc>(),
             child: MainScreen(child: ScheduleDetailPage(scheduleId: scheduleId)),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/schedule/:scheduleId/edit',
-        builder: (context, state) {
-          final scheduleId = state.pathParameters['scheduleId']!;
-          return BlocProvider.value(
-            value: sl<ScheduleBloc>(),
-            child: MainScreen(child: ScheduleEditPage(scheduleId: scheduleId)),
           );
         },
       ),
