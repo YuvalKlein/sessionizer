@@ -82,6 +82,9 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
     
     _maxPlayersController.text = sessionType.maxPlayers.toString();
     _minPlayersController.text = sessionType.minPlayers.toString();
+    
+    // Ensure max players is not less than min players after populating
+    _validateMaxPlayers();
     _notifyCancelation = sessionType.notifyCancelation;
     _showParticipants = sessionType.showParticipants;
     _showMinMax = sessionType.showParticipants; // Use showParticipants as default for showMinMax
@@ -112,6 +115,17 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
     final maxPlayers = int.tryParse(_maxPlayersController.text) ?? 1;
     
     if (maxPlayers < minPlayers) {
+      setState(() {
+        _maxPlayersController.text = minPlayers.toString();
+      });
+    }
+  }
+
+  void _validateMinPlayers() {
+    final minPlayers = int.tryParse(_minPlayersController.text) ?? 1;
+    final maxPlayers = int.tryParse(_maxPlayersController.text) ?? 1;
+    
+    if (minPlayers > maxPlayers) {
       setState(() {
         _maxPlayersController.text = minPlayers.toString();
       });
@@ -356,6 +370,7 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
               children: [
                 Expanded(
                   child: TextFormField(
+                    key: const Key('minPlayersField'),
                     controller: _minPlayersController,
                     decoration: const InputDecoration(
                       labelText: 'Min Players',
@@ -381,6 +396,7 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
+                    key: const Key('maxPlayersField'),
                     controller: _maxPlayersController,
                     decoration: const InputDecoration(
                       labelText: 'Max Players',
@@ -388,6 +404,9 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      _validateMinPlayers();
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter max players';
@@ -405,6 +424,15 @@ class _SessionTypeCreationPageState extends State<SessionTypeCreationPage> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Max players must be greater than or equal to min players',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
