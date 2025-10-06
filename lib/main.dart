@@ -9,19 +9,20 @@ import 'package:myapp/features/auth/presentation/bloc/auth_event.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_state.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
 import 'package:myapp/features/booking/presentation/bloc/booking_bloc.dart';
+import 'package:myapp/firebase_options_development.dart';
 import 'package:myapp/router.dart';
 import 'package:myapp/core/config/environment.dart';
 import 'package:myapp/core/config/environment_config.dart';
-import 'firebase_options.dart';
-import 'firebase_options_production.dart' as prod;
+// import 'firebase_options.dart';
+
 import 'firebase_options_development.dart' as dev;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase with apiclientapp project for development
   final environment = EnvironmentConfig.current;
-  
+
   if (environment == Environment.development) {
     // Use apiclientapp project for development
     final firebaseOptions = dev.DefaultFirebaseOptions.currentPlatform;
@@ -34,12 +35,17 @@ void main() async {
     print('🚀 Initializing Firebase for PRODUCTION (play-e37a6)');
     print('🚀 Environment Name: production');
     print('🚀 Project Name: play-e37a6');
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   }
-  
+
   // Initialize Firebase Messaging
-  await FirebaseMessaging.instance.requestPermission();
-  
+  try {
+    await FirebaseMessaging.instance.requestPermission();
+  } catch (e) {
+    print('Error requesting permission for notifications: $e');
+  }
   await initializeDependencies();
   runApp(const MyAppClean());
 }
@@ -54,12 +60,8 @@ class MyAppClean extends StatelessWidget {
         BlocProvider(
           create: (context) => sl<AuthBloc>()..add(AuthCheckRequested()),
         ),
-        BlocProvider(
-          create: (context) => sl<UserBloc>(),
-        ),
-        BlocProvider(
-          create: (context) => sl<BookingBloc>(),
-        ),
+        BlocProvider(create: (context) => sl<UserBloc>()),
+        BlocProvider(create: (context) => sl<BookingBloc>()),
       ],
       child: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, state) {

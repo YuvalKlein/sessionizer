@@ -3,7 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:myapp/features/auth/presentation/bloc/auth_event.dart';
 import 'package:myapp/features/user/presentation/bloc/user_bloc.dart';
-import 'package:myapp/features/user/presentation/bloc/user_state.dart';\nimport 'package:myapp/core/services/google_calendar_service.dart';
+import 'package:myapp/features/user/presentation/bloc/user_state.dart';
+import 'package:myapp/core/services/google_calendar_service.dart';
 import 'package:myapp/core/services/google_calendar_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -63,9 +64,7 @@ class _ProfilePageState extends State<ProfilePage> {
         } else if (userState is UserError) {
           return _buildErrorState(userState.message);
         }
-        return const Scaffold(
-          body: Center(child: Text('Unknown user state')),
-        );
+        return const Scaffold(body: Center(child: Text('Unknown user state')));
       },
     );
   }
@@ -107,7 +106,9 @@ class _ProfilePageState extends State<ProfilePage> {
             radius: 40,
             backgroundColor: Colors.white,
             child: Text(
-              user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : 'U',
+              user.displayName.isNotEmpty
+                  ? user.displayName[0].toUpperCase()
+                  : 'U',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -138,7 +139,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: user.isInstructor ? Colors.green : Colors.blue,
                     borderRadius: BorderRadius.circular(12),
@@ -172,10 +176,7 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 const Text(
                   'Profile Information',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   onPressed: () {
@@ -281,10 +282,7 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             const Text(
               'Account Settings',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildSettingTile(
@@ -339,14 +337,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildCalendarSyncTile() {
     final calendarService = GoogleCalendarService.instance;
-    
+
     return ListTile(
       leading: Icon(Icons.calendar_today, color: Colors.blue.shade600),
       title: const Text('Google Calendar Sync'),
       subtitle: Text(
-        calendarService.isConnected 
-          ? 'Bookings will sync to your Google Calendar'
-          : 'Connect to sync bookings to Google Calendar'
+        calendarService.isConnected
+            ? 'Bookings will sync to your Google Calendar'
+            : 'Connect to sync bookings to Google Calendar',
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -362,7 +360,10 @@ class _ProfilePageState extends State<ProfilePage> {
               icon: const Icon(Icons.link, size: 16),
               label: const Text('Connect'),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
               ),
             ),
           ],
@@ -409,11 +410,7 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red.shade400,
-              ),
+              Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
               const SizedBox(height: 16),
               Text(
                 'Error Loading Profile',
@@ -426,9 +423,7 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 8),
               Text(
                 message,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(color: Colors.grey.shade600),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -561,7 +556,7 @@ class _ProfilePageState extends State<ProfilePage> {
   /// Handle Google Calendar sync toggle
   void _handleGoogleCalendarSync(bool enabled) {
     final calendarService = GoogleCalendarService.instance;
-    
+
     if (enabled && !calendarService.isConnected) {
       // Need to connect first
       _connectGoogleCalendar();
@@ -570,13 +565,13 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         calendarService.setCalendarSyncEnabled(enabled);
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            enabled 
-              ? '✅ Google Calendar sync enabled'
-              : '⏸️ Google Calendar sync disabled'
+            enabled
+                ? '✅ Google Calendar sync enabled'
+                : '⏸️ Google Calendar sync disabled',
           ),
           backgroundColor: enabled ? Colors.green : Colors.orange,
         ),
@@ -588,7 +583,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _connectGoogleCalendar() async {
     try {
       final calendarService = GoogleCalendarService.instance;
-      
+
       // Show loading
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -598,12 +593,12 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       final success = await calendarService.connect();
-      
+
       if (success) {
         setState(() {
           calendarService.setCalendarSyncEnabled(true);
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ Google Calendar connected successfully!'),
@@ -628,5 +623,4 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
   }
-
 }

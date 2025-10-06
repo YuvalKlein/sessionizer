@@ -9,7 +9,7 @@ import 'package:myapp/core/config/environment_config.dart';
 class FirestoreCollections {
   /// Get the root collection name based on current environment
   static String get _rootCollection => EnvironmentConfig.collectionPrefix;
-  
+
   // Collection names
   static const String _users = 'users';
   static const String _locations = 'locations';
@@ -32,8 +32,10 @@ class FirestoreCollections {
 
   /// Helper method to get a collection reference
   /// Now uses nested collection access: sessionizer/{environmentPrefix}/{collectionName}
-  static CollectionReference _getCollection(String collectionName) => 
-      _firestore.collection('sessionizer').doc(_rootCollection).collection(collectionName);
+  static CollectionReference _getCollection(String collectionName) => _firestore
+      .collection('sessionizer')
+      .doc(_rootCollection)
+      .collection(collectionName);
 
   /// Get the users collection reference
   static CollectionReference get users => _getCollection(_users);
@@ -42,7 +44,8 @@ class FirestoreCollections {
   static CollectionReference get locations => _getCollection(_locations);
 
   /// Get the bookable sessions collection reference
-  static CollectionReference get bookableSessions => _getCollection(_bookableSessions);
+  static CollectionReference get bookableSessions =>
+      _getCollection(_bookableSessions);
 
   /// Get the bookings collection reference
   static CollectionReference get bookings => _getCollection(_bookings);
@@ -54,10 +57,12 @@ class FirestoreCollections {
   static CollectionReference get sessionTypes => _getCollection(_sessionTypes);
 
   /// Get the notifications collection reference
-  static CollectionReference get notifications => _getCollection(_notifications);
+  static CollectionReference get notifications =>
+      _getCollection(_notifications);
 
   /// Get the scheduled notifications collection reference
-  static CollectionReference get scheduledNotifications => _getCollection(_scheduledNotifications);
+  static CollectionReference get scheduledNotifications =>
+      _getCollection(_scheduledNotifications);
 
   /// Get the feedback collection reference
   static CollectionReference get feedback => _getCollection(_feedback);
@@ -69,65 +74,84 @@ class FirestoreCollections {
   static DocumentReference user(String userId) => users.doc(userId);
 
   /// Get a specific location document reference
-  static DocumentReference location(String locationId) => locations.doc(locationId);
+  static DocumentReference location(String locationId) =>
+      locations.doc(locationId);
 
   /// Get a specific bookable session document reference
-  static DocumentReference bookableSession(String sessionId) => bookableSessions.doc(sessionId);
+  static DocumentReference bookableSession(String sessionId) =>
+      bookableSessions.doc(sessionId);
 
   /// Get a specific booking document reference
   static DocumentReference booking(String bookingId) => bookings.doc(bookingId);
 
   /// Get a specific schedule document reference
-  static DocumentReference schedule(String scheduleId) => schedules.doc(scheduleId);
+  static DocumentReference schedule(String scheduleId) =>
+      schedules.doc(scheduleId);
 
   /// Get a specific session type document reference
-  static DocumentReference sessionType(String typeId) => sessionTypes.doc(typeId);
+  static DocumentReference sessionType(String typeId) =>
+      sessionTypes.doc(typeId);
 
   /// Get a specific notification document reference
-  static DocumentReference notification(String notificationId) => notifications.doc(notificationId);
+  static DocumentReference notification(String notificationId) =>
+      notifications.doc(notificationId);
 
   /// Get a specific scheduled notification document reference
-  static DocumentReference scheduledNotification(String notificationId) => scheduledNotifications.doc(notificationId);
+  static DocumentReference scheduledNotification(String notificationId) =>
+      scheduledNotifications.doc(notificationId);
 
   /// Get a specific feedback document reference
-  static DocumentReference feedbackDoc(String feedbackId) => feedback.doc(feedbackId);
+  static DocumentReference feedbackDoc(String feedbackId) =>
+      feedback.doc(feedbackId);
 
   /// Get a specific mail document reference
   static DocumentReference mailDoc(String mailId) => mail.doc(mailId);
-
 }
 
 /// Query builders for common queries
 class FirestoreQueries {
   /// Get users by instructor status
-  static Query getInstructors() => FirestoreCollections.users.where('isInstructor', isEqualTo: true);
+  static Query getInstructors() =>
+      FirestoreCollections.users.where('isInstructor', isEqualTo: true);
 
   /// Get locations by instructor
-  static Query getLocationsByInstructor(String instructorId) => 
-      FirestoreCollections.locations.where('instructorId', isEqualTo: instructorId);
+  static Query getLocationsByInstructor(String instructorId) =>
+      FirestoreCollections.locations.where(
+        'instructorId',
+        isEqualTo: instructorId,
+      );
 
   /// Get bookable sessions by instructor
-  static Query getBookableSessionsByInstructor(String instructorId) => 
-      FirestoreCollections.bookableSessions.where('instructorId', isEqualTo: instructorId);
+  static Query getBookableSessionsByInstructor(String instructorId) =>
+      FirestoreCollections.bookableSessions.where(
+        'instructorId',
+        isEqualTo: instructorId,
+      );
 
   /// Get bookings by client
-  static Query getBookingsByClient(String clientId) => 
+  static Query getBookingsByClient(String clientId) =>
       FirestoreCollections.bookings.where('clientId', isEqualTo: clientId);
 
   /// Get bookings by instructor
-  static Query getBookingsByInstructor(String instructorId) => 
-      FirestoreCollections.bookings.where('instructorId', isEqualTo: instructorId);
+  static Query getBookingsByInstructor(String instructorId) =>
+      FirestoreCollections.bookings.where(
+        'instructorId',
+        isEqualTo: instructorId,
+      );
 
   /// Get schedules by instructor
-  static Query getSchedulesByInstructor(String instructorId) => 
-      FirestoreCollections.schedules.where('instructorId', isEqualTo: instructorId);
+  static Query getSchedulesByInstructor(String instructorId) =>
+      FirestoreCollections.schedules.where(
+        'instructorId',
+        isEqualTo: instructorId,
+      );
 
   /// Get notifications by user
-  static Query getNotificationsByUser(String userId) => 
+  static Query getNotificationsByUser(String userId) =>
       FirestoreCollections.notifications.where('userId', isEqualTo: userId);
 
   /// Get unread notifications by user
-  static Query getUnreadNotificationsByUser(String userId) => 
+  static Query getUnreadNotificationsByUser(String userId) =>
       FirestoreCollections.notifications
           .where('userId', isEqualTo: userId)
           .where('status', isEqualTo: 'pending');

@@ -10,16 +10,14 @@ import 'package:myapp/core/services/google_signin_service.dart';
 abstract class AuthRemoteDataSource {
   Stream<UserModel?> get authStateChanges;
   UserModel? get currentUser;
-  
+
   Future<UserModel> signInWithEmailAndPassword({
     required String email,
     required String password,
   });
-  
-  Future<UserModel> signInWithGoogle({
-    required bool isInstructor,
-  });
-  
+
+  Future<UserModel> signInWithGoogle({required bool isInstructor});
+
   Future<UserModel> signUpWithEmailAndPassword({
     required String email,
     required String password,
@@ -28,9 +26,9 @@ abstract class AuthRemoteDataSource {
     required String phoneNumber,
     required String role,
   });
-  
+
   Future<void> signOut();
-  
+
   Future<void> deleteAccount();
 }
 
@@ -55,7 +53,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         print('❌ No user - returning null');
         return null;
       }
-      
+
       try {
         print('🔍 Looking for user document: ${user.uid}');
         final doc = await FirestoreCollections.user(user.uid).get();
@@ -76,7 +74,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   UserModel? get currentUser {
     final user = _firebaseAuth.currentUser;
     if (user == null) return null;
-    
+
     // This is a simplified version - in a real app, you'd want to cache this
     return null;
   }
@@ -91,16 +89,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         email: email,
         password: password,
       );
-      
+
       if (credential.user == null) {
         throw const AuthException('Sign in failed');
       }
-      
-      final userDoc = await FirestoreCollections.user(credential.user!.uid).get();
+
+      final userDoc = await FirestoreCollections.user(
+        credential.user!.uid,
+      ).get();
       if (!userDoc.exists) {
         throw const AuthException('User profile not found');
       }
-      
+
       return UserModel.fromFirestore(userDoc);
     } on FirebaseAuthException catch (e) {
       print('❌ FirebaseAuthException: ${e.code} - ${e.message}');
@@ -122,7 +122,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           message = 'Too many failed attempts. Please try again later.';
           break;
         case 'network-request-failed':
-          message = 'Network error. Please check your connection and try again.';
+          message =
+              'Network error. Please check your connection and try again.';
           break;
         case 'invalid-credential':
           message = 'Invalid email or password. Please check your credentials.';
@@ -142,19 +143,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel> signInWithGoogle({
-    required bool isInstructor,
-  }) async {
+  Future<UserModel> signInWithGoogle({required bool isInstructor}) async {
     try {
-      final result = await _googleSignInService.signInWithGoogle(isInstructor: isInstructor);
+      final result = await _googleSignInService.signInWithGoogle(
+        isInstructor: isInstructor,
+      );
       if (result == null) {
         throw const AuthException('Google sign in cancelled');
       }
-      
+
       // Create user document in Firestore if it doesn't exist
       final user = result.user!;
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      
+      final userDoc = await FirestoreCollections.user(user.uid).get();
+
       if (!userDoc.exists) {
         final userData = {
           'id': user.uid,
@@ -167,9 +168,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           'isInstructor': isInstructor,
           'createdAt': FieldValue.serverTimestamp(),
         };
-        
-        await _firestore.collection('users').doc(user.uid).set(userData);
-        
+
+        await FirestoreCollections.user(user.uid).set(userData);
+
         return UserModel(
           id: user.uid,
           email: user.email ?? '',
@@ -204,19 +205,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       print('📊 Firestore instance: ${_firestore.app.name}');
       print('📊 Database ID: ${_firestore.databaseId}');
       print('📊 Firestore app options: ${_firestore.app.options.projectId}');
-      
+
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
+
       if (credential.user == null) {
         throw const AuthException('Sign up failed');
       }
 
       final user = credential.user!;
       print('✅ Firebase Auth user created: ${user.uid}');
-      
+
       final newUser = UserModel(
         id: user.uid,
         email: user.email ?? '',
@@ -230,10 +231,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      
+
       print('💾 Creating user document in Firestore...');
       print('📁 Collection path: sessionizer/users/users/${user.uid}');
-      
+
       // Test write to see if we have permissions
       try {
         await FirestoreCollections.users.doc('test').set({'test': 'value'});
@@ -243,20 +244,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       } catch (e) {
         print('❌ Test write failed: $e');
       }
-      
+
       await FirestoreCollections.user(user.uid).set(newUser.toMap());
       print('✅ User document created successfully!');
-      
+
       // Wait a moment for the auth state changes to pick up the new user
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       return newUser;
     } on FirebaseAuthException catch (e) {
       print('❌ Firebase Auth error: ${e.message}');
       String message;
       switch (e.code) {
         case 'email-already-in-use':
-          message = 'An account with this email already exists. Please sign in instead.';
+          message =
+              'An account with this email already exists. Please sign in instead.';
           break;
         case 'weak-password':
           message = 'Password is too weak. Please choose a stronger password.';
@@ -265,10 +267,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           message = 'Please enter a valid email address.';
           break;
         case 'operation-not-allowed':
-          message = 'Email/password accounts are not enabled. Please contact support.';
+          message =
+              'Email/password accounts are not enabled. Please contact support.';
           break;
         case 'network-request-failed':
-          message = 'Network error. Please check your connection and try again.';
+          message =
+              'Network error. Please check your connection and try again.';
           break;
         default:
           message = 'Sign up failed: ${e.message}';
@@ -284,12 +288,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> signOut() async {
     try {
       AppLogger.info('🔄 Starting sign out process...');
-      
+
       // Sign out from Firebase Auth
       AppLogger.info('🔄 Signing out from Firebase Auth...');
       await _firebaseAuth.signOut();
       AppLogger.info('✅ Firebase Auth sign out successful');
-      
+
       AppLogger.info('✅ Sign out process completed successfully');
     } catch (e) {
       AppLogger.error('❌ Sign out failed with error: $e');
@@ -304,7 +308,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (user == null) {
         throw const AuthException('No user to delete');
       }
-      
+
       await FirestoreCollections.user(user.uid).delete();
       await user.delete();
     } catch (e) {

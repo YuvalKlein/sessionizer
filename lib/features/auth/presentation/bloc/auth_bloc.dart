@@ -32,30 +32,41 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _signOut = signOut,
        _authRepository = authRepository,
        super(AuthInitial()) {
-    
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<SignInWithEmailRequested>(_onSignInWithEmailRequested);
     on<SignInWithGoogleRequested>(_onSignInWithGoogleRequested);
     on<SignUpWithEmailRequested>(_onSignUpWithEmailRequested);
     on<SignOutRequested>(_onSignOutRequested);
-    
+
     // Listen to auth state changes
     _authStateSubscription = _authRepository.authStateChanges.listen(
       (user) {
-        AppLogger.blocEvent('AuthBloc', 'AuthStateChanged', data: {'userId': user?.id ?? 'null'});
+        AppLogger.blocEvent(
+          'AuthBloc',
+          'AuthStateChanged',
+          data: {'userId': user?.id ?? 'null'},
+        );
         if (user != null) {
           print('✅ AuthBloc: User found - emitting AuthAuthenticated');
           AppLogger.debug('👤 User authenticated - emitting AuthAuthenticated');
-          emit(AuthAuthenticated(user));
+          add(AuthCheckRequested());
         } else {
-          AppLogger.debug('🚪 User signed out - checking current state before emitting');
+          AppLogger.debug(
+            '🚪 User signed out - checking current state before emitting',
+          );
           // Only emit AuthUnauthenticated if we're not already in that state
           // This prevents conflicts with manual sign-out
           if (state is! AuthUnauthenticated && state is! AuthLoading) {
-            AppLogger.blocState('AuthBloc', 'AuthUnauthenticated', data: {'source': 'authStateListener'});
-            emit(AuthUnauthenticated());
+            AppLogger.blocState(
+              'AuthBloc',
+              'AuthUnauthenticated',
+              data: {'source': 'authStateListener'},
+            );
+            // emit(AuthUnauthenticated());
           } else {
-            AppLogger.debug('🚪 Already in AuthUnauthenticated or AuthLoading state - skipping emission');
+            AppLogger.debug(
+              '🚪 Already in AuthUnauthenticated or AuthLoading state - skipping emission',
+            );
           }
         }
       },
@@ -69,7 +80,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
-  void _onAuthCheckRequested(AuthCheckRequested event, Emitter<AuthState> emit) {
+  void _onAuthCheckRequested(
+    AuthCheckRequested event,
+    Emitter<AuthState> emit,
+  ) {
     final user = _authRepository.currentUser;
     if (user != null) {
       emit(AuthAuthenticated(user));
@@ -83,11 +97,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    
-    final result = await _signInWithEmail(SignInWithEmailParams(
-      email: event.email,
-      password: event.password,
-    ));
+
+    final result = await _signInWithEmail(
+      SignInWithEmailParams(email: event.email, password: event.password),
+    );
 
     result.fold(
       (failure) => emit(AuthError(failure.message)),
@@ -100,10 +113,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    
-    final result = await _signInWithGoogle(SignInWithGoogleParams(
-      isInstructor: event.isInstructor,
-    ));
+
+    final result = await _signInWithGoogle(
+      SignInWithGoogleParams(isInstructor: event.isInstructor),
+    );
 
     result.fold(
       (failure) => emit(AuthError(failure.message)),
@@ -117,15 +130,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     print('🔄 AuthBloc: Starting signup process');
     emit(AuthLoading());
-    
-    final result = await _signUpWithEmail(SignUpWithEmailParams(
-      email: event.email,
-      password: event.password,
-      firstName: event.firstName,
-      lastName: event.lastName,
-      phoneNumber: event.phoneNumber,
-      role: event.role,
-    ));
+
+    final result = await _signUpWithEmail(
+      SignUpWithEmailParams(
+        email: event.email,
+        password: event.password,
+        firstName: event.firstName,
+        lastName: event.lastName,
+        phoneNumber: event.phoneNumber,
+        role: event.role,
+      ),
+    );
 
     result.fold(
       (failure) {
@@ -145,18 +160,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     AppLogger.info('🔄 Sign out requested - emitting AuthLoading');
     emit(AuthLoading());
-    
+
     // Add a fallback timer that will force unauthenticated state after 4 seconds
     Timer(const Duration(seconds: 4), () {
       if (state is AuthLoading) {
-        AppLogger.warning('⏰ Fallback timer triggered - forcing AuthUnauthenticated');
+        AppLogger.warning(
+          '⏰ Fallback timer triggered - forcing AuthUnauthenticated',
+        );
         emit(AuthUnauthenticated());
       }
     });
-    
+
     try {
       AppLogger.info('🔄 Calling sign out use case...');
-      
+
       // Add a timeout to prevent endless loading
       final result = await _signOut(NoParams()).timeout(
         const Duration(seconds: 3),
@@ -173,7 +190,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthUnauthenticated());
         },
         (_) {
-          AppLogger.info('✅ Sign out successful - immediately emitting AuthUnauthenticated');
+          AppLogger.info(
+            '✅ Sign out successful - immediately emitting AuthUnauthenticated',
+          );
           // Immediately emit AuthUnauthenticated instead of waiting for listener
           // This prevents endless loading and ensures UI updates
           emit(AuthUnauthenticated());
